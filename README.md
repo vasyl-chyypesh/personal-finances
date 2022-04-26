@@ -9,3 +9,8 @@ this is my new project about personal finances
 ## project setup
 ```npm install```
 
+### run tests
+```npm test```
+
+### run test coverage
+```npm run test:coverage```
