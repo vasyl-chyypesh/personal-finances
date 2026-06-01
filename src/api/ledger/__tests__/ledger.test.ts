@@ -7,16 +7,22 @@ import type { LedgerEntry, CreateLedgerEntryDto } from '../ledger.types.js';
 
 function makeMockLedgerRepo(overrides: Partial<ILedgerRepository> = {}): ILedgerRepository {
   return {
-    create: () => { throw new Error('not implemented'); },
+    create: () => {
+      throw new Error('not implemented');
+    },
     findById: () => undefined,
     findByDateRange: () => [],
-    update: () => { throw new Error('not implemented'); },
+    update: () => {
+      throw new Error('not implemented');
+    },
     deleteById: () => false,
     ...overrides,
   };
 }
 
-function makeMockCategoriesRepo(overrides: Partial<ICategoriesRepository> = {}): ICategoriesRepository {
+function makeMockCategoriesRepo(
+  overrides: Partial<ICategoriesRepository> = {},
+): ICategoriesRepository {
   return {
     findAll: () => [],
     findById: () => undefined,
@@ -43,21 +49,39 @@ describe('LedgerService (unit)', () => {
       makeMockCategoriesRepo({ findById: () => undefined }),
     );
     const dto: CreateLedgerEntryDto = {
-      type: 'expense', amount: 50, currency: 'UAH', categoryId: 99, date: '2026-06-01',
+      type: 'expense',
+      amount: 50,
+      currency: 'UAH',
+      categoryId: 99,
+      date: '2026-06-01',
     };
-    assert.throws(() => service.create(dto), (err: Error) => {
-      assert.ok(err.message.includes('categoryId'));
-      return true;
-    });
+    assert.throws(
+      () => service.create(dto),
+      (err: Error) => {
+        assert.ok(err.message.includes('categoryId'));
+        return true;
+      },
+    );
   });
 
   it('create delegates to repo when category is valid', () => {
     let called = false;
     const service = new LedgerService(
-      makeMockLedgerRepo({ create: () => { called = true; return stubEntry; } }),
+      makeMockLedgerRepo({
+        create: () => {
+          called = true;
+          return stubEntry;
+        },
+      }),
       makeMockCategoriesRepo({ findById: () => stubCategory }),
     );
-    const result = service.create({ type: 'expense', amount: 50, currency: 'UAH', categoryId: 1, date: '2026-06-01' });
+    const result = service.create({
+      type: 'expense',
+      amount: 50,
+      currency: 'UAH',
+      categoryId: 1,
+      date: '2026-06-01',
+    });
     assert.ok(called);
     assert.deepEqual(result, stubEntry);
   });
@@ -67,10 +91,13 @@ describe('LedgerService (unit)', () => {
       makeMockLedgerRepo({ findById: () => undefined }),
       makeMockCategoriesRepo(),
     );
-    assert.throws(() => service.update(99, { amount: 10 }), (err: Error) => {
-      assert.ok(err.message.toLowerCase().includes('not found'));
-      return true;
-    });
+    assert.throws(
+      () => service.update(99, { amount: 10 }),
+      (err: Error) => {
+        assert.ok(err.message.toLowerCase().includes('not found'));
+        return true;
+      },
+    );
   });
 
   it('update throws 400 when new categoryId does not exist', () => {
@@ -78,10 +105,13 @@ describe('LedgerService (unit)', () => {
       makeMockLedgerRepo({ findById: () => stubEntry }),
       makeMockCategoriesRepo({ findById: () => undefined }),
     );
-    assert.throws(() => service.update(1, { categoryId: 99 }), (err: Error) => {
-      assert.ok(err.message.includes('categoryId'));
-      return true;
-    });
+    assert.throws(
+      () => service.update(1, { categoryId: 99 }),
+      (err: Error) => {
+        assert.ok(err.message.includes('categoryId'));
+        return true;
+      },
+    );
   });
 
   it('remove throws 404 when entry does not exist', () => {
@@ -96,7 +126,13 @@ describe('LedgerService (unit)', () => {
     let startCapture = '';
     let endCapture = '';
     const service = new LedgerService(
-      makeMockLedgerRepo({ findByDateRange: (start, end) => { startCapture = start; endCapture = end; return []; } }),
+      makeMockLedgerRepo({
+        findByDateRange: (start, end) => {
+          startCapture = start;
+          endCapture = end;
+          return [];
+        },
+      }),
       makeMockCategoriesRepo(),
     );
     const result = service.list('week');

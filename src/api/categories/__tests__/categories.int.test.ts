@@ -40,7 +40,17 @@ describe('CategoriesRepository (integration)', () => {
 
   it('includes expected category names', () => {
     const names = service.list().map((c) => c.name);
-    const expected = ['grocery', 'eating out', 'sport', 'medicine', 'charity', 'utilities', 'main work', 'side project', 'deposits'];
+    const expected = [
+      'grocery',
+      'eating out',
+      'sport',
+      'medicine',
+      'charity',
+      'utilities',
+      'main work',
+      'side project',
+      'deposits',
+    ];
     for (const name of expected) {
       assert.ok(names.includes(name), `expected category "${name}" to be present`);
     }

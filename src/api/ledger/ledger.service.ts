@@ -3,7 +3,12 @@ import { CODES } from '../shared/errors/codes.js';
 import { MESSAGES } from '../shared/errors/messages.js';
 import type { ICategoriesRepository } from '../categories/categories.repository.js';
 import type { ILedgerRepository } from './ledger.repository.js';
-import type { LedgerEntry, CreateLedgerEntryDto, UpdateLedgerEntryDto, Period } from './ledger.types.js';
+import type {
+  LedgerEntry,
+  CreateLedgerEntryDto,
+  UpdateLedgerEntryDto,
+  Period,
+} from './ledger.types.js';
 
 export interface DateRange {
   startDate: string;

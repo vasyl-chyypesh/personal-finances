@@ -62,21 +62,32 @@ export class LedgerRepository implements ILedgerRepository {
         `INSERT INTO ledger_entries (type, amount, currency, category_id, description, date, created_at, updated_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       )
-      .run(dto.type, dto.amount, dto.currency, dto.categoryId, dto.description ?? null, dto.date, now, now);
+      .run(
+        dto.type,
+        dto.amount,
+        dto.currency,
+        dto.categoryId,
+        dto.description ?? null,
+        dto.date,
+        now,
+        now,
+      );
 
     return this.findById(Number(result.lastInsertRowid))!;
   }
 
   findById(id: number): LedgerEntry | undefined {
-    const row = this.db
-      .prepare(`${SELECT_WITH_CATEGORY} WHERE le.id = ?`)
-      .get(id) as LedgerRow | undefined;
+    const row = this.db.prepare(`${SELECT_WITH_CATEGORY} WHERE le.id = ?`).get(id) as
+      | LedgerRow
+      | undefined;
     return row ? mapRow(row) : undefined;
   }
 
   findByDateRange(startDate: string, endDate: string): LedgerEntry[] {
     const rows = this.db
-      .prepare(`${SELECT_WITH_CATEGORY} WHERE le.date >= ? AND le.date <= ? ORDER BY le.date DESC, le.id DESC`)
+      .prepare(
+        `${SELECT_WITH_CATEGORY} WHERE le.date >= ? AND le.date <= ? ORDER BY le.date DESC, le.id DESC`,
+      )
       .all(startDate, endDate) as LedgerRow[];
     return rows.map(mapRow);
   }
@@ -86,18 +97,34 @@ export class LedgerRepository implements ILedgerRepository {
     const fields: string[] = ['updated_at = ?'];
     const values: (string | number | null)[] = [now];
 
-    if (dto.type !== undefined) { fields.push('type = ?'); values.push(dto.type); }
-    if (dto.amount !== undefined) { fields.push('amount = ?'); values.push(dto.amount); }
-    if (dto.currency !== undefined) { fields.push('currency = ?'); values.push(dto.currency); }
-    if (dto.categoryId !== undefined) { fields.push('category_id = ?'); values.push(dto.categoryId); }
-    if (dto.description !== undefined) { fields.push('description = ?'); values.push(dto.description); }
-    if (dto.date !== undefined) { fields.push('date = ?'); values.push(dto.date); }
+    if (dto.type !== undefined) {
+      fields.push('type = ?');
+      values.push(dto.type);
+    }
+    if (dto.amount !== undefined) {
+      fields.push('amount = ?');
+      values.push(dto.amount);
+    }
+    if (dto.currency !== undefined) {
+      fields.push('currency = ?');
+      values.push(dto.currency);
+    }
+    if (dto.categoryId !== undefined) {
+      fields.push('category_id = ?');
+      values.push(dto.categoryId);
+    }
+    if (dto.description !== undefined) {
+      fields.push('description = ?');
+      values.push(dto.description);
+    }
+    if (dto.date !== undefined) {
+      fields.push('date = ?');
+      values.push(dto.date);
+    }
 
     values.push(id);
 
-    this.db
-      .prepare(`UPDATE ledger_entries SET ${fields.join(', ')} WHERE id = ?`)
-      .run(...values);
+    this.db.prepare(`UPDATE ledger_entries SET ${fields.join(', ')} WHERE id = ?`).run(...values);
 
     return this.findById(id)!;
   }

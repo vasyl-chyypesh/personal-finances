@@ -9,10 +9,9 @@ export const CreateSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 });
 
-export const UpdateSchema = CreateSchema.partial().refine(
-  (data) => Object.keys(data).length > 0,
-  { message: 'At least one field required' },
-);
+export const UpdateSchema = CreateSchema.partial().refine((data) => Object.keys(data).length > 0, {
+  message: 'At least one field required',
+});
 
 export const ListQuerySchema = z.object({
   period: z.enum(['week', 'month', 'year']).default('month'),

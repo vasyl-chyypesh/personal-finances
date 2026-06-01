@@ -74,7 +74,13 @@ describe('LedgerRepository (integration)', () => {
   });
 
   it('update modifies only provided fields and bumps updatedAt', async () => {
-    const created = repo.create({ type: 'expense', amount: 50, currency: 'UAH', categoryId, date: '2026-06-05' });
+    const created = repo.create({
+      type: 'expense',
+      amount: 50,
+      currency: 'UAH',
+      categoryId,
+      date: '2026-06-05',
+    });
     await new Promise((r) => setTimeout(r, 5));
     const updated = repo.update(created.id, { amount: 75, description: 'updated note' });
     assert.equal(updated.amount, 75);
@@ -84,7 +90,13 @@ describe('LedgerRepository (integration)', () => {
   });
 
   it('deleteById removes the entry and returns true', () => {
-    const entry = repo.create({ type: 'income', amount: 5000, currency: 'UAH', categoryId, date: '2026-06-20' });
+    const entry = repo.create({
+      type: 'income',
+      amount: 5000,
+      currency: 'UAH',
+      categoryId,
+      date: '2026-06-20',
+    });
     const deleted = repo.deleteById(entry.id);
     assert.ok(deleted);
     assert.equal(repo.findById(entry.id), undefined);
@@ -125,9 +137,13 @@ describe('Ledger routes (HTTP integration)', () => {
   });
 
   it('POST / creates an entry and returns 201', async () => {
-    const res = await request(app)
-      .post('/api/ledger')
-      .send({ type: 'expense', amount: 99, currency: 'UAH', categoryId: validCategoryId, date: '2026-06-01' });
+    const res = await request(app).post('/api/ledger').send({
+      type: 'expense',
+      amount: 99,
+      currency: 'UAH',
+      categoryId: validCategoryId,
+      date: '2026-06-01',
+    });
     assert.equal(res.status, 201);
     const body = res.body as LedgerEntry;
     assert.equal(body.type, 'expense');
@@ -142,16 +158,25 @@ describe('Ledger routes (HTTP integration)', () => {
   });
 
   it('POST / returns 400 for unknown categoryId', async () => {
-    const res = await request(app)
-      .post('/api/ledger')
-      .send({ type: 'expense', amount: 10, currency: 'UAH', categoryId: 99999, date: '2026-06-01' });
+    const res = await request(app).post('/api/ledger').send({
+      type: 'expense',
+      amount: 10,
+      currency: 'UAH',
+      categoryId: 99999,
+      date: '2026-06-01',
+    });
     assert.equal(res.status, 400);
   });
 
   it('GET /?period=month returns records and date range', async () => {
     const res = await request(app).get('/api/ledger?period=month');
     assert.equal(res.status, 200);
-    const body = res.body as { records: LedgerEntry[]; period: string; startDate: string; endDate: string };
+    const body = res.body as {
+      records: LedgerEntry[];
+      period: string;
+      startDate: string;
+      endDate: string;
+    };
     assert.equal(body.period, 'month');
     assert.ok(typeof body.startDate === 'string');
     assert.ok(typeof body.endDate === 'string');
@@ -166,9 +191,13 @@ describe('Ledger routes (HTTP integration)', () => {
 
   it('PUT /:id updates the entry', async () => {
     const created = (
-      await request(app)
-        .post('/api/ledger')
-        .send({ type: 'expense', amount: 50, currency: 'UAH', categoryId: validCategoryId, date: '2026-06-15' })
+      await request(app).post('/api/ledger').send({
+        type: 'expense',
+        amount: 50,
+        currency: 'UAH',
+        categoryId: validCategoryId,
+        date: '2026-06-15',
+      })
     ).body as LedgerEntry;
 
     const res = await request(app).put(`/api/ledger/${created.id}`).send({ amount: 75 });
@@ -185,9 +214,13 @@ describe('Ledger routes (HTTP integration)', () => {
 
   it('PUT /:id returns 400 for empty body', async () => {
     const created = (
-      await request(app)
-        .post('/api/ledger')
-        .send({ type: 'income', amount: 1000, currency: 'USD', categoryId: validCategoryId, date: '2026-06-01' })
+      await request(app).post('/api/ledger').send({
+        type: 'income',
+        amount: 1000,
+        currency: 'USD',
+        categoryId: validCategoryId,
+        date: '2026-06-01',
+      })
     ).body as LedgerEntry;
 
     const res = await request(app).put(`/api/ledger/${created.id}`).send({});
@@ -196,9 +229,13 @@ describe('Ledger routes (HTTP integration)', () => {
 
   it('DELETE /:id removes the entry and returns 204', async () => {
     const created = (
-      await request(app)
-        .post('/api/ledger')
-        .send({ type: 'income', amount: 500, currency: 'UAH', categoryId: validCategoryId, date: '2026-06-01' })
+      await request(app).post('/api/ledger').send({
+        type: 'income',
+        amount: 500,
+        currency: 'UAH',
+        categoryId: validCategoryId,
+        date: '2026-06-01',
+      })
     ).body as LedgerEntry;
 
     assert.equal((await request(app).delete(`/api/ledger/${created.id}`)).status, 204);

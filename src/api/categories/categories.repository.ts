@@ -10,14 +10,12 @@ export class CategoriesRepository implements ICategoriesRepository {
   constructor(private readonly db: Database.Database) {}
 
   findAll(): Category[] {
-    return this.db
-      .prepare('SELECT id, name FROM categories ORDER BY name')
-      .all() as Category[];
+    return this.db.prepare('SELECT id, name FROM categories ORDER BY name').all() as Category[];
   }
 
   findById(id: number): Category | undefined {
-    return this.db
-      .prepare('SELECT id, name FROM categories WHERE id = ?')
-      .get(id) as Category | undefined;
+    return this.db.prepare('SELECT id, name FROM categories WHERE id = ?').get(id) as
+      | Category
+      | undefined;
   }
 }
