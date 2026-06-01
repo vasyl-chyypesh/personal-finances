@@ -4,8 +4,14 @@ import { CODES } from '../errors/codes.js';
 import { MESSAGES } from '../errors/messages.js';
 import { Logger } from '../logger.js';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function errorHandler(error: Error, request: Request, response: Response, next: NextFunction) {
+// `next` is required so Express treats this as error-handling middleware (arity 4).
+export function errorHandler(
+  error: Error,
+  request: Request,
+  response: Response,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  next: NextFunction,
+) {
   Logger.error(error);
 
   if (error instanceof HttpError) {
