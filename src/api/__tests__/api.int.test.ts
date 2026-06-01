@@ -1,68 +1,57 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import http from 'node:http';
-import express from 'express';
-import { notFoundHandler } from '../shared/middlewares/notFoundHandler.js';
-import { errorHandler } from '../shared/middlewares/errorHandler.js';
+import { rm } from 'node:fs/promises';
+import request from 'supertest';
+import type { Express } from 'express';
+
+const API_TEST_DB = './api-test.db';
+process.env['DB_PATH'] = API_TEST_DB;
 
 describe('API (integration)', () => {
-  let server: http.Server;
-  let baseUrl: string;
+  let app: Express;
 
   before(async () => {
-    const app = express();
-    app.use(express.json());
-
-    app.get('/health', (_req, res) => {
-      res.json({ status: 'ok', timestamp: new Date().toISOString() });
-    });
-
-    app.use(notFoundHandler);
-    app.use(errorHandler);
-
-    await new Promise<void>((resolve) => {
-      server = app.listen(0, resolve);
-    });
-    const addr = server.address() as { port: number };
-    baseUrl = `http://localhost:${addr.port}`;
+    const { default: importedApp } = await import('../app.js');
+    app = importedApp;
   });
 
   after(async () => {
-    await new Promise<void>((resolve, reject) => server.close((e) => (e ? reject(e) : resolve())));
+    await Promise.all([
+      rm(API_TEST_DB, { force: true }),
+      rm(`${API_TEST_DB}-wal`, { force: true }),
+      rm(`${API_TEST_DB}-shm`, { force: true }),
+    ]);
   });
 
   describe('GET /health', () => {
     it('returns 200 with status ok', async () => {
-      const res = await fetch(`${baseUrl}/health`);
+      const res = await request(app).get('/health');
       assert.equal(res.status, 200);
-      const body = await res.json() as { status: string; timestamp: string };
-      assert.equal(body.status, 'ok');
+      assert.equal(res.body.status, 'ok');
     });
 
     it('includes an ISO 8601 timestamp', async () => {
-      const res = await fetch(`${baseUrl}/health`);
-      const body = await res.json() as { timestamp: string };
-      assert.ok(typeof body.timestamp === 'string', 'timestamp must be a string');
-      assert.ok(!Number.isNaN(Date.parse(body.timestamp)), 'timestamp must be a valid date');
-      assert.ok(body.timestamp.includes('T'), 'timestamp must be ISO 8601 format');
+      const res = await request(app).get('/health');
+      assert.ok(typeof res.body.timestamp === 'string', 'timestamp must be a string');
+      assert.ok(!Number.isNaN(Date.parse(res.body.timestamp)), 'timestamp must be a valid date');
+      assert.ok((res.body.timestamp as string).includes('T'), 'timestamp must be ISO 8601 format');
     });
   });
 
   describe('unknown routes', () => {
     it('returns 404 for an unknown path', async () => {
-      const res = await fetch(`${baseUrl}/does-not-exist`);
+      const res = await request(app).get('/does-not-exist');
       assert.equal(res.status, 404);
     });
 
     it('returns a JSON body with a message field', async () => {
-      const res = await fetch(`${baseUrl}/does-not-exist`);
-      const body = await res.json() as { message: string };
-      assert.ok(typeof body.message === 'string');
-      assert.ok(body.message.length > 0);
+      const res = await request(app).get('/does-not-exist');
+      assert.ok(typeof res.body.message === 'string');
+      assert.ok(res.body.message.length > 0);
     });
 
     it('returns 404 for nested unknown paths', async () => {
-      const res = await fetch(`${baseUrl}/api/unknown/route`);
+      const res = await request(app).get('/api/unknown/route');
       assert.equal(res.status, 404);
     });
   });

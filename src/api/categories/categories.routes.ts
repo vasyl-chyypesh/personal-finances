@@ -1,16 +1,18 @@
 import { Router } from 'express';
-import type { CategoriesService } from './categories.service.js';
+import db from '../shared/database.js';
+import { CategoriesRepository } from './categories.repository.js';
+import { CategoriesService } from './categories.service.js';
 
-export function createCategoriesRouter(service: CategoriesService): Router {
-  const router = Router();
+const service = new CategoriesService(new CategoriesRepository(db));
 
-  router.get('/', (_req, res, next) => {
-    try {
-      res.json(service.list());
-    } catch (err) {
-      next(err);
-    }
-  });
+const router = Router();
 
-  return router;
-}
+router.get('/', (_req, res, next) => {
+  try {
+    res.json(service.list());
+  } catch (err) {
+    next(err);
+  }
+});
+
+export default router;

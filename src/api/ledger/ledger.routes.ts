@@ -1,80 +1,53 @@
 import { Router } from 'express';
-import { z } from 'zod';
-import { HttpError } from '../shared/errors/httpError.js';
-import { CODES } from '../shared/errors/codes.js';
-import type { LedgerService } from './ledger.service.js';
+import db from '../shared/database.js';
+import { LedgerRepository } from './ledger.repository.js';
+import { LedgerService } from './ledger.service.js';
+import { CategoriesRepository } from '../categories/categories.repository.js';
+import { requestValidator, RequestSource } from '../shared/middlewares/requestValidator.js';
+import { CreateSchema, UpdateSchema, ListQuerySchema, IdParamSchema } from './ledger.schema.js';
+import type { CreateLedgerEntryDto, UpdateLedgerEntryDto, Period } from './ledger.types.js';
 
-const CreateSchema = z.object({
-  type: z.enum(['income', 'expense']),
-  amount: z.number().positive(),
-  currency: z.enum(['UAH', 'USD', 'EUR']),
-  categoryId: z.number().int().positive(),
-  description: z.string().optional(),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+const service = new LedgerService(new LedgerRepository(db), new CategoriesRepository(db));
+
+const router = Router();
+
+router.post('/', requestValidator(CreateSchema), (req, res, next) => {
+  try {
+    res.status(201).json(service.create(res.locals.body as CreateLedgerEntryDto));
+  } catch (err) {
+    next(err);
+  }
 });
 
-const UpdateSchema = CreateSchema.partial().refine(
-  (data) => Object.keys(data).length > 0,
-  { message: 'At least one field required' },
+router.get('/', requestValidator(ListQuerySchema, RequestSource.query), (req, res, next) => {
+  try {
+    res.json(service.list((res.locals.query as { period: Period }).period));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put(
+  '/:id',
+  requestValidator(IdParamSchema, RequestSource.params),
+  requestValidator(UpdateSchema),
+  (req, res, next) => {
+    try {
+      const { id } = res.locals.params as { id: number };
+      res.json(service.update(id, res.locals.body as UpdateLedgerEntryDto));
+    } catch (err) {
+      next(err);
+    }
+  },
 );
 
-const ListQuerySchema = z.object({
-  period: z.enum(['week', 'month', 'year']).default('month'),
+router.delete('/:id', requestValidator(IdParamSchema, RequestSource.params), (req, res, next) => {
+  try {
+    service.remove((res.locals.params as { id: number }).id);
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
 });
 
-const IdParamSchema = z.object({
-  id: z.string().regex(/^\d+$/).transform(Number),
-});
-
-function validationError(issues: z.ZodIssue[]): HttpError {
-  return new HttpError(issues[0]?.message ?? 'Validation error', CODES.BAD_REQUEST, 400);
-}
-
-export function createLedgerRouter(service: LedgerService): Router {
-  const router = Router();
-
-  router.post('/', (req, res, next) => {
-    try {
-      const parsed = CreateSchema.safeParse(req.body);
-      if (!parsed.success) throw validationError(parsed.error.issues);
-      res.status(201).json(service.create(parsed.data));
-    } catch (err) {
-      next(err);
-    }
-  });
-
-  router.get('/', (req, res, next) => {
-    try {
-      const parsed = ListQuerySchema.safeParse(req.query);
-      if (!parsed.success) throw validationError(parsed.error.issues);
-      res.json(service.list(parsed.data.period));
-    } catch (err) {
-      next(err);
-    }
-  });
-
-  router.put('/:id', (req, res, next) => {
-    try {
-      const idParsed = IdParamSchema.safeParse(req.params);
-      if (!idParsed.success) throw new HttpError('Invalid id', CODES.BAD_REQUEST, 400);
-      const bodyParsed = UpdateSchema.safeParse(req.body);
-      if (!bodyParsed.success) throw validationError(bodyParsed.error.issues);
-      res.json(service.update(idParsed.data.id, bodyParsed.data));
-    } catch (err) {
-      next(err);
-    }
-  });
-
-  router.delete('/:id', (req, res, next) => {
-    try {
-      const idParsed = IdParamSchema.safeParse(req.params);
-      if (!idParsed.success) throw new HttpError('Invalid id', CODES.BAD_REQUEST, 400);
-      service.remove(idParsed.data.id);
-      res.status(204).end();
-    } catch (err) {
-      next(err);
-    }
-  });
-
-  return router;
-}
+export default router;

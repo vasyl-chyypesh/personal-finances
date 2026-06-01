@@ -1,14 +1,11 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import http from 'node:http';
 import Database from 'better-sqlite3';
-import express from 'express';
 import { rm } from 'node:fs/promises';
+import request from 'supertest';
+import type { Express } from 'express';
 import { LedgerRepository } from '../ledger.repository.js';
-import { LedgerService } from '../ledger.service.js';
 import { CategoriesRepository } from '../../categories/categories.repository.js';
-import { createLedgerRouter } from '../ledger.routes.js';
-import { errorHandler } from '../../shared/middlewares/errorHandler.js';
 import { initDb } from '../../shared/schema.js';
 import type { LedgerEntry, CreateLedgerEntryDto } from '../ledger.types.js';
 
@@ -33,7 +30,11 @@ describe('LedgerRepository (integration)', () => {
 
   after(async () => {
     db.close();
-    await rm('./ledger-test.db', { force: true });
+    await Promise.all([
+      rm('./ledger-test.db', { force: true }),
+      rm('./ledger-test.db-wal', { force: true }),
+      rm('./ledger-test.db-shm', { force: true }),
+    ]);
   });
 
   it('create inserts and returns a full entry with category', () => {
@@ -98,48 +99,37 @@ describe('LedgerRepository (integration)', () => {
 // Ledger routes HTTP integration tests
 // ---------------------------------------------------------------------------
 
+const ROUTES_TEST_DB = './ledger-routes-test.db';
+process.env['DB_PATH'] = ROUTES_TEST_DB;
+
 describe('Ledger routes (HTTP integration)', () => {
-  let db: Database.Database;
-  let server: http.Server;
-  let baseUrl: string;
+  let app: Express;
   let validCategoryId: number;
 
   before(async () => {
-    db = new Database('./ledger-routes-test.db');
+    const { default: importedApp } = await import('../../app.js');
+    app = importedApp;
+
+    const db = new Database(ROUTES_TEST_DB);
     db.pragma('foreign_keys = ON');
-    initDb(db);
-
-    const catRepo = new CategoriesRepository(db);
-    const ledgerRepo = new LedgerRepository(db);
-    const service = new LedgerService(ledgerRepo, catRepo);
-    validCategoryId = catRepo.findAll()[0].id;
-
-    const app = express();
-    app.use(express.json());
-    app.use('/api/ledger', createLedgerRouter(service));
-    app.use(errorHandler);
-
-    await new Promise<void>((resolve) => {
-      server = app.listen(0, resolve);
-    });
-    const addr = server.address() as { port: number };
-    baseUrl = `http://localhost:${addr.port}/api/ledger`;
+    validCategoryId = new CategoriesRepository(db).findAll()[0].id;
+    db.close();
   });
 
   after(async () => {
-    await new Promise<void>((resolve, reject) => server.close((e) => (e ? reject(e) : resolve())));
-    db.close();
-    await rm('./ledger-routes-test.db', { force: true });
+    await Promise.all([
+      rm(ROUTES_TEST_DB, { force: true }),
+      rm(`${ROUTES_TEST_DB}-wal`, { force: true }),
+      rm(`${ROUTES_TEST_DB}-shm`, { force: true }),
+    ]);
   });
 
   it('POST / creates an entry and returns 201', async () => {
-    const res = await fetch(baseUrl, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ type: 'expense', amount: 99, currency: 'UAH', categoryId: validCategoryId, date: '2026-06-01' }),
-    });
+    const res = await request(app)
+      .post('/api/ledger')
+      .send({ type: 'expense', amount: 99, currency: 'UAH', categoryId: validCategoryId, date: '2026-06-01' });
     assert.equal(res.status, 201);
-    const body = await res.json() as LedgerEntry;
+    const body = res.body as LedgerEntry;
     assert.equal(body.type, 'expense');
     assert.equal(body.amount, 99);
     assert.ok(typeof body.id === 'number');
@@ -147,27 +137,21 @@ describe('Ledger routes (HTTP integration)', () => {
   });
 
   it('POST / returns 400 for invalid body', async () => {
-    const res = await fetch(baseUrl, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ type: 'expense' }),
-    });
+    const res = await request(app).post('/api/ledger').send({ type: 'expense' });
     assert.equal(res.status, 400);
   });
 
   it('POST / returns 400 for unknown categoryId', async () => {
-    const res = await fetch(baseUrl, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ type: 'expense', amount: 10, currency: 'UAH', categoryId: 99999, date: '2026-06-01' }),
-    });
+    const res = await request(app)
+      .post('/api/ledger')
+      .send({ type: 'expense', amount: 10, currency: 'UAH', categoryId: 99999, date: '2026-06-01' });
     assert.equal(res.status, 400);
   });
 
   it('GET /?period=month returns records and date range', async () => {
-    const res = await fetch(`${baseUrl}?period=month`);
+    const res = await request(app).get('/api/ledger?period=month');
     assert.equal(res.status, 200);
-    const body = await res.json() as { records: LedgerEntry[]; period: string; startDate: string; endDate: string };
+    const body = res.body as { records: LedgerEntry[]; period: string; startDate: string; endDate: string };
     assert.equal(body.period, 'month');
     assert.ok(typeof body.startDate === 'string');
     assert.ok(typeof body.endDate === 'string');
@@ -175,73 +159,54 @@ describe('Ledger routes (HTTP integration)', () => {
   });
 
   it('GET / defaults period to month when omitted', async () => {
-    const res = await fetch(baseUrl);
+    const res = await request(app).get('/api/ledger');
     assert.equal(res.status, 200);
-    const body = await res.json() as { period: string };
-    assert.equal(body.period, 'month');
+    assert.equal((res.body as { period: string }).period, 'month');
   });
 
   it('PUT /:id updates the entry', async () => {
-    const createRes = await fetch(baseUrl, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ type: 'expense', amount: 50, currency: 'UAH', categoryId: validCategoryId, date: '2026-06-15' }),
-    });
-    const created = await createRes.json() as LedgerEntry;
+    const created = (
+      await request(app)
+        .post('/api/ledger')
+        .send({ type: 'expense', amount: 50, currency: 'UAH', categoryId: validCategoryId, date: '2026-06-15' })
+    ).body as LedgerEntry;
 
-    const res = await fetch(`${baseUrl}/${created.id}`, {
-      method: 'PUT',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ amount: 75 }),
-    });
+    const res = await request(app).put(`/api/ledger/${created.id}`).send({ amount: 75 });
     assert.equal(res.status, 200);
-    const updated = await res.json() as LedgerEntry;
+    const updated = res.body as LedgerEntry;
     assert.equal(updated.amount, 75);
     assert.equal(updated.id, created.id);
   });
 
   it('PUT /:id returns 404 for unknown entry', async () => {
-    const res = await fetch(`${baseUrl}/99999`, {
-      method: 'PUT',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ amount: 10 }),
-    });
+    const res = await request(app).put('/api/ledger/99999').send({ amount: 10 });
     assert.equal(res.status, 404);
   });
 
   it('PUT /:id returns 400 for empty body', async () => {
-    const createRes = await fetch(baseUrl, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ type: 'income', amount: 1000, currency: 'USD', categoryId: validCategoryId, date: '2026-06-01' }),
-    });
-    const created = await createRes.json() as LedgerEntry;
+    const created = (
+      await request(app)
+        .post('/api/ledger')
+        .send({ type: 'income', amount: 1000, currency: 'USD', categoryId: validCategoryId, date: '2026-06-01' })
+    ).body as LedgerEntry;
 
-    const res = await fetch(`${baseUrl}/${created.id}`, {
-      method: 'PUT',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({}),
-    });
+    const res = await request(app).put(`/api/ledger/${created.id}`).send({});
     assert.equal(res.status, 400);
   });
 
   it('DELETE /:id removes the entry and returns 204', async () => {
-    const createRes = await fetch(baseUrl, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ type: 'income', amount: 500, currency: 'UAH', categoryId: validCategoryId, date: '2026-06-01' }),
-    });
-    const created = await createRes.json() as LedgerEntry;
+    const created = (
+      await request(app)
+        .post('/api/ledger')
+        .send({ type: 'income', amount: 500, currency: 'UAH', categoryId: validCategoryId, date: '2026-06-01' })
+    ).body as LedgerEntry;
 
-    const deleteRes = await fetch(`${baseUrl}/${created.id}`, { method: 'DELETE' });
-    assert.equal(deleteRes.status, 204);
-
-    const getRes = await fetch(`${baseUrl}/${created.id}`);
-    assert.equal(getRes.status, 404);
+    assert.equal((await request(app).delete(`/api/ledger/${created.id}`)).status, 204);
+    assert.equal((await request(app).get(`/api/ledger/${created.id}`)).status, 404);
   });
 
   it('DELETE /:id returns 404 for unknown entry', async () => {
-    const res = await fetch(`${baseUrl}/99999`, { method: 'DELETE' });
+    const res = await request(app).delete('/api/ledger/99999');
     assert.equal(res.status, 404);
   });
 });
