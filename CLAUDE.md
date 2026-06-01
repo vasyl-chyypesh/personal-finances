@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A personal finance manager running locally, backed by a SQLite database. The API is built with Express 5 and TypeScript. A React UI is planned but not yet scaffolded.
+A personal finance manager running locally, backed by a SQLite database. The API is built with Express 5 and TypeScript. The UI is a React 19 single-page app built with Vite and Tailwind CSS v4, served separately and proxying `/api` to the Express server.
 
 ## Environment Requirements
 
@@ -76,6 +76,21 @@ Shared code lives in `src/api/shared/`:
 
 `app.ts` wires, in order: `helmet()`, `express.json()`, `rateLimiter`, the `/health` route, feature routers under `/api/*`, then `notFoundHandler` and `errorHandler` last. `x-powered-by` is disabled.
 
+## UI (React)
+
+The frontend lives under `src/ui/` and is a **Vite + React 19 + TypeScript** single-page app. It is fully separate from the API: it never imports server modules (which pull in `better-sqlite3`) and talks to the backend only over HTTP.
+
+- **Dev server**: `npm run dev:ui` runs Vite on `:5173` and proxies `/api/*` to the API on `:3001` (`server.proxy` in `vite.config.ts`). Run `dev:api` and `dev:ui` together.
+- **Styling**: Tailwind CSS v4 via the `@tailwindcss/vite` plugin. There is **no** `tailwind.config.js` / PostCSS config — Tailwind is enabled by `@import "tailwindcss";` in `src/ui/index.css`. Style with utility classes.
+- **Build config**: the UI has its own browser-targeted `src/ui/tsconfig.json` (`jsx: react-jsx`, DOM libs, `moduleResolution: bundler`, `allowImportingTsExtensions`). It is excluded from the API's `tsconfig.json` / `tsconfig.build.json` so `npm run build` (API) never compiles browser code. `npm run build:ui` produces a static bundle in `dist/ui`.
+- **Structure** under `src/ui/`:
+  - `main.tsx` — React entry; `App.tsx` — page composition.
+  - `types.ts` — browser-side mirror of the API domain types (kept in sync manually; do NOT import from `src/api`).
+  - `lib/client.ts` — typed `fetch` wrapper; throws `ApiError` from the `{ code, message }` error body. (Note: UI source must NOT live under a `src/ui/api/` directory — the Vite `/api` proxy prefix would intercept those module URLs and break the app.)
+  - `hooks/` — `useCategories.ts`, `useLedger.ts` (data fetching with `useState`/`useEffect`; no TanStack Query or other state lib).
+  - `components/` — `PascalCase.tsx` presentational/feature components.
+- **Linting**: a dedicated ESLint flat-config block targets `src/ui/**/*.{ts,tsx}` (JSX + browser globals + `react-hooks` rules); the API block is scoped to `src/api/**/*.ts`. `no-console` applies to the UI too — there is no shared logger in the browser, so avoid `console.*` in committed code.
+
 ## Hard Constraints
 
 - **No `console.*`**: Use the shared logger (`src/api/shared/logger.ts`). Violating this will fail the pre-commit ESLint hook.
@@ -85,7 +100,7 @@ Shared code lives in `src/api/shared/`:
 
 ## Naming Conventions
 
-- **Files**: `camelCase` for `.ts` files; `PascalCase` for class and type definition files.
+- **Files**: `camelCase` for `.ts` files; `PascalCase` for class and type definition files. React components are `PascalCase.tsx`; UI hook/util/type files are `camelCase.ts` (ls-lint enforces `.tsx: camelCase | PascalCase`).
 - **Tests**: Must use `.test.ts` suffix.
 
 ## Testing Strategy
@@ -101,13 +116,15 @@ Shared code lives in `src/api/shared/`:
 ## Common Commands
 
 - `npm run dev:api` — start API dev server (tsx watch)
-- `npm run dev:ui` — start React UI dev server (not yet scaffolded)
+- `npm run dev:ui` — start the React UI dev server (Vite on `:5173`, proxies `/api` to `:3001`)
 - `npm test` — run all tests
 - `npm run lint` — run ESLint
 - `npm run lint:files` — run ls-lint (file naming linter, separate from ESLint)
 - `npm run format` — run Prettier (writes changes)
 - `npm run format:check` — verify formatting without writing (used in CI)
-- `npm run build` — compile TypeScript to `dist/`
+- `npm run build` — compile the API TypeScript to `dist/` (excludes `src/ui`)
+- `npm run build:ui` — build the production UI bundle to `dist/ui`
+- `npm run preview:ui` — preview the built UI bundle locally
 - `npm start` — run compiled production build from `dist/`
 - `npm run scan:security` — run Bearer security scanner (requires Docker)
 - `npm run scan:security:report` — same, outputs an HTML report to `scan-report.html`

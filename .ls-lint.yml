@@ -1,6 +1,7 @@
 ls:
   .js: camelCase
   .ts: camelCase | PascalCase
+  .tsx: camelCase | PascalCase
   .yml: kebab-case
   .json: kebab-case
 

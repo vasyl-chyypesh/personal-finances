@@ -1,11 +1,12 @@
 # personal-finances
 
-A personal finance manager that runs locally and stores data in a SQLite database. The backend is a TypeScript REST API built with Express 5; a React UI is planned but not yet scaffolded.
+A personal finance manager that runs locally and stores data in a SQLite database. The backend is a TypeScript REST API built with Express 5; the frontend is a React single-page app built with Vite and Tailwind CSS.
 
 ## Tech stack
 
 - **Runtime**: Node.js ≥ 25 (ESM only)
 - **API**: Express 5 + TypeScript
+- **UI**: React 19 + Vite + Tailwind CSS v4
 - **Database**: SQLite via `better-sqlite3`
 - **Validation**: Zod
 - **Security**: Helmet, `express-rate-limit`
@@ -28,11 +29,16 @@ cp .env.example .env
 
 # 3. Start the API in watch mode
 npm run dev:api
+
+# 4. In a second terminal, start the UI dev server
+npm run dev:ui
 ```
 
 The API listens on `http://localhost:3001` by default. The SQLite file is created automatically on first run and seeded with a set of predefined categories.
 
-The API follows a strict layered architecture: **Routes → Services → Repositories**. See [CLAUDE.md](./CLAUDE.md) for the full architecture and contribution conventions.
+The UI is served by Vite on `http://localhost:5173` and proxies `/api/*` requests to the API on `:3001`, so both dev servers must be running to use the app. From there you can add ledger entries, list them by period (week/month/year), and edit or delete existing entries.
+
+The API follows a strict layered architecture: **Routes → Services → Repositories**. The UI lives under `src/ui/` (Vite SPA, plain `fetch` + hooks, no extra state library). See [CLAUDE.md](./CLAUDE.md) for the full architecture and contribution conventions.
 
 ## License
 
