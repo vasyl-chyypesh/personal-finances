@@ -1,0 +1,6 @@
+export const CODES = Object.freeze({
+  BAD_REQUEST: 'BAD_REQUEST',
+  NOT_FOUND: 'NOT_FOUND',
+  RATE_LIMIT: 'RATE_LIMIT',
+  INTERNAL_ERROR: 'INTERNAL_ERROR',
+});
