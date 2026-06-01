@@ -3,4 +3,5 @@ export const MESSAGES = Object.freeze({
   VALIDATION_ERROR: 'Validation error',
   PAGE_NOT_FOUND: 'Page not found',
   TOO_MANY_REQUESTS: 'Too many requests, please try again later.',
+  LEDGER_NOT_FOUND: 'Ledger entry not found',
 });
