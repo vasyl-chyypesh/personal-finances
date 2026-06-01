@@ -1,12 +1,12 @@
 ls:
-    .js: camelCase
-    .ts: camelCase | PascalCase | regex:[A-Za-z]+
-    .yml: kebab-case
-    .json: kebab-case
+  .js: camelCase
+  .ts: camelCase | PascalCase
+  .yml: kebab-case
+  .json: kebab-case
 
-ignore: 
-    - .git 
-    - node_modules
-    - dist
-    - .husky
-    - coverage
+ignore:
+  - .git
+  - node_modules
+  - dist
+  - .husky
+  - coverage

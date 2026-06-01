@@ -16,6 +16,7 @@
     "scan:security": "docker run --rm -v $(pwd):/tmp/scan bearer/bearer:latest scan /tmp/scan --severity critical,high,medium",
     "scan:security:report": "docker run --rm -v $(pwd):/tmp/scan bearer/bearer:latest scan /tmp/scan --format html --output /tmp/scan/scan-report.html",
     "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "node --import tsx --test 'src/**/*.test.ts'"
   },
   "dependencies": {

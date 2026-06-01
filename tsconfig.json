@@ -13,7 +13,7 @@
     "strictNullChecks": true,
     "skipLibCheck": true,
     "noFallthroughCasesInSwitch": true,
-    "removeComments": true,
+    "removeComments": true
   },
-  "include": ["./src/**/*.ts", "./test/**/*.ts"],
+  "include": ["./src/**/*.ts"]
 }
