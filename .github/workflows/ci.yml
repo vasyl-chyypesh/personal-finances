@@ -7,6 +7,18 @@ on:
     branches: [ main ]
 
 jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Bearer security scan
+        uses: bearer/bearer-action@v2
+        with:
+          path: .
+          severity: critical,high,medium
+
   build-and-test:
     runs-on: ubuntu-latest
 
