@@ -8,6 +8,14 @@ export type Locale = 'en' | 'uk';
 
 export type LocalizedName = Partial<Record<Locale, string>>;
 
+/** Pairwise conversion matrix: `rates[from][to]` converts an amount from→to. */
+export type ExchangeRates = Record<Currency, Record<Currency, number>>;
+
+export interface ExchangeRatesResponse {
+  base: Currency;
+  rates: ExchangeRates;
+}
+
 export interface Category {
   id: number;
   slug: string;

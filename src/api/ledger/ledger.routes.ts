@@ -21,7 +21,12 @@ router.post('/', requestValidator(CreateSchema), (req, res, next) => {
 
 router.get('/', requestValidator(ListQuerySchema, RequestSource.query), (req, res, next) => {
   try {
-    res.json(service.list((res.locals.query as { period: Period }).period));
+    const { period, year, month } = res.locals.query as {
+      period: Period;
+      year?: number;
+      month?: number;
+    };
+    res.json(service.list(period, year, month));
   } catch (err) {
     next(err);
   }

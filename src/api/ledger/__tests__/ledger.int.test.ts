@@ -189,6 +189,26 @@ describe('Ledger routes (HTTP integration)', () => {
     assert.equal((res.body as { period: string }).period, 'month');
   });
 
+  it('GET /?period=month&year=2026&month=4 scopes to that explicit month', async () => {
+    const inApril = (
+      await request(app).post('/api/ledger').send({
+        type: 'expense',
+        amount: 321,
+        currency: 'UAH',
+        categoryId: validCategoryId,
+        date: '2026-04-15',
+      })
+    ).body as LedgerEntry;
+
+    const res = await request(app).get('/api/ledger?period=month&year=2026&month=4');
+    assert.equal(res.status, 200);
+    const body = res.body as { records: LedgerEntry[]; startDate: string; endDate: string };
+    assert.equal(body.startDate, '2026-04-01');
+    assert.equal(body.endDate, '2026-04-30');
+    assert.ok(body.records.some((e) => e.id === inApril.id));
+    assert.ok(body.records.every((e) => e.date >= '2026-04-01' && e.date <= '2026-04-30'));
+  });
+
   it('PUT /:id updates the entry', async () => {
     const created = (
       await request(app).post('/api/ledger').send({

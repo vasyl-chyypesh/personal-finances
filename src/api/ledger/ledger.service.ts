@@ -29,25 +29,23 @@ function toISODate(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-function getDateRange(period: Period): DateRange {
-  const now = new Date();
-
+function getDateRange(period: Period, anchor: Date = new Date()): DateRange {
   if (period === 'week') {
-    const monday = new Date(now);
-    monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+    const monday = new Date(anchor);
+    monday.setDate(anchor.getDate() - ((anchor.getDay() + 6) % 7));
     const sunday = new Date(monday);
     sunday.setDate(monday.getDate() + 6);
     return { startDate: toISODate(monday), endDate: toISODate(sunday) };
   }
 
   if (period === 'month') {
-    const start = new Date(now.getFullYear(), now.getMonth(), 1);
-    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const start = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
+    const end = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0);
     return { startDate: toISODate(start), endDate: toISODate(end) };
   }
 
-  const start = new Date(now.getFullYear(), 0, 1);
-  const end = new Date(now.getFullYear(), 11, 31);
+  const start = new Date(anchor.getFullYear(), 0, 1);
+  const end = new Date(anchor.getFullYear(), 11, 31);
   return { startDate: toISODate(start), endDate: toISODate(end) };
 }
 
@@ -64,8 +62,9 @@ export class LedgerService {
     return this.ledgerRepo.create(dto);
   }
 
-  list(period: Period): LedgerListResult {
-    const { startDate, endDate } = getDateRange(period);
+  list(period: Period, year?: number, month?: number): LedgerListResult {
+    const anchor = year && month ? new Date(year, month - 1, 1) : new Date();
+    const { startDate, endDate } = getDateRange(period, anchor);
     const records = this.ledgerRepo.findByDateRange(startDate, endDate);
     return { records, period, startDate, endDate };
   }

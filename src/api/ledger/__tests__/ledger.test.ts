@@ -170,6 +170,16 @@ describe('LedgerService (unit)', () => {
     assert.ok(endDay >= 28 && endDay <= 31);
   });
 
+  it('list scopes to an explicit year/month when both are provided', () => {
+    const service = new LedgerService(
+      makeMockLedgerRepo({ findByDateRange: () => [] }),
+      makeMockCategoriesRepo(),
+    );
+    const result = service.list('month', 2026, 4);
+    assert.equal(result.startDate, '2026-04-01');
+    assert.equal(result.endDate, '2026-04-30');
+  });
+
   it('list computes year date range from Jan 1 to Dec 31', () => {
     const service = new LedgerService(
       makeMockLedgerRepo({ findByDateRange: () => [] }),

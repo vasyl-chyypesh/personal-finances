@@ -42,6 +42,31 @@ export const MESSAGES: Record<Locale, Record<string, string>> = {
     'list.actions': 'Actions',
     'list.edit': 'Edit',
     'list.delete': 'Delete',
+
+    'nav.list': 'List',
+    'nav.table': 'Table',
+
+    'table.expenses': 'Expenses',
+    'table.income': 'Income',
+    'table.category': 'Category',
+    'table.total': 'TOTAL',
+    'table.percent': '%',
+    'table.daily': 'TOTAL',
+    'table.currency': 'Currency',
+    'table.month': 'Month',
+    'table.year': 'Year',
+    'table.loading': 'Loading…',
+    'table.empty': 'No entries for this month yet.',
+    'table.ratesTitle': 'Exchange rates',
+    'table.ratesError': 'Failed to load exchange rates',
+
+    'month.prev': 'Previous month',
+    'month.next': 'Next month',
+
+    'cell.title': '{category} · {date}',
+    'cell.none': 'No entries in this cell yet.',
+    'cell.add': 'Add to this cell',
+    'cell.close': 'Close',
   },
   uk: {
     'app.title': 'Особисті фінанси',
@@ -83,6 +108,31 @@ export const MESSAGES: Record<Locale, Record<string, string>> = {
     'list.actions': 'Дії',
     'list.edit': 'Редагувати',
     'list.delete': 'Видалити',
+
+    'nav.list': 'Список',
+    'nav.table': 'Таблиця',
+
+    'table.expenses': 'Витрати',
+    'table.income': 'Доходи',
+    'table.category': 'Категорія',
+    'table.total': 'РАЗОМ',
+    'table.percent': '%',
+    'table.daily': 'РАЗОМ',
+    'table.currency': 'Валюта',
+    'table.month': 'Місяць',
+    'table.year': 'Рік',
+    'table.loading': 'Завантаження…',
+    'table.empty': 'Поки немає записів за цей місяць.',
+    'table.ratesTitle': 'Курси валют',
+    'table.ratesError': 'Не вдалося завантажити курси валют',
+
+    'month.prev': 'Попередній місяць',
+    'month.next': 'Наступний місяць',
+
+    'cell.title': '{category} · {date}',
+    'cell.none': 'Поки немає записів у цій комірці.',
+    'cell.add': 'Додати до цієї комірки',
+    'cell.close': 'Закрити',
   },
 };
 
