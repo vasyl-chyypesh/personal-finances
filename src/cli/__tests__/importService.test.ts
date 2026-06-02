@@ -5,7 +5,7 @@ import { ImportService } from '../importService.js';
 import type { ParsedSheet } from '../xlsParser.js';
 import type { ICategoriesRepository } from '../../api/categories/categories.repository.js';
 import type { ILedgerRepository } from '../../api/ledger/ledger.repository.js';
-import type { Category } from '../../api/categories/categories.types.js';
+import type { Category, LocalizedName } from '../../api/categories/categories.types.js';
 import type { CreateLedgerEntryDto, LedgerEntry } from '../../api/ledger/ledger.types.js';
 
 // A transaction stub that simply runs the function synchronously, like better-sqlite3.
@@ -15,18 +15,23 @@ const fakeDb = {
 
 function makeCategoriesRepo(existing: Category[] = []): {
   repo: ICategoriesRepository;
-  created: string[];
+  created: { slug: string; names: LocalizedName }[];
 } {
-  const created: string[] = [];
+  const created: { slug: string; names: LocalizedName }[] = [];
   let nextId = existing.length + 1;
   const repo: ICategoriesRepository = {
     findAll: () => existing,
-    findById: () => undefined,
-    findByName: (name) => existing.find((c) => c.name === name),
-    create: (name) => {
-      created.push(name);
-      const category = { id: nextId++, name };
+    findById: (id) => existing.find((c) => c.id === id),
+    findBySlug: (slug) => existing.find((c) => c.slug === slug),
+    create: (slug, names) => {
+      created.push({ slug, names });
+      const category = { id: nextId++, slug, names };
       existing.push(category);
+      return category;
+    },
+    updateNames: (id, names) => {
+      const category = existing.find((c) => c.id === id)!;
+      category.names = names;
       return category;
     },
   };
@@ -76,21 +81,31 @@ describe('ImportService', () => {
     assert.deepEqual(ledger.deleteRange, ['2026-04-01', '2026-04-30']);
   });
 
-  it('creates each missing category once and reuses it across rows', () => {
+  it('maps known labels to catalog slugs (bilingual) and unknown ones to custom slugs', () => {
     const cats = makeCategoriesRepo();
     const ledger = makeLedgerRepo();
     const summary = new ImportService(fakeDb, ledger.repo, cats.repo).import(sheet);
 
-    assert.deepEqual(cats.created, ['Благодійність', 'Зарплата']);
+    // "Благодійність" -> catalog slug "charity" with both names;
+    // "Зарплата" is not in the catalog -> custom slug from the label, uk only.
+    assert.deepEqual(cats.created, [
+      { slug: 'charity', names: { en: 'Charity', uk: 'Благодійність' } },
+      { slug: 'зарплата', names: { uk: 'Зарплата' } },
+    ]);
     assert.equal(summary.categoriesCreated, 2);
   });
 
   it('does not recreate categories that already exist', () => {
-    const cats = makeCategoriesRepo([{ id: 1, name: 'Благодійність' }]);
+    const cats = makeCategoriesRepo([
+      { id: 1, slug: 'charity', names: { en: 'Charity', uk: 'Благодійність' } },
+    ]);
     const ledger = makeLedgerRepo();
     const summary = new ImportService(fakeDb, ledger.repo, cats.repo).import(sheet);
 
-    assert.deepEqual(cats.created, ['Зарплата']);
+    assert.deepEqual(
+      cats.created.map((c) => c.slug),
+      ['зарплата'],
+    );
     assert.equal(summary.categoriesCreated, 1);
   });
 

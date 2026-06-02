@@ -10,17 +10,16 @@ function makeMockCategoriesRepo(
   return {
     findAll: () => [],
     findById: () => undefined,
-    findByName: () => undefined,
-    create: () => {
-      throw new Error('not implemented');
-    },
+    findBySlug: () => undefined,
+    create: (slug, names) => ({ id: 1, slug, names }),
+    updateNames: (id, names) => ({ id, slug: 'x', names }),
     ...overrides,
   };
 }
 
 const stubCategories: Category[] = [
-  { id: 1, name: 'grocery' },
-  { id: 2, name: 'sport' },
+  { id: 1, slug: 'grocery', names: { en: 'Groceries', uk: 'Продукти харчування' } },
+  { id: 2, slug: 'sport', names: { en: 'Sport', uk: 'Спорт' } },
 ];
 
 describe('CategoriesService (unit)', () => {
@@ -36,17 +35,24 @@ describe('CategoriesService (unit)', () => {
     assert.deepEqual(service.list(), []);
   });
 
-  it('list delegates to repository.findAll exactly once', () => {
-    let calls = 0;
+  it('updateNames merges new translations into existing names', () => {
+    let mergedArg: Category['names'] | undefined;
     const service = new CategoriesService(
       makeMockCategoriesRepo({
-        findAll: () => {
-          calls += 1;
-          return stubCategories;
+        findById: () => ({ id: 1, slug: 'charity', names: { uk: 'Благодійність' } }),
+        updateNames: (_id, names) => {
+          mergedArg = names;
+          return { id: 1, slug: 'charity', names };
         },
       }),
     );
-    service.list();
-    assert.equal(calls, 1);
+    const result = service.updateNames(1, { en: 'Charity' });
+    assert.deepEqual(mergedArg, { uk: 'Благодійність', en: 'Charity' });
+    assert.deepEqual(result.names, { uk: 'Благодійність', en: 'Charity' });
+  });
+
+  it('updateNames throws 404 when the category does not exist', () => {
+    const service = new CategoriesService(makeMockCategoriesRepo({ findById: () => undefined }));
+    assert.throws(() => service.updateNames(99999, { en: 'x' }), /not found/i);
   });
 });

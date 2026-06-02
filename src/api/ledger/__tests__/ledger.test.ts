@@ -27,15 +27,22 @@ function makeMockCategoriesRepo(
   return {
     findAll: () => [],
     findById: () => undefined,
-    findByName: () => undefined,
+    findBySlug: () => undefined,
     create: () => {
+      throw new Error('not implemented');
+    },
+    updateNames: () => {
       throw new Error('not implemented');
     },
     ...overrides,
   };
 }
 
-const stubCategory = { id: 1, name: 'grocery' };
+const stubCategory = {
+  id: 1,
+  slug: 'grocery',
+  names: { en: 'Groceries', uk: 'Продукти харчування' },
+};
 const stubEntry: LedgerEntry = {
   id: 1,
   type: 'expense',

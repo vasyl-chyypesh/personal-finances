@@ -1,22 +1,12 @@
 import type Database from 'better-sqlite3';
-
-const PREDEFINED_CATEGORIES = [
-  'grocery',
-  'eating out',
-  'sport',
-  'medicine',
-  'charity',
-  'utilities',
-  'main work',
-  'side project',
-  'deposits',
-];
+import { CATEGORY_CATALOG } from '../categories/categories.catalog.js';
 
 export function initSchema(db: Database.Database): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS categories (
-      id   INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT    NOT NULL UNIQUE
+      id    INTEGER PRIMARY KEY AUTOINCREMENT,
+      slug  TEXT    NOT NULL UNIQUE,
+      names TEXT    NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS ledger_entries (
@@ -34,9 +24,9 @@ export function initSchema(db: Database.Database): void {
 }
 
 export function seedCategories(db: Database.Database): void {
-  const insert = db.prepare('INSERT OR IGNORE INTO categories (name) VALUES (?)');
-  for (const name of PREDEFINED_CATEGORIES) {
-    insert.run(name);
+  const insert = db.prepare('INSERT OR IGNORE INTO categories (slug, names) VALUES (?, ?)');
+  for (const { slug, names } of CATEGORY_CATALOG) {
+    insert.run(slug, JSON.stringify(names));
   }
 }
 

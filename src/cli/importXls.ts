@@ -7,13 +7,22 @@ import { LedgerRepository } from '../api/ledger/ledger.repository.js';
 import { Logger } from '../api/shared/logger.js';
 import { parseXls } from './xlsParser.js';
 import { ImportService } from './importService.js';
+import { LOCALES, type Locale } from '../api/categories/categories.types.js';
 
 function main(): void {
-  const filePath = process.argv[2];
+  const args = process.argv.slice(2);
+  const localeArg = args.find((a) => a.startsWith('--locale='))?.split('=')[1] ?? 'uk';
+  const filePath = args.find((a) => !a.startsWith('--'));
+
   if (!filePath) {
-    Logger.error('Usage: npm run import:xls -- <path-to-file.xls>');
+    Logger.error('Usage: npm run import:xls -- <path-to-file.xls> [--locale=uk|en]');
     process.exit(1);
   }
+  if (!LOCALES.includes(localeArg as Locale)) {
+    Logger.error(`Unsupported locale "${localeArg}". Supported: ${LOCALES.join(', ')}`);
+    process.exit(1);
+  }
+  const locale = localeArg as Locale;
 
   // eslint-disable-next-line security/detect-non-literal-fs-filename -- filePath is the CLI's explicit input argument
   if (!existsSync(filePath)) {
@@ -25,7 +34,7 @@ function main(): void {
 
   const sheet = parseXls(filePath);
   const service = new ImportService(db, new LedgerRepository(db), new CategoriesRepository(db));
-  const summary = service.import(sheet);
+  const summary = service.import(sheet, locale);
 
   Logger.log(
     `Imported ${summary.month}: ${summary.entriesInserted} entries inserted, ` +

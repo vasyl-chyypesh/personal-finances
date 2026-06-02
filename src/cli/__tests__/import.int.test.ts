@@ -49,19 +49,26 @@ describe('xls import (integration)', () => {
     const entries = ledgerRepo.findByDateRange('2026-04-01', '2026-04-30');
     assert.equal(entries.length, 4);
 
-    const charity = entries.find((e) => e.category.name === 'Благодійність' && e.amount === 800);
+    const charity = entries.find((e) => e.category.slug === 'charity' && e.amount === 800);
     assert.ok(charity);
     assert.equal(charity.type, 'expense');
     assert.equal(charity.currency, 'UAH');
     assert.equal(charity.date, '2026-04-01');
     assert.equal(charity.description, 'army');
+    // mapped onto the seeded catalog entry, so it is bilingual
+    assert.equal(charity.category.names.en, 'Charity');
+    assert.equal(charity.category.names.uk, 'Благодійність');
 
-    // sub-row "-електроенергія" was normalized to a flat, capitalized category
-    assert.ok(categoriesRepo.findByName('Електроенергія'));
+    // sub-row "-електроенергія" normalized to "Електроенергія" and mapped to the
+    // catalog "electricity" slug (seeded, bilingual)
+    const electricity = categoriesRepo.findBySlug('electricity');
+    assert.equal(electricity?.names.uk, 'Електроенергія');
 
-    const salary = entries.find((e) => e.category.name === 'Зарплата');
+    // "Зарплата" is not in the catalog -> created as a custom, single-locale category
+    const salary = entries.find((e) => e.category.slug === 'зарплата');
     assert.equal(salary?.type, 'income');
     assert.equal(salary?.amount, 267325.695);
+    assert.deepEqual(salary?.category.names, { uk: 'Зарплата' });
   });
 
   it('is idempotent per month — re-running replaces rather than duplicates', () => {

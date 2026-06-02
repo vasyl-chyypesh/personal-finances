@@ -2,6 +2,8 @@ import type Database from 'better-sqlite3';
 import type { ICategoriesRepository } from '../api/categories/categories.repository.js';
 import type { ILedgerRepository } from '../api/ledger/ledger.repository.js';
 import type { Currency } from '../api/ledger/ledger.types.js';
+import type { Locale } from '../api/categories/categories.types.js';
+import { resolveCategory } from '../api/categories/categories.catalog.js';
 import type { ParsedSheet } from './xlsParser.js';
 
 const IMPORT_CURRENCY: Currency = 'UAH';
@@ -25,7 +27,7 @@ export class ImportService {
     private readonly categoriesRepo: ICategoriesRepository,
   ) {}
 
-  import(sheet: ParsedSheet): ImportSummary {
+  import(sheet: ParsedSheet, locale: Locale = 'uk'): ImportSummary {
     const { month, year, rows } = sheet;
     const monthStr = `${year}-${pad2(month)}`;
     const startDate = `${monthStr}-01`;
@@ -36,17 +38,18 @@ export class ImportService {
     let entriesDeleted = 0;
     let entriesInserted = 0;
 
+    // Resolve a label to a category id, mapping known labels onto catalog slugs
+    // (bilingual) and creating a single-locale category for unknown ones.
     const categoryIds = new Map<string, number>();
-    const resolveCategory = (name: string): number => {
-      const cached = categoryIds.get(name);
+    const resolveCategoryId = (label: string): number => {
+      const { slug, names } = resolveCategory(label, locale);
+      const cached = categoryIds.get(slug);
       if (cached !== undefined) return cached;
-      let category = this.categoriesRepo.findByName(name);
-      if (!category) {
-        category = this.categoriesRepo.create(name);
-        categoriesCreated++;
-      }
-      categoryIds.set(name, category.id);
-      return category.id;
+      const existing = this.categoriesRepo.findBySlug(slug);
+      const id = existing ? existing.id : this.categoriesRepo.create(slug, names).id;
+      if (!existing) categoriesCreated++;
+      categoryIds.set(slug, id);
+      return id;
     };
 
     const runImport = this.db.transaction(() => {
@@ -58,7 +61,7 @@ export class ImportService {
           type: row.type,
           amount: row.amount,
           currency: IMPORT_CURRENCY,
-          categoryId: resolveCategory(row.category),
+          categoryId: resolveCategoryId(row.category),
           description: row.description ?? undefined,
           date: `${monthStr}-${pad2(row.day)}`,
         });
