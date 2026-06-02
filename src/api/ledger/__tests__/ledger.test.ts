@@ -16,6 +16,7 @@ function makeMockLedgerRepo(overrides: Partial<ILedgerRepository> = {}): ILedger
       throw new Error('not implemented');
     },
     deleteById: () => false,
+    deleteByDateRange: () => 0,
     ...overrides,
   };
 }
@@ -26,6 +27,10 @@ function makeMockCategoriesRepo(
   return {
     findAll: () => [],
     findById: () => undefined,
+    findByName: () => undefined,
+    create: () => {
+      throw new Error('not implemented');
+    },
     ...overrides,
   };
 }

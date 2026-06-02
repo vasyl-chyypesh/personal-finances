@@ -91,6 +91,19 @@ The frontend lives under `src/ui/` and is a **Vite + React 19 + TypeScript** sin
   - `components/` — `PascalCase.tsx` presentational/feature components.
 - **Linting**: a dedicated ESLint flat-config block targets `src/ui/**/*.{ts,tsx}` (JSX + browser globals + `react-hooks` rules); the API block is scoped to `src/api/**/*.ts`. `no-console` applies to the UI too — there is no shared logger in the browser, so avoid `console.*` in committed code.
 
+## CLI (xls import)
+
+A command-line importer lives under `src/cli/` (parallel to `src/api/` and `src/ui/`, not an HTTP feature). It reads a legacy Excel `.xls` budget sheet and creates categories + ledger entries.
+
+- **Run**: `npm run import:xls -- <path-to-file.xls>`. Honors `DB_PATH` from `.env` and reuses the same SQLite db singleton as the API.
+- **Library**: SheetJS (`xlsx`), installed from the SheetJS-hosted tarball (the public-npm build carries known advisories). It reads legacy BIFF8 `.xls` — `exceljs` cannot.
+- **Files**:
+  - `xlsParser.ts` — pure: `parseXls(path) → { month, year, rows[] }`. No db access, so it's unit-testable. Reads cell values and cell comments directly off the worksheet (comments parse by default; do not pass a `cellComments` option — it isn't in SheetJS's TS types).
+  - `importService.ts` — orchestration: find-or-create category per label, wipe the target month's date range, then insert, all inside one `db.transaction`.
+  - `importXls.ts` — entry: arg parsing, wiring, summary logging via the shared `Logger`.
+- **Mapping** (matches `test_data.xls`): the sheet has an expense table (`Стаття витрат`) and an income table (`Джерело доходу`), each with a `1..31` day-column header and trailing `РАЗОМ`/`%`/plan columns. Each non-empty, positive day cell → one ledger entry. `type` = expense/income by table; `date` = month/year parsed from the Ukrainian sheet title + the day column; `currency` = fixed `UAH`; `description` = the cell's Excel comment (or null); category = the row label with any leading non-letter prefix stripped and the first letter capitalized (e.g. `-електроенергія` → `Електроенергія`), auto-created if missing. Only columns whose header is an integer `1..31` are treated as days, so totals/percent/plan columns are ignored. Re-running wipes the month first, so it's idempotent per month.
+- **Tests**: in `src/cli/__tests__/`. `fixture.ts` builds a small BIFF8 workbook in-memory (with comments) for the parser unit test and the integration test; `importService.test.ts` uses mock repos. Note `fixture.ts` is a non-`.test.ts` helper, so `tsconfig.build.json` excludes `src/**/__tests__/**` to keep it out of the production build.
+
 ## Hard Constraints
 
 - **No `console.*`**: Use the shared logger (`src/api/shared/logger.ts`). Violating this will fail the pre-commit ESLint hook.
@@ -117,6 +130,7 @@ The frontend lives under `src/ui/` and is a **Vite + React 19 + TypeScript** sin
 
 - `npm run dev:api` — start API dev server (tsx watch)
 - `npm run dev:ui` — start the React UI dev server (Vite on `:5173`, proxies `/api` to `:3001`)
+- `npm run import:xls -- <file.xls>` — import a legacy Excel budget sheet into the SQLite db
 - `npm test` — run all tests
 - `npm run lint` — run ESLint
 - `npm run lint:files` — run ls-lint (file naming linter, separate from ESLint)

@@ -50,6 +50,7 @@ export interface ILedgerRepository {
   findByDateRange(startDate: string, endDate: string): LedgerEntry[];
   update(id: number, dto: UpdateLedgerEntryDto): LedgerEntry;
   deleteById(id: number): boolean;
+  deleteByDateRange(startDate: string, endDate: string): number;
 }
 
 export class LedgerRepository implements ILedgerRepository {
@@ -132,5 +133,12 @@ export class LedgerRepository implements ILedgerRepository {
   deleteById(id: number): boolean {
     const result = this.db.prepare('DELETE FROM ledger_entries WHERE id = ?').run(id);
     return result.changes > 0;
+  }
+
+  deleteByDateRange(startDate: string, endDate: string): number {
+    const result = this.db
+      .prepare('DELETE FROM ledger_entries WHERE date >= ? AND date <= ?')
+      .run(startDate, endDate);
+    return result.changes;
   }
 }

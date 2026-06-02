@@ -9,6 +9,7 @@ A personal finance manager that runs locally and stores data in a SQLite databas
 - **UI**: React 19 + Vite + Tailwind CSS v4
 - **Database**: SQLite via `better-sqlite3`
 - **Validation**: Zod
+- **Excel import**: SheetJS (`xlsx`)
 - **Security**: Helmet, `express-rate-limit`
 - **Tests**: native `node:test` + `supertest`
 

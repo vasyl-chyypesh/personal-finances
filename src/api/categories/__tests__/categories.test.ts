@@ -10,6 +10,10 @@ function makeMockCategoriesRepo(
   return {
     findAll: () => [],
     findById: () => undefined,
+    findByName: () => undefined,
+    create: () => {
+      throw new Error('not implemented');
+    },
     ...overrides,
   };
 }
