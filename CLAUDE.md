@@ -33,7 +33,7 @@ Routes → Services → Repositories
 Every new API feature lives in `src/api/<feature-name>/`:
 
 - `<feature>.routes.ts`
-- `<feature>.schema.ts` — only when the feature accepts input (body/query/params) to validate. A read-only feature with no input (e.g. `categories`) has no schema file.
+- `<feature>.schema.ts` — only when the feature accepts input (body/query/params) to validate.
 - `<feature>.service.ts`
 - `<feature>.repository.ts`
 - `<feature>.types.ts`
@@ -62,12 +62,20 @@ router.get('/:id', requestValidator(IdParamSchema, RequestSource.params), (req, 
 
 `src/api/app.ts` exports the configured Express `app` as default. `src/api/index.ts` imports it and calls `app.listen()`. Tests that exercise HTTP routes import `app.ts` directly.
 
+### Categories & i18n (multi-language)
+
+Categories are **language-neutral with bilingual names**. The `categories` table is `(id, slug, names)` where `slug` is the stable identity and `names` is a JSON blob like `{"en":"Charity","uk":"Благодійність"}` (at least one locale; supported locales are `en` and `uk`).
+
+- `src/api/categories/categories.catalog.ts` — `CATEGORY_CATALOG`, the canonical bilingual list (the `uk` value matches the xls parser's normalized labels). It is **both** the seed set (`seedCategories` inserts all of it) and the import mapping source. `resolveCategory(label, locale)` maps a label to a catalog `{ slug, names }`, falling back to a slugified single-locale category for unknown labels.
+- `categories` is **writable**: `PATCH /api/categories/:id` with `{ names: { en?, uk? } }` merges translations (used to fill a missing-language name). `GET /api/categories` returns `{ id, slug, names }`; ledger entries embed the same category shape. The API returns **all translations** — the UI picks the active locale client-side.
+- UI i18n lives in `src/ui/i18n/`: `messages.ts` (flat `en`/`uk` string catalogs), `i18nContext.ts` (`I18nContext` + `useI18n()` hook), `I18nProvider.tsx` (provider; locale persisted to `localStorage`, initialized from `navigator.language`), and `categoryName.ts` (resolves a category's display name: active locale → other locale → slug). `LanguageSwitcher.tsx` toggles the locale. Components call `t(key, vars?)` (with `{name}` interpolation) — no hard-coded display strings. API error messages remain English.
+
 ### Shared Utilities
 
 Shared code lives in `src/api/shared/`:
 
 - `database.ts` — singleton SQLite connection, reads `DB_PATH` from env.
-- `schema.ts` — `initDb(db)` creates the `categories` and `ledger_entries` tables (`initSchema`) and seeds predefined categories (`seedCategories`). Called once in `app.ts`.
+- `schema.ts` — `initDb(db)` creates the `categories` and `ledger_entries` tables (`initSchema`) and seeds categories from the catalog (`seedCategories`). Called once in `app.ts`.
 - `logger.ts` — shared logger utility. ALL logging MUST go through this. NEVER use `console.log` or any `console.*` method directly — `no-console` is enforced by ESLint.
 - `errors/` — `httpError.ts` (the `HttpError` class with `code` + `httpStatus`), plus `codes.ts` and `messages.ts` constants. Throw `HttpError` from services for expected failures; the error handler maps it to a JSON `{ code, message }` response.
 - `middlewares/` — `requestValidator.ts` (Zod validation), `errorHandler.ts` (terminal error → JSON), `notFoundHandler.ts` (404 for unmatched routes), `rateLimiter.ts` (`express-rate-limit`, 60 req/min per IP).
@@ -90,6 +98,19 @@ The frontend lives under `src/ui/` and is a **Vite + React 19 + TypeScript** sin
   - `hooks/` — `useCategories.ts`, `useLedger.ts` (data fetching with `useState`/`useEffect`; no TanStack Query or other state lib).
   - `components/` — `PascalCase.tsx` presentational/feature components.
 - **Linting**: a dedicated ESLint flat-config block targets `src/ui/**/*.{ts,tsx}` (JSX + browser globals + `react-hooks` rules); the API block is scoped to `src/api/**/*.ts`. `no-console` applies to the UI too — there is no shared logger in the browser, so avoid `console.*` in committed code.
+
+## CLI (xls import)
+
+A command-line importer lives under `src/cli/` (parallel to `src/api/` and `src/ui/`, not an HTTP feature). It reads a legacy Excel `.xls` budget sheet and creates categories + ledger entries.
+
+- **Run**: `npm run import:xls -- <path-to-file.xls> [--locale=uk|en]` (default `uk` — the language the row labels are in). Honors `DB_PATH` from `.env` and reuses the same SQLite db singleton as the API.
+- **Library**: SheetJS (`xlsx`), installed from the SheetJS-hosted tarball (the public-npm build carries known advisories). It reads legacy BIFF8 `.xls` — `exceljs` cannot.
+- **Files**:
+  - `xlsParser.ts` — pure: `parseXls(path) → { month, year, rows[] }`. No db access, so it's unit-testable. Reads cell values and cell comments directly off the worksheet (comments parse by default; do not pass a `cellComments` option — it isn't in SheetJS's TS types).
+  - `importService.ts` — orchestration: resolve each label to a category via the catalog (`resolveCategory`), `findBySlug`-or-create, wipe the target month's date range, then insert, all inside one `db.transaction`.
+  - `importXls.ts` — entry: arg/`--locale` parsing, wiring, summary logging via the shared `Logger`.
+- **Mapping** (matches `test_data.xls`): the sheet has an expense table (`Стаття витрат`) and an income table (`Джерело доходу`), each with a `1..31` day-column header and trailing `РАЗОМ`/`%`/plan columns. Each non-empty, positive day cell → one ledger entry. `type` = expense/income by table; `date` = month/year parsed from the Ukrainian sheet title + the day column; `currency` = fixed `UAH`; `description` = the cell's Excel comment (or null). The category label (leading non-letter prefix stripped and first letter capitalized, e.g. `-електроенергія` → `Електроенергія`) is resolved against `CATEGORY_CATALOG` for the given locale → a bilingual catalog slug, or, if unknown, a slugified single-locale custom category. Only columns whose header is an integer `1..31` are treated as days, so totals/percent/plan columns are ignored. Re-running wipes the month first, so it's idempotent per month. The catalog fully covers `test_data.xls`, so a clean import creates no custom categories.
+- **Tests**: in `src/cli/__tests__/`. `fixture.ts` builds a small BIFF8 workbook in-memory (with comments) for the parser unit test and the integration test; `importService.test.ts` uses mock repos. Note `fixture.ts` is a non-`.test.ts` helper, so `tsconfig.build.json` excludes `src/**/__tests__/**` to keep it out of the production build.
 
 ## Hard Constraints
 
@@ -117,6 +138,7 @@ The frontend lives under `src/ui/` and is a **Vite + React 19 + TypeScript** sin
 
 - `npm run dev:api` — start API dev server (tsx watch)
 - `npm run dev:ui` — start the React UI dev server (Vite on `:5173`, proxies `/api` to `:3001`)
+- `npm run import:xls -- <file.xls>` — import a legacy Excel budget sheet into the SQLite db
 - `npm test` — run all tests
 - `npm run lint` — run ESLint
 - `npm run lint:files` — run ls-lint (file naming linter, separate from ESLint)

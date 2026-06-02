@@ -1,5 +1,6 @@
 import type Database from 'better-sqlite3';
 import type { LedgerEntry, CreateLedgerEntryDto, UpdateLedgerEntryDto } from './ledger.types.js';
+import type { LocalizedName } from '../categories/categories.types.js';
 
 interface LedgerRow {
   id: number;
@@ -7,7 +8,8 @@ interface LedgerRow {
   amount: number;
   currency: string;
   category_id: number;
-  category_name: string;
+  category_slug: string;
+  category_names: string;
   description: string | null;
   date: string;
   created_at: string;
@@ -20,7 +22,11 @@ function mapRow(row: LedgerRow): LedgerEntry {
     type: row.type as LedgerEntry['type'],
     amount: row.amount,
     currency: row.currency as LedgerEntry['currency'],
-    category: { id: row.category_id, name: row.category_name },
+    category: {
+      id: row.category_id,
+      slug: row.category_slug,
+      names: JSON.parse(row.category_names) as LocalizedName,
+    },
     description: row.description ?? undefined,
     date: row.date,
     createdAt: row.created_at,
@@ -35,7 +41,8 @@ const SELECT_WITH_CATEGORY = `
     le.amount,
     le.currency,
     le.category_id,
-    c.name  AS category_name,
+    c.slug  AS category_slug,
+    c.names AS category_names,
     le.description,
     le.date,
     le.created_at,
@@ -50,6 +57,7 @@ export interface ILedgerRepository {
   findByDateRange(startDate: string, endDate: string): LedgerEntry[];
   update(id: number, dto: UpdateLedgerEntryDto): LedgerEntry;
   deleteById(id: number): boolean;
+  deleteByDateRange(startDate: string, endDate: string): number;
 }
 
 export class LedgerRepository implements ILedgerRepository {
@@ -132,5 +140,12 @@ export class LedgerRepository implements ILedgerRepository {
   deleteById(id: number): boolean {
     const result = this.db.prepare('DELETE FROM ledger_entries WHERE id = ?').run(id);
     return result.changes > 0;
+  }
+
+  deleteByDateRange(startDate: string, endDate: string): number {
+    const result = this.db
+      .prepare('DELETE FROM ledger_entries WHERE date >= ? AND date <= ?')
+      .run(startDate, endDate);
+    return result.changes;
   }
 }

@@ -9,6 +9,7 @@ A personal finance manager that runs locally and stores data in a SQLite databas
 - **UI**: React 19 + Vite + Tailwind CSS v4
 - **Database**: SQLite via `better-sqlite3`
 - **Validation**: Zod
+- **Excel import**: SheetJS (`xlsx`)
 - **Security**: Helmet, `express-rate-limit`
 - **Tests**: native `node:test` + `supertest`
 
@@ -37,6 +38,8 @@ npm run dev:ui
 The API listens on `http://localhost:3001` by default. The SQLite file is created automatically on first run and seeded with a set of predefined categories.
 
 The UI is served by Vite on `http://localhost:5173` and proxies `/api/*` requests to the API on `:3001`, so both dev servers must be running to use the app. From there you can add ledger entries, list them by period (week/month/year), and edit or delete existing entries.
+
+The app is **multi-language** (English and Ukrainian). Use the language switcher in the header to change locale; the choice is remembered in `localStorage` and defaults from the browser language. Category names are bilingual — stored per category and shown in the active language (falling back to the other language, then the slug).
 
 The API follows a strict layered architecture: **Routes → Services → Repositories**. The UI lives under `src/ui/` (Vite SPA, plain `fetch` + hooks, no extra state library). See [CLAUDE.md](./CLAUDE.md) for the full architecture and contribution conventions.
 

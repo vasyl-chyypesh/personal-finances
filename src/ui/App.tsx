@@ -2,11 +2,14 @@ import { useState } from 'react';
 import { PeriodFilter } from './components/PeriodFilter.tsx';
 import { LedgerForm } from './components/LedgerForm.tsx';
 import { LedgerList } from './components/LedgerList.tsx';
+import { LanguageSwitcher } from './components/LanguageSwitcher.tsx';
 import { useCategories } from './hooks/useCategories.ts';
 import { useLedger } from './hooks/useLedger.ts';
+import { useI18n } from './i18n/i18nContext.ts';
 import type { CreateLedgerEntryDto, LedgerEntry, Period } from './types.ts';
 
 export default function App() {
+  const { t } = useI18n();
   const [period, setPeriod] = useState<Period>('month');
   const [editing, setEditing] = useState<LedgerEntry | null>(null);
 
@@ -23,7 +26,7 @@ export default function App() {
   }
 
   async function handleDelete(id: number) {
-    if (!confirm('Delete this entry?')) {
+    if (!confirm(t('app.deleteConfirm'))) {
       return;
     }
     if (editing?.id === id) {
@@ -37,9 +40,12 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900">
       <div className="mx-auto max-w-4xl px-4 py-8">
-        <header className="mb-6">
-          <h1 className="text-2xl font-bold text-slate-800">Personal Finances</h1>
-          <p className="text-sm text-slate-500">Track your income and expenses.</p>
+        <header className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800">{t('app.title')}</h1>
+            <p className="text-sm text-slate-500">{t('app.subtitle')}</p>
+          </div>
+          <LanguageSwitcher />
         </header>
 
         {categoriesError ? (

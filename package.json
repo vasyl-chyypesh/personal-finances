@@ -10,6 +10,7 @@
     "prepare": "node .husky/install.mjs",
     "dev:api": "tsx watch src/api/index.ts",
     "dev:ui": "vite",
+    "import:xls": "tsx src/cli/importXls.ts",
     "build": "rm -rf dist && tsc --project tsconfig.build.json",
     "build:ui": "vite build",
     "preview:ui": "vite preview",
@@ -30,6 +31,7 @@
     "helmet": "8.2.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "zod": "^4.4.3"
   },
   "devDependencies": {

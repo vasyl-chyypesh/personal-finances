@@ -4,4 +4,5 @@ export const MESSAGES = Object.freeze({
   PAGE_NOT_FOUND: 'Page not found',
   TOO_MANY_REQUESTS: 'Too many requests, please try again later.',
   LEDGER_NOT_FOUND: 'Ledger entry not found',
+  CATEGORY_NOT_FOUND: 'Category not found',
 });

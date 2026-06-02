@@ -4,10 +4,14 @@
 export type LedgerEntryType = 'income' | 'expense';
 export type Currency = 'UAH' | 'USD' | 'EUR';
 export type Period = 'week' | 'month' | 'year';
+export type Locale = 'en' | 'uk';
+
+export type LocalizedName = Partial<Record<Locale, string>>;
 
 export interface Category {
   id: number;
-  name: string;
+  slug: string;
+  names: LocalizedName;
 }
 
 export interface LedgerEntry {
@@ -43,3 +47,4 @@ export interface LedgerListResult {
 export const LEDGER_TYPES: LedgerEntryType[] = ['income', 'expense'];
 export const CURRENCIES: Currency[] = ['UAH', 'USD', 'EUR'];
 export const PERIODS: Period[] = ['week', 'month', 'year'];
+export const LOCALES: Locale[] = ['en', 'uk'];

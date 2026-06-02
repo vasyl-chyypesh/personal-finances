@@ -8,6 +8,8 @@ import {
   type LedgerEntry,
   type LedgerEntryType,
 } from '../types.ts';
+import { useI18n } from '../i18n/i18nContext.ts';
+import { categoryName } from '../i18n/categoryName.ts';
 
 interface LedgerFormProps {
   categories: Category[];
@@ -63,6 +65,7 @@ export function LedgerForm({
   onUpdate,
   onCancelEdit,
 }: LedgerFormProps) {
+  const { locale, t } = useI18n();
   const [form, setForm] = useState<FormState>(emptyState);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -82,16 +85,16 @@ export function LedgerForm({
 
     const amount = Number(form.amount);
     if (!Number.isFinite(amount) || amount <= 0) {
-      setError('Amount must be a positive number');
+      setError(t('form.errAmount'));
       return;
     }
     const categoryId = Number(form.categoryId);
     if (!categoryId) {
-      setError('Please pick a category');
+      setError(t('form.errCategory'));
       return;
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(form.date)) {
-      setError('Date must be in YYYY-MM-DD format');
+      setError(t('form.errDate'));
       return;
     }
 
@@ -113,7 +116,7 @@ export function LedgerForm({
         setForm(emptyState());
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      setError(err instanceof Error ? err.message : t('form.errGeneric'));
     } finally {
       setSubmitting(false);
     }
@@ -125,13 +128,13 @@ export function LedgerForm({
       className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
     >
       <h2 className="mb-4 text-lg font-semibold text-slate-800">
-        {editing ? `Edit entry #${editing.id}` : 'Add entry'}
+        {editing ? t('form.editTitle', { id: editing.id }) : t('form.addTitle')}
       </h2>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className={labelClass} htmlFor="type">
-            Type
+            {t('form.type')}
           </label>
           <select
             id="type"
@@ -139,9 +142,9 @@ export function LedgerForm({
             value={form.type}
             onChange={(e) => set('type', e.target.value as LedgerEntryType)}
           >
-            {LEDGER_TYPES.map((t) => (
-              <option key={t} value={t} className="capitalize">
-                {t}
+            {LEDGER_TYPES.map((type) => (
+              <option key={type} value={type}>
+                {t(`type.${type}`)}
               </option>
             ))}
           </select>
@@ -149,7 +152,7 @@ export function LedgerForm({
 
         <div>
           <label className={labelClass} htmlFor="category">
-            Category
+            {t('form.category')}
           </label>
           <select
             id="category"
@@ -157,10 +160,10 @@ export function LedgerForm({
             value={form.categoryId}
             onChange={(e) => set('categoryId', e.target.value)}
           >
-            <option value="">Select…</option>
+            <option value="">{t('form.categoryPlaceholder')}</option>
             {categories.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.name}
+                {categoryName(c, locale)}
               </option>
             ))}
           </select>
@@ -168,7 +171,7 @@ export function LedgerForm({
 
         <div>
           <label className={labelClass} htmlFor="amount">
-            Amount
+            {t('form.amount')}
           </label>
           <input
             id="amount"
@@ -184,7 +187,7 @@ export function LedgerForm({
 
         <div>
           <label className={labelClass} htmlFor="currency">
-            Currency
+            {t('form.currency')}
           </label>
           <select
             id="currency"
@@ -202,7 +205,7 @@ export function LedgerForm({
 
         <div>
           <label className={labelClass} htmlFor="date">
-            Date
+            {t('form.date')}
           </label>
           <input
             id="date"
@@ -215,7 +218,7 @@ export function LedgerForm({
 
         <div>
           <label className={labelClass} htmlFor="description">
-            Description
+            {t('form.description')}
           </label>
           <input
             id="description"
@@ -223,7 +226,7 @@ export function LedgerForm({
             className={inputClass}
             value={form.description}
             onChange={(e) => set('description', e.target.value)}
-            placeholder="Optional"
+            placeholder={t('form.descriptionPlaceholder')}
           />
         </div>
       </div>
@@ -236,7 +239,7 @@ export function LedgerForm({
           disabled={submitting}
           className="rounded-md bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
         >
-          {editing ? 'Save changes' : 'Add entry'}
+          {editing ? t('form.submitSave') : t('form.submitAdd')}
         </button>
         {editing ? (
           <button
@@ -244,7 +247,7 @@ export function LedgerForm({
             onClick={onCancelEdit}
             className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
           >
-            Cancel
+            {t('form.cancel')}
           </button>
         ) : null}
       </div>
