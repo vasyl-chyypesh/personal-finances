@@ -61,12 +61,16 @@ Categories are **language-neutral with bilingual names**. The `categories` table
 
 The UI rendering half of i18n (locale selection, message catalogs, display-name resolution) lives in `src/ui/CLAUDE.md`. The catalog is also consumed by the importer — see `src/cli/CLAUDE.md`.
 
+## Exchange rates
+
+`GET /api/exchange-rates` returns `{ base: 'UAH', rates }` where `rates[from][to]` is the full pairwise conversion matrix. Rates are **DB-backed**: stored in the `exchange_rates` table (`(from_currency, to_currency, rate)`, PK on the pair) and read back into the matrix by `exchangeRates.repository.ts`. `exchangeRates.catalog.ts` holds `BASE_CURRENCY` and `DEFAULT_EXCHANGE_RATES` (the verbatim pairs, e.g. `EUR→USD = 1.16`, not derived), which `seedExchangeRates` inserts only when the table is empty — so editing stored rates survives restarts. The feature has no `schema.ts` (no input) and no write route yet.
+
 ## Shared Utilities
 
 Shared code lives in `src/api/shared/`:
 
 - `database.ts` — singleton SQLite connection, reads `DB_PATH` from env.
-- `schema.ts` — `initDb(db)` creates the `categories` and `ledger_entries` tables (`initSchema`) and seeds categories from the catalog (`seedCategories`). Called once in `app.ts`.
+- `schema.ts` — `initDb(db)` creates the `categories`, `ledger_entries`, and `exchange_rates` tables (`initSchema`), seeds categories from the catalog (`seedCategories`), and seeds the conversion matrix (`seedExchangeRates`, only when the table is empty). Called once in `app.ts`.
 - `logger.ts` — shared logger utility. ALL logging MUST go through this. NEVER use `console.log` or any `console.*` method directly — `no-console` is enforced by ESLint.
 - `errors/` — `httpError.ts` (the `HttpError` class with `code` + `httpStatus`), plus `codes.ts` and `messages.ts` constants. Throw `HttpError` from services for expected failures; the error handler maps it to a JSON `{ code, message }` response.
 - `middlewares/` — `requestValidator.ts` (Zod validation), `errorHandler.ts` (terminal error → JSON), `notFoundHandler.ts` (404 for unmatched routes), `rateLimiter.ts` (`express-rate-limit`, 60 req/min per IP).

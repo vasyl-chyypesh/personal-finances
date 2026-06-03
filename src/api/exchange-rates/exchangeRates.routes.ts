@@ -1,7 +1,9 @@
 import { Router } from 'express';
+import db from '../shared/database.js';
+import { ExchangeRatesRepository } from './exchangeRates.repository.js';
 import { ExchangeRatesService } from './exchangeRates.service.js';
 
-const service = new ExchangeRatesService();
+const service = new ExchangeRatesService(new ExchangeRatesRepository(db));
 
 const router = Router();
 

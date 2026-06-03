@@ -1,5 +1,6 @@
 import type Database from 'better-sqlite3';
 import { CATEGORY_CATALOG } from '../categories/categories.catalog.js';
+import { DEFAULT_EXCHANGE_RATES } from '../exchange-rates/exchangeRates.catalog.js';
 
 export function initSchema(db: Database.Database): void {
   db.exec(`
@@ -20,6 +21,13 @@ export function initSchema(db: Database.Database): void {
       created_at  TEXT    NOT NULL,
       updated_at  TEXT    NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS exchange_rates (
+      from_currency TEXT NOT NULL CHECK(from_currency IN ('UAH', 'USD', 'EUR')),
+      to_currency   TEXT NOT NULL CHECK(to_currency IN ('UAH', 'USD', 'EUR')),
+      rate          REAL NOT NULL CHECK(rate > 0),
+      PRIMARY KEY (from_currency, to_currency)
+    );
   `);
 }
 
@@ -30,7 +38,23 @@ export function seedCategories(db: Database.Database): void {
   }
 }
 
+/** Seeds the predefined conversion matrix only when no rates are stored yet. */
+export function seedExchangeRates(db: Database.Database): void {
+  const { n } = db.prepare('SELECT COUNT(*) AS n FROM exchange_rates').get() as { n: number };
+  if (n > 0) return;
+
+  const insert = db.prepare(
+    'INSERT INTO exchange_rates (from_currency, to_currency, rate) VALUES (?, ?, ?)',
+  );
+  for (const [from, row] of Object.entries(DEFAULT_EXCHANGE_RATES)) {
+    for (const [to, rate] of Object.entries(row)) {
+      insert.run(from, to, rate);
+    }
+  }
+}
+
 export function initDb(db: Database.Database): void {
   initSchema(db);
   seedCategories(db);
+  seedExchangeRates(db);
 }

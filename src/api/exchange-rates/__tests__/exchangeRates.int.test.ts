@@ -42,4 +42,18 @@ describe('Exchange rates routes (HTTP integration)', () => {
     assert.equal(rates.EUR.UAH, 52);
     assert.equal(rates.EUR.USD, 1.16);
   });
+
+  it('GET / returns the full seeded matrix (every pair persisted)', async () => {
+    const res = await request(app).get('/api/exchange-rates');
+    const { rates } = res.body as ExchangeRatesResponse;
+    const currencies = ['UAH', 'USD', 'EUR'] as const;
+    for (const from of currencies) {
+      for (const to of currencies) {
+        // eslint-disable-next-line security/detect-object-injection -- from/to are typed Currency literals
+        const rate = rates[from][to];
+        assert.equal(typeof rate, 'number', `${from}->${to} should be stored`);
+        assert.ok(rate > 0, `${from}->${to} should be positive`);
+      }
+    }
+  });
 });

@@ -26,11 +26,11 @@ All code lives under `src/`, split into three independent parts:
 
 When working inside a part, read its nested `CLAUDE.md` for the detailed conventions:
 
-| File | Scope |
-| --- | --- |
+| File                                     | Scope                                                                                                                    |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | [`src/api/CLAUDE.md`](src/api/CLAUDE.md) | Express API: layers, request validation, app/middleware wiring, shared utils, categories & i18n data model, API testing. |
-| [`src/ui/CLAUDE.md`](src/ui/CLAUDE.md) | React/Vite SPA: structure, Tailwind v4 setup, build config, UI i18n, UI linting. |
-| [`src/cli/CLAUDE.md`](src/cli/CLAUDE.md) | xls importer: parser, import service, mapping spec, run command. |
+| [`src/ui/CLAUDE.md`](src/ui/CLAUDE.md)   | React/Vite SPA: structure, Tailwind v4 setup, build config, UI i18n, UI linting.                                         |
+| [`src/cli/CLAUDE.md`](src/cli/CLAUDE.md) | xls importer: parser, import service, mapping spec, run command.                                                         |
 
 ## Hard Constraints
 
