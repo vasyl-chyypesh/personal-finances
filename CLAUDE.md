@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository. It covers project-wide concerns; each part of `src/` has its own nested `CLAUDE.md` with detailed guidance (see **Directory guides** below).
 
 ## Project Overview
 
@@ -16,108 +16,28 @@ A personal finance manager running locally, backed by a SQLite database. The API
 
 ## Architecture
 
-The codebase is under `src/`. The API follows a strict layered architecture:
+All code lives under `src/`, split into three independent parts:
 
-```
-Routes → Services → Repositories
-```
+- `src/api/` — Express 5 + TypeScript HTTP API, layered `Routes → Services → Repositories`, backed by SQLite.
+- `src/ui/` — Vite + React 19 SPA; talks to the API only over HTTP (never imports server modules).
+- `src/cli/` — a standalone xls importer (not an HTTP feature) that loads a legacy Excel budget sheet into the db.
 
-- **Routes** (`*.routes.ts`): HTTP handlers, response shaping. Instantiates its own service using the shared db singleton and exports `default router` (not a factory function). Uses `requestValidator` middleware for input validation. MUST NOT import Repositories directly.
-- **Schemas** (`*.schema.ts`): Zod schemas for a feature's routes. Imported by routes and passed to `requestValidator`.
-- **Services** (`*.service.ts`): Business logic and orchestration. MUST NOT import Routes.
-- **Repositories** (`*.repository.ts`): All SQLite queries and data mapping. MUST NOT import Services or Routes.
-- **Types** (`*.types.ts`): Shared domain models and TypeScript interfaces for the feature.
+## Directory guides
 
-### API Feature Structure
+When working inside a part, read its nested `CLAUDE.md` for the detailed conventions:
 
-Every new API feature lives in `src/api/<feature-name>/`:
-
-- `<feature>.routes.ts`
-- `<feature>.schema.ts` — only when the feature accepts input (body/query/params) to validate.
-- `<feature>.service.ts`
-- `<feature>.repository.ts`
-- `<feature>.types.ts`
-- `__tests__/` — feature tests live here, split into:
-  - `<feature>.int.test.ts` — HTTP integration tests (always required)
-  - `<feature>.test.ts` — service unit tests (required when the service has logic worth isolating)
-
-Cross-cutting HTTP tests that span features live in `src/api/__tests__/`.
-
-### Request Validation
-
-Use `requestValidator<T>(schema, source?)` from `src/api/shared/middlewares/requestValidator.ts` as route middleware. It validates the request against a Zod schema and stores the transformed result in `res.locals[source]` (default source: `body`). Route handlers read validated data from `res.locals.body`, `res.locals.query`, or `res.locals.params`.
-
-```ts
-router.post('/', requestValidator(CreateSchema), (req, res, next) => {
-  res.status(201).json(service.create(res.locals.body as CreateDto));
-});
-
-router.get('/:id', requestValidator(IdParamSchema, RequestSource.params), (req, res, next) => {
-  const { id } = res.locals.params as { id: number };
-  res.json(service.findById(id));
-});
-```
-
-### App entrypoint
-
-`src/api/app.ts` exports the configured Express `app` as default. `src/api/index.ts` imports it and calls `app.listen()`. Tests that exercise HTTP routes import `app.ts` directly.
-
-### Categories & i18n (multi-language)
-
-Categories are **language-neutral with bilingual names**. The `categories` table is `(id, slug, names)` where `slug` is the stable identity and `names` is a JSON blob like `{"en":"Charity","uk":"Благодійність"}` (at least one locale; supported locales are `en` and `uk`).
-
-- `src/api/categories/categories.catalog.ts` — `CATEGORY_CATALOG`, the canonical bilingual list (the `uk` value matches the xls parser's normalized labels). It is **both** the seed set (`seedCategories` inserts all of it) and the import mapping source. `resolveCategory(label, locale)` maps a label to a catalog `{ slug, names }`, falling back to a slugified single-locale category for unknown labels.
-- `categories` is **writable**: `PATCH /api/categories/:id` with `{ names: { en?, uk? } }` merges translations (used to fill a missing-language name). `GET /api/categories` returns `{ id, slug, names }`; ledger entries embed the same category shape. The API returns **all translations** — the UI picks the active locale client-side.
-- UI i18n lives in `src/ui/i18n/`: `messages.ts` (flat `en`/`uk` string catalogs), `i18nContext.ts` (`I18nContext` + `useI18n()` hook), `I18nProvider.tsx` (provider; locale persisted to `localStorage`, initialized from `navigator.language`), and `categoryName.ts` (resolves a category's display name: active locale → other locale → slug). `LanguageSwitcher.tsx` toggles the locale. Components call `t(key, vars?)` (with `{name}` interpolation) — no hard-coded display strings. API error messages remain English.
-
-### Shared Utilities
-
-Shared code lives in `src/api/shared/`:
-
-- `database.ts` — singleton SQLite connection, reads `DB_PATH` from env.
-- `schema.ts` — `initDb(db)` creates the `categories` and `ledger_entries` tables (`initSchema`) and seeds categories from the catalog (`seedCategories`). Called once in `app.ts`.
-- `logger.ts` — shared logger utility. ALL logging MUST go through this. NEVER use `console.log` or any `console.*` method directly — `no-console` is enforced by ESLint.
-- `errors/` — `httpError.ts` (the `HttpError` class with `code` + `httpStatus`), plus `codes.ts` and `messages.ts` constants. Throw `HttpError` from services for expected failures; the error handler maps it to a JSON `{ code, message }` response.
-- `middlewares/` — `requestValidator.ts` (Zod validation), `errorHandler.ts` (terminal error → JSON), `notFoundHandler.ts` (404 for unmatched routes), `rateLimiter.ts` (`express-rate-limit`, 60 req/min per IP).
-
-### App middleware stack
-
-`app.ts` wires, in order: `helmet()`, `express.json()`, `rateLimiter`, the `/health` route, feature routers under `/api/*`, then `notFoundHandler` and `errorHandler` last. `x-powered-by` is disabled.
-
-## UI (React)
-
-The frontend lives under `src/ui/` and is a **Vite + React 19 + TypeScript** single-page app. It is fully separate from the API: it never imports server modules (which pull in `better-sqlite3`) and talks to the backend only over HTTP.
-
-- **Dev server**: `npm run dev:ui` runs Vite on `:5173` and proxies `/api/*` to the API on `:3001` (`server.proxy` in `vite.config.ts`). Run `dev:api` and `dev:ui` together.
-- **Styling**: Tailwind CSS v4 via the `@tailwindcss/vite` plugin. There is **no** `tailwind.config.js` / PostCSS config — Tailwind is enabled by `@import "tailwindcss";` in `src/ui/index.css`. Style with utility classes.
-- **Build config**: the UI has its own browser-targeted `src/ui/tsconfig.json` (`jsx: react-jsx`, DOM libs, `moduleResolution: bundler`, `allowImportingTsExtensions`). It is excluded from the API's `tsconfig.json` / `tsconfig.build.json` so `npm run build` (API) never compiles browser code. `npm run build:ui` produces a static bundle in `dist/ui`.
-- **Structure** under `src/ui/`:
-  - `main.tsx` — React entry; `App.tsx` — page composition.
-  - `types.ts` — browser-side mirror of the API domain types (kept in sync manually; do NOT import from `src/api`).
-  - `lib/client.ts` — typed `fetch` wrapper; throws `ApiError` from the `{ code, message }` error body. (Note: UI source must NOT live under a `src/ui/api/` directory — the Vite `/api` proxy prefix would intercept those module URLs and break the app.)
-  - `hooks/` — `useCategories.ts`, `useLedger.ts` (data fetching with `useState`/`useEffect`; no TanStack Query or other state lib).
-  - `components/` — `PascalCase.tsx` presentational/feature components.
-- **Linting**: a dedicated ESLint flat-config block targets `src/ui/**/*.{ts,tsx}` (JSX + browser globals + `react-hooks` rules); the API block is scoped to `src/api/**/*.ts`. `no-console` applies to the UI too — there is no shared logger in the browser, so avoid `console.*` in committed code.
-
-## CLI (xls import)
-
-A command-line importer lives under `src/cli/` (parallel to `src/api/` and `src/ui/`, not an HTTP feature). It reads a legacy Excel `.xls` budget sheet and creates categories + ledger entries.
-
-- **Run**: `npm run import:xls -- <path-to-file.xls> [--locale=uk|en]` (default `uk` — the language the row labels are in). Honors `DB_PATH` from `.env` and reuses the same SQLite db singleton as the API.
-- **Library**: SheetJS (`xlsx`), installed from the SheetJS-hosted tarball (the public-npm build carries known advisories). It reads legacy BIFF8 `.xls` — `exceljs` cannot.
-- **Files**:
-  - `xlsParser.ts` — pure: `parseXls(path) → { month, year, rows[] }`. No db access, so it's unit-testable. Reads cell values and cell comments directly off the worksheet (comments parse by default; do not pass a `cellComments` option — it isn't in SheetJS's TS types).
-  - `importService.ts` — orchestration: resolve each label to a category via the catalog (`resolveCategory`), `findBySlug`-or-create, wipe the target month's date range, then insert, all inside one `db.transaction`.
-  - `importXls.ts` — entry: arg/`--locale` parsing, wiring, summary logging via the shared `Logger`.
-- **Mapping** (matches `test_data.xls`): the sheet has an expense table (`Стаття витрат`) and an income table (`Джерело доходу`), each with a `1..31` day-column header and trailing `РАЗОМ`/`%`/plan columns. Each non-empty, positive day cell → one ledger entry. `type` = expense/income by table; `date` = month/year parsed from the Ukrainian sheet title + the day column; `currency` = fixed `UAH`; `description` = the cell's Excel comment (or null). The category label (leading non-letter prefix stripped and first letter capitalized, e.g. `-електроенергія` → `Електроенергія`) is resolved against `CATEGORY_CATALOG` for the given locale → a bilingual catalog slug, or, if unknown, a slugified single-locale custom category. Only columns whose header is an integer `1..31` are treated as days, so totals/percent/plan columns are ignored. Re-running wipes the month first, so it's idempotent per month. The catalog fully covers `test_data.xls`, so a clean import creates no custom categories.
-- **Tests**: in `src/cli/__tests__/`. `fixture.ts` builds a small BIFF8 workbook in-memory (with comments) for the parser unit test and the integration test; `importService.test.ts` uses mock repos. Note `fixture.ts` is a non-`.test.ts` helper, so `tsconfig.build.json` excludes `src/**/__tests__/**` to keep it out of the production build.
+| File | Scope |
+| --- | --- |
+| [`src/api/CLAUDE.md`](src/api/CLAUDE.md) | Express API: layers, request validation, app/middleware wiring, shared utils, categories & i18n data model, API testing. |
+| [`src/ui/CLAUDE.md`](src/ui/CLAUDE.md) | React/Vite SPA: structure, Tailwind v4 setup, build config, UI i18n, UI linting. |
+| [`src/cli/CLAUDE.md`](src/cli/CLAUDE.md) | xls importer: parser, import service, mapping spec, run command. |
 
 ## Hard Constraints
 
-- **No `console.*`**: Use the shared logger (`src/api/shared/logger.ts`). Violating this will fail the pre-commit ESLint hook.
+- **No `console.*`**: Use the shared logger (`src/api/shared/logger.ts`). In the browser there is no logger, so avoid `console.*` there too. Violating this will fail the pre-commit ESLint hook.
 - **No `any` without justification**: `@typescript-eslint/no-explicit-any` is a warning. Avoid it; use proper types.
 - **Commit messages MUST follow Conventional Commits** (e.g. `feat:`, `fix:`, `chore:`). commitlint enforces this via husky on every commit.
-- **Layer imports**: Routes → Services → Repositories only. Cross-layer imports in the wrong direction will be rejected in review.
+- **Layer imports** (API): Routes → Services → Repositories only. Cross-layer imports in the wrong direction will be rejected in review.
 
 ## Naming Conventions
 
@@ -126,13 +46,12 @@ A command-line importer lives under `src/cli/` (parallel to `src/api/` and `src/
 
 ## Testing Strategy
 
+Project-wide rules (part-specific details — supertest, the `DB_PATH` HTTP setup, mock repos, UI util tests — are in the nested guides):
+
 - **Test runner**: Native `node:test` and `node:assert`. Do NOT use Jest, Vitest, or any other test runner.
-- **HTTP assertions**: Use `supertest` — `request(app).get('/path')` instead of manual `http.Server` + `fetch`.
 - **Integration tests**: Use a real SQLite file (e.g. `test.db`). Create it before the test suite and delete it after. Do NOT use `:memory:` — tests should reflect real file-based behavior.
-- **HTTP integration test setup**: `dotenv/config` is only loaded in `index.ts`, so tests must set `DB_PATH` manually before the app module is loaded. Set `process.env['DB_PATH']` at module level (before any imports that transitively load `database.ts`), then use dynamic `import('../../app.js')` inside `before()`. Import `app` as a reference for `request(app)` — do not call `app.listen()`.
-- **Unit tests**: Test service logic in isolation by passing mock repository objects.
-- **Integration tests are always required.** Unit tests are required whenever the service has logic beyond trivial delegation. (`categories` only delegates `list()` to the repo, so its unit test is minimal; `ledger` has real logic and a full unit suite.)
-- **Test file locations**: see "API Feature Structure" above — tests live in the feature's `__tests__/` directory, not alongside the source files.
+- **Test file locations**: tests live in the feature's `__tests__/` directory, not alongside the source files.
+- **Integration tests are always required.** Unit tests are required whenever a service has logic beyond trivial delegation. See `src/api/CLAUDE.md` for the API testing specifics.
 
 ## Common Commands
 
