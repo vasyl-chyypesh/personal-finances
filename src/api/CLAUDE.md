@@ -74,11 +74,11 @@ Shared code lives in `src/api/shared/`:
 - `schema.ts` — `initDb(db)` creates the `categories`, `ledger_entries`, and `exchange_rates` tables (`initSchema`), seeds categories from the catalog (`seedCategories`), and seeds the conversion matrix (`seedExchangeRates`, only when the table is empty). Called once in `app.ts`.
 - `logger.ts` — shared logger utility. ALL logging MUST go through this. NEVER use `console.log` or any `console.*` method directly — `no-console` is enforced by ESLint.
 - `errors/` — `httpError.ts` (the `HttpError` class with `code` + `httpStatus`), plus `codes.ts` and `messages.ts` constants. Throw `HttpError` from services for expected failures; the error handler maps it to a JSON `{ code, message }` response.
-- `middlewares/` — `requestValidator.ts` (Zod validation), `errorHandler.ts` (terminal error → JSON), `notFoundHandler.ts` (404 for unmatched routes), `rateLimiter.ts` (`express-rate-limit`, 60 req/min per IP).
+- `middlewares/` — `requestValidator.ts` (Zod validation), `errorHandler.ts` (terminal error → JSON), `notFoundHandler.ts` (404 for unmatched routes), `rateLimiter.ts` (`express-rate-limit`, 60 req/min per IP), `requestLogger.ts` (per-request access log on the response `finish` event; logs method/url/status/duration via `Logger.log`, escalating 5xx to `Logger.error`).
 
 ## App middleware stack
 
-`app.ts` wires, in order: `helmet()`, `express.json()`, `rateLimiter`, the `/health` route, feature routers under `/api/*`, then `notFoundHandler` and `errorHandler` last. `x-powered-by` is disabled.
+`app.ts` wires, in order: `helmet()`, `express.json()`, `requestLogger`, `rateLimiter`, the `/health` route, feature routers under `/api/*`, then `notFoundHandler` and `errorHandler` last. `x-powered-by` is disabled.
 
 ## API testing
 

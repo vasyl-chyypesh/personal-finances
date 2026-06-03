@@ -1,6 +1,7 @@
 import express from 'express';
 import helmet from 'helmet';
 import { rateLimiter } from './shared/middlewares/rateLimiter.js';
+import { requestLogger } from './shared/middlewares/requestLogger.js';
 import { notFoundHandler } from './shared/middlewares/notFoundHandler.js';
 import { errorHandler } from './shared/middlewares/errorHandler.js';
 import db from './shared/database.js';
@@ -16,6 +17,7 @@ const app = express();
 app.disable('x-powered-by');
 app.use(helmet());
 app.use(express.json());
+app.use(requestLogger);
 app.use(rateLimiter);
 
 app.get('/health', (_req, res) => {
