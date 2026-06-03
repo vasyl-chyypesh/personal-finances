@@ -1,6 +1,7 @@
 import type {
   Category,
   CreateLedgerEntryDto,
+  ExchangeRatesResponse,
   LedgerEntry,
   LedgerListResult,
   Period,
@@ -57,8 +58,20 @@ export function getCategories(): Promise<Category[]> {
   return request<Category[]>('/categories');
 }
 
-export function listLedger(period: Period): Promise<LedgerListResult> {
-  return request<LedgerListResult>(`/ledger?period=${period}`);
+export function getExchangeRates(): Promise<ExchangeRatesResponse> {
+  return request<ExchangeRatesResponse>('/exchange-rates');
+}
+
+export function listLedger(
+  period: Period,
+  opts?: { year?: number; month?: number },
+): Promise<LedgerListResult> {
+  const params = new URLSearchParams({ period });
+  if (opts?.year !== undefined && opts.month !== undefined) {
+    params.set('year', String(opts.year));
+    params.set('month', String(opts.month));
+  }
+  return request<LedgerListResult>(`/ledger?${params.toString()}`);
 }
 
 export function createLedger(dto: CreateLedgerEntryDto): Promise<LedgerEntry> {

@@ -21,14 +21,20 @@ function toMessage(err: unknown, fallback: string): string {
   return err instanceof ApiError ? err.message : fallback;
 }
 
-export function useLedger(period: Period): UseLedgerResult {
+interface UseLedgerOptions {
+  year?: number;
+  month?: number;
+}
+
+export function useLedger(period: Period, opts: UseLedgerOptions = {}): UseLedgerResult {
+  const { year, month } = opts;
   const [result, setResult] = useState<LedgerListResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
-    return listLedger(period)
+    return listLedger(period, { year, month })
       .then((data) => {
         setResult(data);
         setError(null);
@@ -39,12 +45,12 @@ export function useLedger(period: Period): UseLedgerResult {
       .finally(() => {
         setLoading(false);
       });
-  }, [period]);
+  }, [period, year, month]);
 
   useEffect(() => {
     let active = true;
     setLoading(true);
-    listLedger(period)
+    listLedger(period, { year, month })
       .then((data) => {
         if (active) {
           setResult(data);
@@ -64,7 +70,7 @@ export function useLedger(period: Period): UseLedgerResult {
     return () => {
       active = false;
     };
-  }, [period]);
+  }, [period, year, month]);
 
   const create = useCallback(
     async (dto: CreateLedgerEntryDto) => {

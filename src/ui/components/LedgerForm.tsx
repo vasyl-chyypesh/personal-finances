@@ -11,12 +11,20 @@ import {
 import { useI18n } from '../i18n/i18nContext.ts';
 import { categoryName } from '../i18n/categoryName.ts';
 
+/** Prefilled values for the "add" form (ignored while editing). */
+export interface LedgerFormDefaults {
+  type?: LedgerEntryType;
+  categoryId?: number;
+  date?: string;
+}
+
 interface LedgerFormProps {
   categories: Category[];
   editing: LedgerEntry | null;
   onCreate: (dto: CreateLedgerEntryDto) => Promise<void>;
   onUpdate: (id: number, dto: CreateLedgerEntryDto) => Promise<void>;
   onCancelEdit: () => void;
+  defaults?: LedgerFormDefaults;
 }
 
 function today(): string {
@@ -32,14 +40,14 @@ interface FormState {
   date: string;
 }
 
-function emptyState(): FormState {
+function emptyState(defaults?: LedgerFormDefaults): FormState {
   return {
-    type: 'expense',
+    type: defaults?.type ?? 'expense',
     amount: '',
     currency: 'UAH',
-    categoryId: '',
+    categoryId: defaults?.categoryId !== undefined ? String(defaults.categoryId) : '',
     description: '',
-    date: today(),
+    date: defaults?.date ?? today(),
   };
 }
 
@@ -64,16 +72,20 @@ export function LedgerForm({
   onCreate,
   onUpdate,
   onCancelEdit,
+  defaults,
 }: LedgerFormProps) {
   const { locale, t } = useI18n();
-  const [form, setForm] = useState<FormState>(emptyState);
+  const [form, setForm] = useState<FormState>(() => emptyState(defaults));
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const defaultsKey = `${defaults?.type ?? ''}|${defaults?.categoryId ?? ''}|${defaults?.date ?? ''}`;
   useEffect(() => {
-    setForm(editing ? stateFromEntry(editing) : emptyState());
+    setForm(editing ? stateFromEntry(editing) : emptyState(defaults));
     setError(null);
-  }, [editing]);
+    // defaultsKey captures the defaults object's relevant fields without re-running on every render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editing, defaultsKey]);
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -113,7 +125,7 @@ export function LedgerForm({
         await onUpdate(editing.id, dto);
       } else {
         await onCreate(dto);
-        setForm(emptyState());
+        setForm(emptyState(defaults));
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t('form.errGeneric'));

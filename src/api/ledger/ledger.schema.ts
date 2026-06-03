@@ -15,6 +15,8 @@ export const UpdateSchema = CreateSchema.partial().refine((data) => Object.keys(
 
 export const ListQuerySchema = z.object({
   period: z.enum(['week', 'month', 'year']).default('month'),
+  year: z.coerce.number().int().min(1970).max(9999).optional(),
+  month: z.coerce.number().int().min(1).max(12).optional(),
 });
 
 export const IdParamSchema = z.object({
