@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { rm } from 'node:fs/promises';
 import { parseXls, type ParsedRow } from '../xlsParser.js';
-import { writeFixtureXls } from './fixture.js';
+import { writeFixtureXls, writeMultiSheetFixtureXls } from './fixture.js';
 
 const FIXTURE = join(tmpdir(), `import-parser-${process.pid}.xls`);
 
@@ -19,7 +19,8 @@ describe('parseXls', () => {
 
   before(() => {
     writeFixtureXls(FIXTURE);
-    ({ month, year, rows } = parseXls(FIXTURE));
+    const { sheets } = parseXls(FIXTURE);
+    ({ month, year, rows } = sheets[0]);
   });
 
   after(async () => {
@@ -61,5 +62,31 @@ describe('parseXls', () => {
 
   it('skips rows whose cells are all empty or zero', () => {
     assert.ok(!rows.some((r) => r.category === 'Порожня'));
+  });
+});
+
+describe('parseXls with multiple sheets', () => {
+  const MULTI = join(tmpdir(), `import-parser-multi-${process.pid}.xls`);
+
+  before(() => writeMultiSheetFixtureXls(MULTI));
+  after(async () => {
+    await rm(MULTI, { force: true });
+  });
+
+  it('parses every budget sheet, one per tab, in order', () => {
+    const { sheets } = parseXls(MULTI);
+    assert.equal(sheets.length, 2);
+    assert.deepEqual(
+      sheets.map((s) => [s.name, s.year, s.month]),
+      [
+        ['Квітень 26', 2026, 4],
+        ['Травень 26', 2026, 5],
+      ],
+    );
+  });
+
+  it('reports non-budget tabs as skipped instead of throwing', () => {
+    const { skipped } = parseXls(MULTI);
+    assert.deepEqual(skipped, ['Notes']);
   });
 });

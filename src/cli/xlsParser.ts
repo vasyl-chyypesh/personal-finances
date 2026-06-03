@@ -12,10 +12,18 @@ export interface ParsedRow {
 }
 
 export interface ParsedSheet {
+  /** The workbook tab name this sheet was parsed from. */
+  name: string;
   /** 1-12 */
   month: number;
   year: number;
   rows: ParsedRow[];
+}
+
+export interface ParsedWorkbook {
+  sheets: ParsedSheet[];
+  /** Names of tabs skipped because they were empty or had no parseable title. */
+  skipped: string[];
 }
 
 /** Ukrainian nominative month names, index 0 = January. */
@@ -38,12 +46,12 @@ const EXPENSE_HEADER = 'Стаття витрат';
 const INCOME_HEADER = 'Джерело доходу';
 const TOTAL_LABEL = 'РАЗОМ';
 
-function parseTitle(title: string): { month: number; year: number } {
+function parseTitle(title: string): { month: number; year: number } | null {
   const lower = title.toLowerCase();
   const monthIndex = UA_MONTHS.findIndex((name) => lower.includes(name));
   const yearMatch = lower.match(/\b(\d{4})\b/);
   if (monthIndex === -1 || !yearMatch) {
-    throw new Error(`Cannot parse month/year from sheet title: "${title}"`);
+    return null;
   }
   return { month: monthIndex + 1, year: Number(yearMatch[1]) };
 }
@@ -63,21 +71,18 @@ function cellComment(cell: CellObject | undefined): string | null {
   return text.length ? text : null;
 }
 
-export function parseXls(filePath: string): ParsedSheet {
-  // eslint-disable-next-line security/detect-non-literal-fs-filename -- filePath is the CLI's explicit input argument
-  const buffer = readFileSync(filePath);
-  const workbook = XLSX.read(buffer);
-  const sheet: WorkSheet | undefined = workbook.Sheets[workbook.SheetNames[0]];
-  if (!sheet?.['!ref']) {
-    throw new Error('Workbook has no readable sheet');
-  }
+/** Parses a single worksheet, or returns null if it isn't a budget sheet. */
+function parseSheet(sheet: WorkSheet, name: string): ParsedSheet | null {
+  if (!sheet?.['!ref']) return null;
 
   const range = XLSX.utils.decode_range(sheet['!ref']);
   const cellAt = (r: number, c: number): CellObject | undefined =>
     sheet[XLSX.utils.encode_cell({ r, c })] as CellObject | undefined;
 
   const titleCell = cellAt(range.s.r, range.s.c);
-  const { month, year } = parseTitle(String(titleCell?.v ?? ''));
+  const title = parseTitle(String(titleCell?.v ?? ''));
+  if (!title) return null;
+  const { month, year } = title;
 
   const rows: ParsedRow[] = [];
   let section: LedgerEntryType | null = null;
@@ -118,5 +123,22 @@ export function parseXls(filePath: string): ParsedSheet {
     }
   }
 
-  return { month, year, rows };
+  return { name, month, year, rows };
+}
+
+export function parseXls(filePath: string): ParsedWorkbook {
+  // eslint-disable-next-line security/detect-non-literal-fs-filename -- filePath is the CLI's explicit input argument
+  const buffer = readFileSync(filePath);
+  const workbook = XLSX.read(buffer);
+
+  const sheets: ParsedSheet[] = [];
+  const skipped: string[] = [];
+  for (const name of workbook.SheetNames) {
+    // eslint-disable-next-line security/detect-object-injection -- name comes from the workbook's own SheetNames
+    const parsed = parseSheet(workbook.Sheets[name], name);
+    if (parsed) sheets.push(parsed);
+    else skipped.push(name);
+  }
+
+  return { sheets, skipped };
 }

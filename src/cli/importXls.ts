@@ -32,13 +32,34 @@ function main(): void {
 
   initDb(db);
 
-  const sheet = parseXls(filePath);
+  const { sheets, skipped } = parseXls(filePath);
+  for (const name of skipped) {
+    Logger.warn(`Skipped sheet "${name}": not a recognizable budget sheet.`);
+  }
+  if (sheets.length === 0) {
+    Logger.error('No importable budget sheets found in the workbook.');
+    process.exit(1);
+  }
+
   const service = new ImportService(db, new LedgerRepository(db), new CategoriesRepository(db));
-  const summary = service.import(sheet, locale);
+
+  let totalInserted = 0;
+  let totalDeleted = 0;
+  let totalCategories = 0;
+  for (const sheet of sheets) {
+    const summary = service.import(sheet, locale);
+    totalInserted += summary.entriesInserted;
+    totalDeleted += summary.entriesDeleted;
+    totalCategories += summary.categoriesCreated;
+    Logger.log(
+      `Imported ${summary.month}: ${summary.entriesInserted} entries inserted, ` +
+        `${summary.entriesDeleted} removed, ${summary.categoriesCreated} categories created.`,
+    );
+  }
 
   Logger.log(
-    `Imported ${summary.month}: ${summary.entriesInserted} entries inserted, ` +
-      `${summary.entriesDeleted} removed, ${summary.categoriesCreated} categories created.`,
+    `Done: ${sheets.length} sheet(s), ${totalInserted} entries inserted, ` +
+      `${totalDeleted} removed, ${totalCategories} categories created.`,
   );
 }
 

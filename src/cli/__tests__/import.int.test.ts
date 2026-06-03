@@ -9,7 +9,7 @@ import { CategoriesRepository } from '../../api/categories/categories.repository
 import { LedgerRepository } from '../../api/ledger/ledger.repository.js';
 import { parseXls } from '../xlsParser.js';
 import { ImportService } from '../importService.js';
-import { writeFixtureXls } from './fixture.js';
+import { writeFixtureXls, writeMultiSheetFixtureXls } from './fixture.js';
 
 const TEST_DB = './import-int-test.db';
 const FIXTURE = join(tmpdir(), `import-int-${process.pid}.xls`);
@@ -39,7 +39,7 @@ describe('xls import (integration)', () => {
   });
 
   function runImport() {
-    return new ImportService(db, ledgerRepo, categoriesRepo).import(parseXls(FIXTURE));
+    return new ImportService(db, ledgerRepo, categoriesRepo).import(parseXls(FIXTURE).sheets[0]);
   }
 
   it('persists ledger entries and auto-creates categories', () => {
@@ -79,5 +79,48 @@ describe('xls import (integration)', () => {
 
     const entries = ledgerRepo.findByDateRange('2026-04-01', '2026-04-30');
     assert.equal(entries.length, 4, 'no duplication after a second import');
+  });
+});
+
+describe('xls import (integration) — multiple sheets', () => {
+  const MULTI_DB = './import-int-multi-test.db';
+  const MULTI_FIXTURE = join(tmpdir(), `import-int-multi-${process.pid}.xls`);
+  let db: Database.Database;
+
+  before(() => {
+    writeMultiSheetFixtureXls(MULTI_FIXTURE);
+    db = new Database(MULTI_DB);
+    db.pragma('foreign_keys = ON');
+    initDb(db);
+  });
+
+  after(async () => {
+    db.close();
+    await Promise.all([
+      rm(MULTI_DB, { force: true }),
+      rm(`${MULTI_DB}-wal`, { force: true }),
+      rm(`${MULTI_DB}-shm`, { force: true }),
+      rm(MULTI_FIXTURE, { force: true }),
+    ]);
+  });
+
+  it('imports each budget sheet into its own month and skips non-budget tabs', () => {
+    const ledgerRepo = new LedgerRepository(db);
+    const service = new ImportService(db, ledgerRepo, new CategoriesRepository(db));
+
+    const { sheets, skipped } = parseXls(MULTI_FIXTURE);
+    assert.deepEqual(skipped, ['Notes']);
+    const summaries = sheets.map((sheet) => service.import(sheet));
+
+    assert.deepEqual(
+      summaries.map((s) => [s.month, s.entriesInserted]),
+      [
+        ['2026-04', 4],
+        ['2026-05', 2],
+      ],
+    );
+
+    assert.equal(ledgerRepo.findByDateRange('2026-04-01', '2026-04-30').length, 4);
+    assert.equal(ledgerRepo.findByDateRange('2026-05-01', '2026-05-31').length, 2);
   });
 });

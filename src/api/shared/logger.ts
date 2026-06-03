@@ -4,6 +4,10 @@ export class Logger {
     console.log(`[${new Date().toISOString()}]`, ...args);
   }
 
+  public static warn(...args: unknown[]) {
+    console.warn(`[${new Date().toISOString()}] Warning:`, ...args);
+  }
+
   public static error(...args: unknown[]) {
     console.error(`[${new Date().toISOString()}] Error:`, ...args);
   }
