@@ -27,6 +27,7 @@ Every new API feature lives in `src/api/<feature-name>/`:
 - `<feature>.service.ts`
 - `<feature>.repository.ts`
 - `<feature>.types.ts`
+- `<feature>.catalog.ts` — only when the feature has seed/reference data consumed by `shared/schema.ts` (e.g. `categories`, `exchange-rates`).
 - `__tests__/` — feature tests live here, split into:
   - `<feature>.int.test.ts` — HTTP integration tests (always required)
   - `<feature>.test.ts` — service unit tests (required when the service has logic worth isolating)

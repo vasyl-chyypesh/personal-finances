@@ -25,9 +25,8 @@ The categories data model and API live on the server — see `src/api/CLAUDE.md`
 - `i18nContext.ts` — `I18nContext` + `useI18n()` hook.
 - `I18nProvider.tsx` — provider; locale persisted to `localStorage`, initialized from `navigator.language`.
 - `categoryName.ts` — resolves a category's display name: active locale → other locale → slug.
-- `LanguageSwitcher.tsx` — toggles the locale.
 
-Components call `t(key, vars?)` (with `{name}` interpolation) — no hard-coded display strings.
+The locale toggle itself is a component, `components/LanguageSwitcher.tsx` (not under `i18n/`). Components call `t(key, vars?)` (with `{name}` interpolation) — no hard-coded display strings.
 
 ## Linting
 
