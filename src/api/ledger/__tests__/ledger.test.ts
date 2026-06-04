@@ -76,6 +76,29 @@ describe('LedgerService (unit)', () => {
     );
   });
 
+  it('create throws 400 when the category is soft-deleted', () => {
+    const service = new LedgerService(
+      makeMockLedgerRepo(),
+      makeMockCategoriesRepo({
+        findById: () => ({ ...stubCategory, deletedAt: new Date().toISOString() }),
+      }),
+    );
+    const dto: CreateLedgerEntryDto = {
+      type: 'expense',
+      amount: 50,
+      currency: 'UAH',
+      categoryId: 1,
+      date: '2026-06-01',
+    };
+    assert.throws(
+      () => service.create(dto),
+      (err: Error) => {
+        assert.ok(err.message.includes('categoryId'));
+        return true;
+      },
+    );
+  });
+
   it('create delegates to repo when category is valid', () => {
     let called = false;
     const service = new LedgerService(
@@ -116,6 +139,22 @@ describe('LedgerService (unit)', () => {
     const service = new LedgerService(
       makeMockLedgerRepo({ findById: () => stubEntry }),
       makeMockCategoriesRepo({ findById: () => undefined }),
+    );
+    assert.throws(
+      () => service.update(1, { categoryId: 99 }),
+      (err: Error) => {
+        assert.ok(err.message.includes('categoryId'));
+        return true;
+      },
+    );
+  });
+
+  it('update throws 400 when new categoryId is soft-deleted', () => {
+    const service = new LedgerService(
+      makeMockLedgerRepo({ findById: () => stubEntry }),
+      makeMockCategoriesRepo({
+        findById: () => ({ ...stubCategory, deletedAt: new Date().toISOString() }),
+      }),
     );
     assert.throws(
       () => service.update(1, { categoryId: 99 }),

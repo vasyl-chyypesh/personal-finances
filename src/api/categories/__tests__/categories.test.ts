@@ -87,6 +87,12 @@ describe('CategoriesService (unit)', () => {
     assert.equal(createdSlug, 'кава');
   });
 
+  it('create throws 400 when the name has no sluggable characters', () => {
+    const service = new CategoriesService(makeMockCategoriesRepo());
+    assert.throws(() => service.create({ en: '!!!' }), /at least one letter or number/i);
+    assert.throws(() => service.create({ uk: '💰' }), /at least one letter or number/i);
+  });
+
   it('create throws 409 when the slug already exists', () => {
     const service = new CategoriesService(
       makeMockCategoriesRepo({

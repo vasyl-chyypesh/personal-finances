@@ -192,6 +192,12 @@ describe('Categories routes (HTTP integration)', () => {
     assert.equal(res.status, 400);
   });
 
+  it('POST / returns 400 when the name has no sluggable characters', async () => {
+    const res = await request(app).post('/api/categories').send({ names: { en: '💰' } });
+    assert.equal(res.status, 400);
+    assert.equal((res.body as { code: string }).code, 'CATEGORY_INVALID_NAME');
+  });
+
   it('DELETE /:id soft-deletes, hiding it from the default list', async () => {
     const created = (
       await request(app)

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+export { IdParamSchema } from '../shared/validation.js';
+
 const NamesSchema = z
   .object({
     en: z.string().trim().min(1).optional(),
@@ -26,8 +28,4 @@ export const ListQuerySchema = z.object({
     .string()
     .optional()
     .transform((v) => v === 'true'),
-});
-
-export const IdParamSchema = z.object({
-  id: z.string().regex(/^\d+$/).transform(Number),
 });

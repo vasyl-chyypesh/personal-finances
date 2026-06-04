@@ -15,6 +15,9 @@ export class CategoriesService {
   /** Creates a category with a slug auto-derived from its name. */
   create(names: LocalizedName): Category {
     const slug = slugify(names.en ?? names.uk ?? '');
+    if (!slug) {
+      throw new HttpError(MESSAGES.CATEGORY_INVALID_NAME, CODES.CATEGORY_INVALID_NAME, 400);
+    }
     if (this.repository.findBySlug(slug)) {
       throw new HttpError(MESSAGES.CATEGORY_SLUG_CONFLICT, CODES.CATEGORY_SLUG_CONFLICT, 409);
     }

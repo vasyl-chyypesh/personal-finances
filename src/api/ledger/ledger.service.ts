@@ -56,7 +56,8 @@ export class LedgerService {
   ) {}
 
   create(dto: CreateLedgerEntryDto): LedgerEntry {
-    if (!this.categoriesRepo.findById(dto.categoryId)) {
+    const category = this.categoriesRepo.findById(dto.categoryId);
+    if (!category || category.deletedAt) {
       throw new HttpError('Invalid categoryId', CODES.BAD_REQUEST, 400);
     }
     return this.ledgerRepo.create(dto);
@@ -73,8 +74,11 @@ export class LedgerService {
     if (!this.ledgerRepo.findById(id)) {
       throw new HttpError(MESSAGES.LEDGER_NOT_FOUND, CODES.LEDGER_NOT_FOUND, 404);
     }
-    if (dto.categoryId !== undefined && !this.categoriesRepo.findById(dto.categoryId)) {
-      throw new HttpError('Invalid categoryId', CODES.BAD_REQUEST, 400);
+    if (dto.categoryId !== undefined) {
+      const category = this.categoriesRepo.findById(dto.categoryId);
+      if (!category || category.deletedAt) {
+        throw new HttpError('Invalid categoryId', CODES.BAD_REQUEST, 400);
+      }
     }
     return this.ledgerRepo.update(id, dto);
   }

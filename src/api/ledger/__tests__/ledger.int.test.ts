@@ -168,6 +168,42 @@ describe('Ledger routes (HTTP integration)', () => {
     assert.equal(res.status, 400);
   });
 
+  it('rejects new entries for a soft-deleted category but keeps existing ones', async () => {
+    const category = (
+      await request(app)
+        .post('/api/categories')
+        .send({ names: { en: 'Temp ledger category' } })
+    ).body as { id: number };
+
+    const existing = (
+      await request(app).post('/api/ledger').send({
+        type: 'expense',
+        amount: 12,
+        currency: 'UAH',
+        categoryId: category.id,
+        date: '2026-06-02',
+      })
+    ).body as LedgerEntry;
+
+    await request(app).delete(`/api/categories/${category.id}`);
+
+    const rejected = await request(app).post('/api/ledger').send({
+      type: 'expense',
+      amount: 34,
+      currency: 'UAH',
+      categoryId: category.id,
+      date: '2026-06-02',
+    });
+    assert.equal(rejected.status, 400);
+
+    const list = (await request(app).get('/api/ledger?period=month&year=2026&month=6'))
+      .body as { records: LedgerEntry[] };
+    assert.ok(
+      list.records.some((e) => e.id === existing.id),
+      'existing entry on the deleted category is still returned',
+    );
+  });
+
   it('GET /?period=month returns records and date range', async () => {
     const res = await request(app).get('/api/ledger?period=month');
     assert.equal(res.status, 200);

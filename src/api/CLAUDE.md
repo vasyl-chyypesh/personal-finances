@@ -78,7 +78,7 @@ Shared code lives in `src/api/shared/`:
 
 ## App middleware stack
 
-`app.ts` wires, in order: `helmet()`, `express.json()`, `requestLogger`, `rateLimiter`, the `/health` route, feature routers under `/api/*`, then `notFoundHandler` and `errorHandler` last. `x-powered-by` is disabled.
+`app.ts` wires, in order: `helmet()`, `requestLogger`, `rateLimiter`, `express.json({ limit: '100kb' })`, the `/health` route, feature routers under `/api/*`, then `notFoundHandler` and `errorHandler` last. `x-powered-by` is disabled. The limiter runs before body parsing so throttled requests are rejected without parsing; `express.json` errors (`entity.too.large` → 413, other 4xx → 400) are translated by `errorHandler` into the standard `{ code, message }` shape.
 
 ## API testing
 

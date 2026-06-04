@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+export { IdParamSchema } from '../shared/validation.js';
+
 export const CreateSchema = z.object({
   type: z.enum(['income', 'expense']),
   amount: z.number().positive(),
@@ -17,8 +19,4 @@ export const ListQuerySchema = z.object({
   period: z.enum(['week', 'month', 'year']).default('month'),
   year: z.coerce.number().int().min(1970).max(9999).optional(),
   month: z.coerce.number().int().min(1).max(12).optional(),
-});
-
-export const IdParamSchema = z.object({
-  id: z.string().regex(/^\d+$/).transform(Number),
 });

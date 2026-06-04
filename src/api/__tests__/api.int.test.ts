@@ -44,8 +44,9 @@ describe('API (integration)', () => {
       assert.equal(res.status, 404);
     });
 
-    it('returns a JSON body with a message field', async () => {
+    it('returns a JSON body with a code and message field', async () => {
       const res = await request(app).get('/does-not-exist');
+      assert.equal(res.body.code, 'NOT_FOUND');
       assert.ok(typeof res.body.message === 'string');
       assert.ok(res.body.message.length > 0);
     });
@@ -53,6 +54,22 @@ describe('API (integration)', () => {
     it('returns 404 for nested unknown paths', async () => {
       const res = await request(app).get('/api/unknown/route');
       assert.equal(res.status, 404);
+    });
+  });
+
+  describe('request hardening', () => {
+    it('rejects a JSON body larger than the 100kb limit with 413', async () => {
+      const res = await request(app)
+        .post('/api/categories')
+        .set('Content-Type', 'application/json')
+        .send(JSON.stringify({ names: { en: 'a'.repeat(200 * 1024) } }));
+      assert.equal(res.status, 413);
+    });
+
+    it('rejects an id param beyond the safe-integer range with 400', async () => {
+      const res = await request(app).delete('/api/ledger/99999999999999999999');
+      assert.equal(res.status, 400);
+      assert.equal(res.body.code, 'BAD_REQUEST');
     });
   });
 });
