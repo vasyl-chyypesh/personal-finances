@@ -6,9 +6,5 @@ import { z } from 'zod';
  * otherwise round silently and surface as a misleading 404).
  */
 export const IdParamSchema = z.object({
-  id: z
-    .string()
-    .regex(/^\d+$/)
-    .transform(Number)
-    .refine(Number.isSafeInteger, 'Invalid id'),
+  id: z.string().regex(/^\d+$/).transform(Number).refine(Number.isSafeInteger, 'Invalid id'),
 });

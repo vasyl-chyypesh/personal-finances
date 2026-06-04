@@ -196,8 +196,9 @@ describe('Ledger routes (HTTP integration)', () => {
     });
     assert.equal(rejected.status, 400);
 
-    const list = (await request(app).get('/api/ledger?period=month&year=2026&month=6'))
-      .body as { records: LedgerEntry[] };
+    const list = (await request(app).get('/api/ledger?period=month&year=2026&month=6')).body as {
+      records: LedgerEntry[];
+    };
     assert.ok(
       list.records.some((e) => e.id === existing.id),
       'existing entry on the deleted category is still returned',
