@@ -20,6 +20,12 @@ export interface Category {
   id: number;
   slug: string;
   names: LocalizedName;
+  deletedAt?: string | null;
+  sortOrder?: number;
+}
+
+export interface CreateCategoryDto {
+  names: LocalizedName;
 }
 
 export interface LedgerEntry {

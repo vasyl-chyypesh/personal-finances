@@ -33,14 +33,14 @@ function dayOfMonth(date: string): number {
 /**
  * Pivots flat ledger entries into a category × day matrix per type. Amounts are
  * converted into `displayCurrency` via the rate matrix. Rows include only
- * categories that have at least one entry of that type, sorted by `nameOf`.
+ * categories that have at least one entry of that type, sorted by the category's
+ * `sortOrder`.
  */
 export function pivot(
   entries: LedgerEntry[],
   displayCurrency: Currency,
   daysInMonth: number,
   rates: ExchangeRates,
-  nameOf: (category: Category) => string,
 ): PivotResult {
   const sections: Record<LedgerEntryType, Map<number, PivotRow>> = {
     expense: new Map(),
@@ -72,8 +72,8 @@ export function pivot(
   }
 
   const buildSection = (rows: Map<number, PivotRow>): PivotSection => {
-    const ordered = [...rows.values()].sort((a, b) =>
-      nameOf(a.category).localeCompare(nameOf(b.category)),
+    const ordered = [...rows.values()].sort(
+      (a, b) => (a.category.sortOrder ?? 0) - (b.category.sortOrder ?? 0),
     );
     const dailyTotals = Array<number>(daysInMonth).fill(0);
     let grandTotal = 0;

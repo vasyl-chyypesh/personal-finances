@@ -8,7 +8,6 @@ import { useCategories } from '../hooks/useCategories.ts';
 import { useLedger } from '../hooks/useLedger.ts';
 import { useExchangeRates } from '../hooks/useExchangeRates.ts';
 import { useI18n } from '../i18n/i18nContext.ts';
-import { categoryName } from '../i18n/categoryName.ts';
 import { pivot } from '../lib/pivot.ts';
 import type { Category, Currency, LedgerEntryType } from '../types.ts';
 
@@ -35,8 +34,8 @@ export function TablePage() {
     if (!rates) {
       return null;
     }
-    return pivot(records, currency, daysInMonth, rates, (c) => categoryName(c, locale));
-  }, [records, currency, daysInMonth, rates, locale]);
+    return pivot(records, currency, daysInMonth, rates);
+  }, [records, currency, daysInMonth, rates]);
 
   const monthLabel = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(
     new Date(year, month - 1, 1),

@@ -10,6 +10,7 @@ interface LedgerRow {
   category_id: number;
   category_slug: string;
   category_names: string;
+  category_sort_order: number;
   description: string | null;
   date: string;
   created_at: string;
@@ -26,6 +27,7 @@ function mapRow(row: LedgerRow): LedgerEntry {
       id: row.category_id,
       slug: row.category_slug,
       names: JSON.parse(row.category_names) as LocalizedName,
+      sortOrder: row.category_sort_order,
     },
     description: row.description ?? undefined,
     date: row.date,
@@ -41,8 +43,9 @@ const SELECT_WITH_CATEGORY = `
     le.amount,
     le.currency,
     le.category_id,
-    c.slug  AS category_slug,
-    c.names AS category_names,
+    c.slug       AS category_slug,
+    c.names      AS category_names,
+    c.sort_order AS category_sort_order,
     le.description,
     le.date,
     le.created_at,

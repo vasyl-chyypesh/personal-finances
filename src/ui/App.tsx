@@ -2,6 +2,7 @@ import { NavLink, Navigate, Route, Routes } from 'react-router';
 import { LanguageSwitcher } from './components/LanguageSwitcher.tsx';
 import { ListPage } from './pages/ListPage.tsx';
 import { TablePage } from './pages/TablePage.tsx';
+import { CategoriesPage } from './pages/CategoriesPage.tsx';
 import { useI18n } from './i18n/i18nContext.ts';
 
 function navClass({ isActive }: { isActive: boolean }): string {
@@ -31,11 +32,15 @@ export default function App() {
           <NavLink to="/table" className={navClass}>
             {t('nav.table')}
           </NavLink>
+          <NavLink to="/categories" className={navClass}>
+            {t('nav.categories')}
+          </NavLink>
         </nav>
 
         <Routes>
           <Route path="/list" element={<ListPage />} />
           <Route path="/table" element={<TablePage />} />
+          <Route path="/categories" element={<CategoriesPage />} />
           <Route path="*" element={<Navigate to="/list" replace />} />
         </Routes>
       </div>

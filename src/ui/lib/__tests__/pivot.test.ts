@@ -9,13 +9,24 @@ const RATES: ExchangeRates = {
   EUR: { UAH: 52, USD: 1.16, EUR: 1 },
 };
 
-const grocery: Category = { id: 1, slug: 'grocery', names: { en: 'Groceries', uk: 'Продукти' } };
+const grocery: Category = {
+  id: 1,
+  slug: 'grocery',
+  names: { en: 'Groceries', uk: 'Продукти' },
+  sortOrder: 2,
+};
 const transport: Category = {
   id: 2,
   slug: 'transport',
   names: { en: 'Transport', uk: 'Транспорт' },
+  sortOrder: 0,
 };
-const salary: Category = { id: 3, slug: 'salary', names: { en: 'Salary', uk: 'Зарплата' } };
+const salary: Category = {
+  id: 3,
+  slug: 'salary',
+  names: { en: 'Salary', uk: 'Зарплата' },
+  sortOrder: 1,
+};
 
 function entry(over: Partial<LedgerEntry>): LedgerEntry {
   return {
@@ -31,8 +42,6 @@ function entry(over: Partial<LedgerEntry>): LedgerEntry {
   };
 }
 
-const nameEn = (c: Category) => c.names.en ?? c.slug;
-
 describe('pivot', () => {
   it('buckets entries into category × day cells and sums per row', () => {
     const result = pivot(
@@ -44,7 +53,6 @@ describe('pivot', () => {
       'UAH',
       30,
       RATES,
-      nameEn,
     );
     const row = result.expense.rows[0];
     assert.equal(row.category.id, grocery.id);
@@ -61,7 +69,6 @@ describe('pivot', () => {
       'UAH',
       30,
       RATES,
-      nameEn,
     );
     assert.equal(result.expense.rows[0].cells[0].amount, 4400); // 100 USD * 44
   });
@@ -75,34 +82,32 @@ describe('pivot', () => {
       'UAH',
       30,
       RATES,
-      nameEn,
     );
     assert.equal(result.expense.grandTotal, 200);
     assert.equal(result.income.grandTotal, 5000);
     assert.equal(result.income.rows[0].category.id, salary.id);
   });
 
-  it('orders rows by localized name and collects per-cell notes', () => {
+  it('orders rows by category sortOrder and collects per-cell notes', () => {
     const result = pivot(
       [
-        entry({ category: transport, amount: 10, description: 'taxi' }),
         entry({ category: grocery, amount: 10 }),
+        entry({ category: transport, amount: 10, description: 'taxi' }),
       ],
       'UAH',
       30,
       RATES,
-      nameEn,
     );
-    // "Groceries" sorts before "Transport"
+    // transport (sortOrder 0) sorts before grocery (sortOrder 2)
     assert.deepEqual(
       result.expense.rows.map((r) => r.category.slug),
-      ['grocery', 'transport'],
+      ['transport', 'grocery'],
     );
-    assert.deepEqual(result.expense.rows[1].cells[9].notes, ['taxi']);
+    assert.deepEqual(result.expense.rows[0].cells[9].notes, ['taxi']);
   });
 
   it('returns zeroed sections when there are no entries', () => {
-    const result = pivot([], 'UAH', 31, RATES, nameEn);
+    const result = pivot([], 'UAH', 31, RATES);
     assert.equal(result.expense.rows.length, 0);
     assert.equal(result.expense.grandTotal, 0);
     assert.equal(result.expense.dailyTotals.length, 31);

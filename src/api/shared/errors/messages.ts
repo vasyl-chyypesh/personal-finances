@@ -5,4 +5,5 @@ export const MESSAGES = Object.freeze({
   TOO_MANY_REQUESTS: 'Too many requests, please try again later.',
   LEDGER_NOT_FOUND: 'Ledger entry not found',
   CATEGORY_NOT_FOUND: 'Category not found',
+  CATEGORY_SLUG_CONFLICT: 'A category with this slug already exists',
 });

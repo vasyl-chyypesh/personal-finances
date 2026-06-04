@@ -6,7 +6,7 @@ import type { Express } from 'express';
 import request from 'supertest';
 import { CategoriesRepository } from '../categories.repository.js';
 import { CategoriesService } from '../categories.service.js';
-import { initDb } from '../../shared/schema.js';
+import { initDb, migrateSchema } from '../../shared/schema.js';
 import { CATEGORY_CATALOG } from '../categories.catalog.js';
 import type { Category } from '../categories.types.js';
 
@@ -56,7 +56,14 @@ describe('CategoriesRepository (integration)', () => {
   it('create inserts a category with a JSON names blob', () => {
     const created = repo.create('custom-test', { uk: 'Тест' });
     const found = repo.findById(created.id);
-    assert.deepEqual(found, { id: created.id, slug: 'custom-test', names: { uk: 'Тест' } });
+    assert.deepEqual(found, {
+      id: created.id,
+      slug: 'custom-test',
+      names: { uk: 'Тест' },
+      deletedAt: null,
+      sortOrder: found?.sortOrder,
+    });
+    assert.equal(typeof found?.sortOrder, 'number');
   });
 
   it('updateNames merges translations', () => {
@@ -67,6 +74,45 @@ describe('CategoriesRepository (integration)', () => {
 
   it('findById returns undefined for unknown id', () => {
     assert.equal(repo.findById(99999), undefined);
+  });
+
+  it('seeds categories in catalog order', () => {
+    const list = service.list();
+    assert.equal(list[0].slug, CATEGORY_CATALOG[0].slug);
+    assert.equal(list[1].slug, CATEGORY_CATALOG[1].slug);
+  });
+
+  it('create appends a category with the highest sort_order', () => {
+    const before = service.list();
+    const maxOrder = Math.max(...before.map((c) => c.sortOrder ?? 0));
+    const created = service.create({ en: 'Appended last' });
+    assert.equal(created.sortOrder, maxOrder + 1);
+    assert.equal(service.list().at(-1)?.id, created.id);
+  });
+
+  it('reorder rewrites sort_order to match the given id sequence', () => {
+    const list = service.list();
+    const reversed = [...list].reverse().map((c) => c.id);
+    service.reorder(reversed);
+    assert.deepEqual(
+      service.list().map((c) => c.id),
+      reversed,
+    );
+  });
+
+  it('softDelete hides a category from the default list but restore brings it back', () => {
+    const created = service.create({ en: 'Soft delete me' });
+    service.remove(created.id);
+    assert.ok(!service.list().some((c) => c.id === created.id), 'hidden by default');
+    assert.ok(
+      service.list(true).some((c) => c.id === created.id),
+      'included when includeDeleted',
+    );
+    service.restore(created.id);
+    assert.ok(
+      service.list().some((c) => c.id === created.id),
+      'visible again after restore',
+    );
   });
 });
 
@@ -121,5 +167,131 @@ describe('Categories routes (HTTP integration)', () => {
   it('PATCH /:id returns 400 when no locale provided', async () => {
     const res = await request(app).patch(`/api/categories/${seededId}`).send({ names: {} });
     assert.equal(res.status, 400);
+  });
+
+  it('POST / creates a category with an auto-derived slug', async () => {
+    const res = await request(app)
+      .post('/api/categories')
+      .send({ names: { en: 'Coffee Beans', uk: 'Кавові зерна' } });
+    assert.equal(res.status, 201);
+    const body = res.body as Category;
+    assert.equal(body.slug, 'coffee-beans');
+    assert.equal(body.names.en, 'Coffee Beans');
+  });
+
+  it('POST / returns 409 for a duplicate slug', async () => {
+    const res = await request(app)
+      .post('/api/categories')
+      .send({ names: { en: 'Coffee Beans' } });
+    assert.equal(res.status, 409);
+    assert.equal((res.body as { code: string }).code, 'CATEGORY_SLUG_CONFLICT');
+  });
+
+  it('POST / returns 400 when no locale provided', async () => {
+    const res = await request(app).post('/api/categories').send({ names: {} });
+    assert.equal(res.status, 400);
+  });
+
+  it('DELETE /:id soft-deletes, hiding it from the default list', async () => {
+    const created = (
+      await request(app)
+        .post('/api/categories')
+        .send({ names: { en: 'To be removed' } })
+    ).body as Category;
+
+    const del = await request(app).delete(`/api/categories/${created.id}`);
+    assert.equal(del.status, 204);
+
+    const list = (await request(app).get('/api/categories')).body as Category[];
+    assert.ok(!list.some((c) => c.id === created.id), 'hidden by default');
+
+    const withDeleted = (await request(app).get('/api/categories?includeDeleted=true'))
+      .body as Category[];
+    assert.ok(
+      withDeleted.some((c) => c.id === created.id),
+      'shown with includeDeleted',
+    );
+
+    const restored = await request(app).post(`/api/categories/${created.id}/restore`);
+    assert.equal(restored.status, 200);
+    const after = (await request(app).get('/api/categories')).body as Category[];
+    assert.ok(
+      after.some((c) => c.id === created.id),
+      'visible again after restore',
+    );
+  });
+
+  it('DELETE /:id returns 404 for unknown category', async () => {
+    const res = await request(app).delete('/api/categories/99999');
+    assert.equal(res.status, 404);
+  });
+
+  it('POST /:id/restore returns 404 for unknown category', async () => {
+    const res = await request(app).post('/api/categories/99999/restore');
+    assert.equal(res.status, 404);
+  });
+
+  it('PUT /order reorders categories and GET reflects the new order', async () => {
+    const list = (await request(app).get('/api/categories')).body as Category[];
+    const reversed = [...list].reverse().map((c) => c.id);
+
+    const res = await request(app).put('/api/categories/order').send({ ids: reversed });
+    assert.equal(res.status, 204);
+
+    const after = (await request(app).get('/api/categories')).body as Category[];
+    assert.deepEqual(
+      after.map((c) => c.id),
+      reversed,
+    );
+  });
+
+  it('PUT /order returns 400 for an empty id list', async () => {
+    const res = await request(app).put('/api/categories/order').send({ ids: [] });
+    assert.equal(res.status, 400);
+  });
+});
+
+const MIGRATE_TEST_DB = './categories-migrate-test.db';
+
+describe('migrateSchema (sort_order backfill)', () => {
+  let db: Database.Database;
+
+  before(() => {
+    db = new Database(MIGRATE_TEST_DB);
+    // Simulate a pre-sort_order schema and insert rows out of catalog order.
+    db.exec(`
+      CREATE TABLE categories (
+        id    INTEGER PRIMARY KEY AUTOINCREMENT,
+        slug  TEXT    NOT NULL UNIQUE,
+        names TEXT    NOT NULL
+      );
+    `);
+    const insert = db.prepare('INSERT INTO categories (slug, names) VALUES (?, ?)');
+    // catalog index: charity=0, alcohol-tobacco=1; custom slug is unknown → goes last
+    insert.run('custom-zzz', JSON.stringify({ en: 'Custom' }));
+    insert.run('alcohol-tobacco', JSON.stringify({ en: 'Alcohol' }));
+    insert.run('charity', JSON.stringify({ en: 'Charity' }));
+  });
+
+  after(async () => {
+    db.close();
+    await Promise.all([
+      rm(MIGRATE_TEST_DB, { force: true }),
+      rm(`${MIGRATE_TEST_DB}-wal`, { force: true }),
+      rm(`${MIGRATE_TEST_DB}-shm`, { force: true }),
+    ]);
+  });
+
+  it('backfills sort_order in catalog order, with unknown slugs last', () => {
+    migrateSchema(db);
+    const rows = new CategoriesRepository(db).findAll();
+    assert.deepEqual(
+      rows.map((c) => c.slug),
+      ['charity', 'alcohol-tobacco', 'custom-zzz'],
+    );
+    assert.deepEqual(
+      rows.map((c) => c.sortOrder),
+      [0, 1, 2],
+    );
   });
 });

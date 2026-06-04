@@ -1,9 +1,11 @@
 import type {
   Category,
+  CreateCategoryDto,
   CreateLedgerEntryDto,
   ExchangeRatesResponse,
   LedgerEntry,
   LedgerListResult,
+  LocalizedName,
   Period,
   UpdateLedgerEntryDto,
 } from '../types.ts';
@@ -54,8 +56,38 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 
-export function getCategories(): Promise<Category[]> {
-  return request<Category[]>('/categories');
+export function getCategories(includeDeleted = false): Promise<Category[]> {
+  const query = includeDeleted ? '?includeDeleted=true' : '';
+  return request<Category[]>(`/categories${query}`);
+}
+
+export function createCategory(dto: CreateCategoryDto): Promise<Category> {
+  return request<Category>('/categories', {
+    method: 'POST',
+    body: JSON.stringify(dto),
+  });
+}
+
+export function updateCategoryNames(id: number, names: LocalizedName): Promise<Category> {
+  return request<Category>(`/categories/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ names }),
+  });
+}
+
+export function deleteCategory(id: number): Promise<void> {
+  return request<void>(`/categories/${id}`, { method: 'DELETE' });
+}
+
+export function restoreCategory(id: number): Promise<Category> {
+  return request<Category>(`/categories/${id}/restore`, { method: 'POST' });
+}
+
+export function reorderCategories(ids: number[]): Promise<void> {
+  return request<void>('/categories/order', {
+    method: 'PUT',
+    body: JSON.stringify({ ids }),
+  });
 }
 
 export function getExchangeRates(): Promise<ExchangeRatesResponse> {

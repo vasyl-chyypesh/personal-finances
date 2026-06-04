@@ -13,6 +13,9 @@ function makeMockCategoriesRepo(
     findBySlug: () => undefined,
     create: (slug, names) => ({ id: 1, slug, names }),
     updateNames: (id, names) => ({ id, slug: 'x', names }),
+    softDelete: (id, deletedAt) => ({ id, slug: 'x', names: {}, deletedAt }),
+    restore: (id) => ({ id, slug: 'x', names: {}, deletedAt: null }),
+    reorder: () => undefined,
     ...overrides,
   };
 }
@@ -54,5 +57,65 @@ describe('CategoriesService (unit)', () => {
   it('updateNames throws 404 when the category does not exist', () => {
     const service = new CategoriesService(makeMockCategoriesRepo({ findById: () => undefined }));
     assert.throws(() => service.updateNames(99999, { en: 'x' }), /not found/i);
+  });
+
+  it('create derives a slug from the English name', () => {
+    let createdSlug: string | undefined;
+    const service = new CategoriesService(
+      makeMockCategoriesRepo({
+        create: (slug, names) => {
+          createdSlug = slug;
+          return { id: 1, slug, names };
+        },
+      }),
+    );
+    service.create({ en: 'Coffee Beans', uk: 'Кавові зерна' });
+    assert.equal(createdSlug, 'coffee-beans');
+  });
+
+  it('create falls back to the Ukrainian name for the slug', () => {
+    let createdSlug: string | undefined;
+    const service = new CategoriesService(
+      makeMockCategoriesRepo({
+        create: (slug, names) => {
+          createdSlug = slug;
+          return { id: 1, slug, names };
+        },
+      }),
+    );
+    service.create({ uk: 'Кава' });
+    assert.equal(createdSlug, 'кава');
+  });
+
+  it('create throws 409 when the slug already exists', () => {
+    const service = new CategoriesService(
+      makeMockCategoriesRepo({
+        findBySlug: () => ({ id: 1, slug: 'coffee', names: { en: 'Coffee' } }),
+      }),
+    );
+    assert.throws(() => service.create({ en: 'Coffee' }), /already exists/i);
+  });
+
+  it('remove throws 404 when the category does not exist', () => {
+    const service = new CategoriesService(makeMockCategoriesRepo({ findById: () => undefined }));
+    assert.throws(() => service.remove(99999), /not found/i);
+  });
+
+  it('restore throws 404 when the category does not exist', () => {
+    const service = new CategoriesService(makeMockCategoriesRepo({ findById: () => undefined }));
+    assert.throws(() => service.restore(99999), /not found/i);
+  });
+
+  it('reorder delegates the id list to the repository', () => {
+    let receivedIds: number[] | undefined;
+    const service = new CategoriesService(
+      makeMockCategoriesRepo({
+        reorder: (ids) => {
+          receivedIds = ids;
+        },
+      }),
+    );
+    service.reorder([3, 1, 2]);
+    assert.deepEqual(receivedIds, [3, 1, 2]);
   });
 });
