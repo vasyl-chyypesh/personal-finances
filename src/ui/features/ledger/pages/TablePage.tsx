@@ -1,15 +1,15 @@
 import { useMemo, useState } from 'react';
 import { MonthPicker } from '../components/MonthPicker.tsx';
-import { CurrencySelector } from '../components/CurrencySelector.tsx';
-import { ExchangeRatesPanel } from '../components/ExchangeRatesPanel.tsx';
+import { CurrencySelector } from '../../exchange-rates/components/CurrencySelector.tsx';
+import { ExchangeRatesPanel } from '../../exchange-rates/components/ExchangeRatesPanel.tsx';
 import { LedgerTable } from '../components/LedgerTable.tsx';
 import { CellEntriesModal, type CellDescriptor } from '../components/CellEntriesModal.tsx';
-import { useCategories } from '../hooks/useCategories.ts';
+import { useCategories } from '../../categories/hooks/useCategories.ts';
 import { useLedger } from '../hooks/useLedger.ts';
-import { useExchangeRates } from '../hooks/useExchangeRates.ts';
-import { useI18n } from '../i18n/i18nContext.ts';
+import { useExchangeRates } from '../../exchange-rates/hooks/useExchangeRates.ts';
+import { useI18n } from '../../../i18n/i18nContext.ts';
 import { pivot } from '../lib/pivot.ts';
-import type { Category, Currency, LedgerEntryType } from '../types.ts';
+import type { Category, Currency, LedgerEntryType } from '../../../types.ts';
 
 function pad(n: number): string {
   return String(n).padStart(2, '0');

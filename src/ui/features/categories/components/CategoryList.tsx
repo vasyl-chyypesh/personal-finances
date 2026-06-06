@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { Category } from '../types.ts';
-import { useI18n } from '../i18n/i18nContext.ts';
+import type { Category } from '../../../types.ts';
+import { useI18n } from '../../../i18n/i18nContext.ts';
 
 interface CategoryListProps {
   categories: Category[];

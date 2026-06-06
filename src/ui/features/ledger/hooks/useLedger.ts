@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ApiError, createLedger, deleteLedger, listLedger, updateLedger } from '../lib/client.ts';
+import { ApiError, createLedger, deleteLedger, listLedger, updateLedger } from '../../../lib/client.ts';
 import type {
   CreateLedgerEntryDto,
   LedgerListResult,
   Period,
   UpdateLedgerEntryDto,
-} from '../types.ts';
+} from '../../../types.ts';
 
 interface UseLedgerResult {
   result: LedgerListResult | null;

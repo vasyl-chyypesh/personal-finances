@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { getCategories } from '../lib/client.ts';
-import { ApiError } from '../lib/client.ts';
-import type { Category } from '../types.ts';
+import { getCategories } from '../../../lib/client.ts';
+import { ApiError } from '../../../lib/client.ts';
+import type { Category } from '../../../types.ts';
 
 interface UseCategoriesResult {
   categories: Category[];

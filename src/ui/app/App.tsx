@@ -1,9 +1,9 @@
 import { NavLink, Navigate, Route, Routes } from 'react-router';
-import { LanguageSwitcher } from './components/LanguageSwitcher.tsx';
-import { ListPage } from './pages/ListPage.tsx';
-import { TablePage } from './pages/TablePage.tsx';
-import { CategoriesPage } from './pages/CategoriesPage.tsx';
-import { useI18n } from './i18n/i18nContext.ts';
+import { LanguageSwitcher } from './LanguageSwitcher.tsx';
+import { ListPage } from '../features/ledger/pages/ListPage.tsx';
+import { TablePage } from '../features/ledger/pages/TablePage.tsx';
+import { CategoriesPage } from '../features/categories/pages/CategoriesPage.tsx';
+import { useI18n } from '../i18n/i18nContext.ts';
 
 function navClass({ isActive }: { isActive: boolean }): string {
   return `rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${

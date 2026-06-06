@@ -1,5 +1,5 @@
-import type { Category, Currency, ExchangeRates, LedgerEntry, LedgerEntryType } from '../types.ts';
-import { convert } from './currency.ts';
+import type { Category, Currency, ExchangeRates, LedgerEntry, LedgerEntryType } from '../../../types.ts';
+import { convert } from '../../exchange-rates/lib/currency.ts';
 
 export interface PivotCell {
   amount: number;

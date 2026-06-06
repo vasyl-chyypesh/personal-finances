@@ -1,5 +1,5 @@
-import { CURRENCIES, type Currency } from '../types.ts';
-import { useI18n } from '../i18n/i18nContext.ts';
+import { CURRENCIES, type Currency } from '../../../types.ts';
+import { useI18n } from '../../../i18n/i18nContext.ts';
 
 interface CurrencySelectorProps {
   value: Currency;

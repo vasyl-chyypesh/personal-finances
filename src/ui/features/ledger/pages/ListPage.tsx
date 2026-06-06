@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { PeriodFilter } from '../components/PeriodFilter.tsx';
 import { LedgerForm } from '../components/LedgerForm.tsx';
 import { LedgerList } from '../components/LedgerList.tsx';
-import { useCategories } from '../hooks/useCategories.ts';
+import { useCategories } from '../../categories/hooks/useCategories.ts';
 import { useLedger } from '../hooks/useLedger.ts';
-import { useI18n } from '../i18n/i18nContext.ts';
-import type { CreateLedgerEntryDto, LedgerEntry, Period } from '../types.ts';
+import { useI18n } from '../../../i18n/i18nContext.ts';
+import type { CreateLedgerEntryDto, LedgerEntry, Period } from '../../../types.ts';
 
 export function ListPage() {
   const { t } = useI18n();

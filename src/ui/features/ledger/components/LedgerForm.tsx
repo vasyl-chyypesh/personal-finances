@@ -7,10 +7,10 @@ import {
   type Currency,
   type LedgerEntry,
   type LedgerEntryType,
-} from '../types.ts';
-import { useI18n } from '../i18n/i18nContext.ts';
-import { categoryName } from '../i18n/categoryName.ts';
-import { centsToMajor, majorToCents } from '../lib/money.ts';
+} from '../../../types.ts';
+import { useI18n } from '../../../i18n/i18nContext.ts';
+import { categoryName } from '../../../i18n/categoryName.ts';
+import { centsToMajor, majorToCents } from '../../../lib/money.ts';
 
 /** Prefilled values for the "add" form (ignored while editing). */
 export interface LedgerFormDefaults {

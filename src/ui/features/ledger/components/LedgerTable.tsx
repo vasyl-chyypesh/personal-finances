@@ -1,8 +1,8 @@
-import type { Category, Currency, LedgerEntryType, Locale } from '../types.ts';
+import type { Category, Currency, LedgerEntryType, Locale } from '../../../types.ts';
 import type { PivotResult, PivotSection } from '../lib/pivot.ts';
-import { categoryName } from '../i18n/categoryName.ts';
-import { useI18n } from '../i18n/i18nContext.ts';
-import { centsToMajor } from '../lib/money.ts';
+import { categoryName } from '../../../i18n/categoryName.ts';
+import { useI18n } from '../../../i18n/i18nContext.ts';
+import { centsToMajor } from '../../../lib/money.ts';
 
 interface LedgerTableProps {
   pivot: PivotResult;

@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { pivot } from '../pivot.ts';
-import type { Category, ExchangeRates, LedgerEntry } from '../../types.ts';
+import { pivot } from '../lib/pivot.ts';
+import type { Category, ExchangeRates, LedgerEntry } from '../../../types.ts';
 
 const RATES: ExchangeRates = {
   UAH: { UAH: 1, USD: 1 / 44, EUR: 1 / 52 },

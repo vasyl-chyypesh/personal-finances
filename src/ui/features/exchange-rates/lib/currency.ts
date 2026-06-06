@@ -1,4 +1,4 @@
-import type { Currency, ExchangeRates } from '../types.ts';
+import type { Currency, ExchangeRates } from '../../../types.ts';
 
 /**
  * Converts an amount between currencies using a pairwise rate matrix fetched from

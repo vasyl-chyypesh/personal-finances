@@ -7,8 +7,8 @@ import {
   reorderCategories,
   restoreCategory,
   updateCategoryNames,
-} from '../lib/client.ts';
-import type { Category, CreateCategoryDto, LocalizedName } from '../types.ts';
+} from '../../../lib/client.ts';
+import type { Category, CreateCategoryDto, LocalizedName } from '../../../types.ts';
 
 interface UseManageCategoriesResult {
   categories: Category[];

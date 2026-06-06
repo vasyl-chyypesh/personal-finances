@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ApiError, getExchangeRates } from '../lib/client.ts';
-import type { ExchangeRates } from '../types.ts';
+import { ApiError, getExchangeRates } from '../../../lib/client.ts';
+import type { ExchangeRates } from '../../../types.ts';
 
 interface UseExchangeRatesResult {
   rates: ExchangeRates | null;

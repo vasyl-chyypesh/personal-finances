@@ -1,7 +1,7 @@
-import type { LedgerEntry } from '../types.ts';
-import { useI18n } from '../i18n/i18nContext.ts';
-import { categoryName } from '../i18n/categoryName.ts';
-import { centsToMajor } from '../lib/money.ts';
+import type { LedgerEntry } from '../../../types.ts';
+import { useI18n } from '../../../i18n/i18nContext.ts';
+import { categoryName } from '../../../i18n/categoryName.ts';
+import { centsToMajor } from '../../../lib/money.ts';
 
 interface LedgerListProps {
   entries: LedgerEntry[];

@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import type { Category, CreateCategoryDto, LocalizedName } from '../types.ts';
-import { useI18n } from '../i18n/i18nContext.ts';
+import type { Category, CreateCategoryDto, LocalizedName } from '../../../types.ts';
+import { useI18n } from '../../../i18n/i18nContext.ts';
 
 interface CategoryFormProps {
   editing: Category | null;
