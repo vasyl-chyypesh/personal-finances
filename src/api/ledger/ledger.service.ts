@@ -20,6 +20,8 @@ export interface LedgerListResult {
   period: Period;
   startDate: string;
   endDate: string;
+  /** Total entries in the range, ignoring limit/offset. */
+  total: number;
 }
 
 function toISODate(date: Date): string {
@@ -63,11 +65,24 @@ export class LedgerService {
     return this.ledgerRepo.create(dto);
   }
 
-  list(period: Period, year?: number, month?: number): LedgerListResult {
-    const anchor = year && month ? new Date(year, month - 1, 1) : new Date();
+  list(
+    period: Period,
+    year?: number,
+    month?: number,
+    limit?: number,
+    offset?: number,
+  ): LedgerListResult {
+    // Honor year/month independently, defaulting the missing part to today. When
+    // neither is given, anchor on today's full date so `week` covers this week.
+    const now = new Date();
+    const anchor =
+      year !== undefined || month !== undefined
+        ? new Date(year ?? now.getFullYear(), (month ?? now.getMonth() + 1) - 1, 1)
+        : now;
     const { startDate, endDate } = getDateRange(period, anchor);
-    const records = this.ledgerRepo.findByDateRange(startDate, endDate);
-    return { records, period, startDate, endDate };
+    const records = this.ledgerRepo.findByDateRange(startDate, endDate, { limit, offset });
+    const total = this.ledgerRepo.countByDateRange(startDate, endDate);
+    return { records, period, startDate, endDate, total };
   }
 
   update(id: number, dto: UpdateLedgerEntryDto): LedgerEntry {

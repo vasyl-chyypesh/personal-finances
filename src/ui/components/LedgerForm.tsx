@@ -10,6 +10,7 @@ import {
 } from '../types.ts';
 import { useI18n } from '../i18n/i18nContext.ts';
 import { categoryName } from '../i18n/categoryName.ts';
+import { centsToMajor, majorToCents } from '../lib/money.ts';
 
 /** Prefilled values for the "add" form (ignored while editing). */
 export interface LedgerFormDefaults {
@@ -54,7 +55,7 @@ function emptyState(defaults?: LedgerFormDefaults): FormState {
 function stateFromEntry(entry: LedgerEntry): FormState {
   return {
     type: entry.type,
-    amount: String(entry.amount),
+    amount: String(centsToMajor(entry.amount)),
     currency: entry.currency,
     categoryId: String(entry.category.id),
     description: entry.description ?? '',
@@ -112,7 +113,7 @@ export function LedgerForm({
 
     const dto: CreateLedgerEntryDto = {
       type: form.type,
-      amount,
+      amount: majorToCents(amount),
       currency: form.currency,
       categoryId,
       date: form.date,

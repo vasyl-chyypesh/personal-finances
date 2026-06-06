@@ -49,7 +49,8 @@ describe('xls import (integration)', () => {
     const entries = ledgerRepo.findByDateRange('2026-04-01', '2026-04-30');
     assert.equal(entries.length, 4);
 
-    const charity = entries.find((e) => e.category.slug === 'charity' && e.amount === 800);
+    // 800 in the sheet is stored as 80000 integer minor units (cents)
+    const charity = entries.find((e) => e.category.slug === 'charity' && e.amount === 80000);
     assert.ok(charity);
     assert.equal(charity.type, 'expense');
     assert.equal(charity.currency, 'UAH');
@@ -67,7 +68,7 @@ describe('xls import (integration)', () => {
     // "Зарплата" is not in the catalog -> created as a custom, single-locale category
     const salary = entries.find((e) => e.category.slug === 'зарплата');
     assert.equal(salary?.type, 'income');
-    assert.equal(salary?.amount, 267325.695);
+    assert.equal(salary?.amount, 26732570); // 267325.695 * 100, rounded
     assert.deepEqual(salary?.category.names, { uk: 'Зарплата' });
   });
 

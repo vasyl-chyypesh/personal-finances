@@ -15,7 +15,7 @@ export function initSchema(db: Database.Database): void {
     CREATE TABLE IF NOT EXISTS ledger_entries (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
       type        TEXT    NOT NULL CHECK(type IN ('income', 'expense')),
-      amount      REAL    NOT NULL CHECK(amount > 0),
+      amount      INTEGER NOT NULL CHECK(amount > 0),
       currency    TEXT    NOT NULL CHECK(currency IN ('UAH', 'USD', 'EUR')),
       category_id INTEGER NOT NULL REFERENCES categories(id),
       description TEXT,
@@ -43,6 +43,47 @@ export function migrateSchema(db: Database.Database): void {
     db.exec('ALTER TABLE categories ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0');
     backfillSortOrder(db);
   }
+}
+
+/**
+ * Converts `ledger_entries.amount` from floating-point major units to integer
+ * minor units (cents). Pre-existing DB files were created with a `REAL` column
+ * holding values like `150.5`; rebuild the table with an `INTEGER` column and
+ * `ROUND(amount * 100)` so money is stored exactly. Guarded by `user_version`
+ * so it runs exactly once (a fresh DB has no rows to convert).
+ */
+export function migrateAmountToCents(db: Database.Database): void {
+  const version = db.pragma('user_version', { simple: true }) as number;
+  if (version >= 1) return;
+
+  db.pragma('foreign_keys = OFF');
+  db.transaction(() => {
+    db.exec(`
+      CREATE TABLE ledger_entries_new (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        type        TEXT    NOT NULL CHECK(type IN ('income', 'expense')),
+        amount      INTEGER NOT NULL CHECK(amount > 0),
+        currency    TEXT    NOT NULL CHECK(currency IN ('UAH', 'USD', 'EUR')),
+        category_id INTEGER NOT NULL REFERENCES categories(id),
+        description TEXT,
+        date        TEXT    NOT NULL,
+        created_at  TEXT    NOT NULL,
+        updated_at  TEXT    NOT NULL
+      );
+
+      INSERT INTO ledger_entries_new
+        (id, type, amount, currency, category_id, description, date, created_at, updated_at)
+      SELECT
+        id, type, CAST(ROUND(amount * 100) AS INTEGER), currency,
+        category_id, description, date, created_at, updated_at
+      FROM ledger_entries;
+
+      DROP TABLE ledger_entries;
+      ALTER TABLE ledger_entries_new RENAME TO ledger_entries;
+    `);
+  })();
+  db.pragma('foreign_keys = ON');
+  db.pragma('user_version = 1');
 }
 
 /** Assigns a sequential sort_order to all existing categories: catalog order first, then by slug. */
@@ -90,6 +131,7 @@ export function seedExchangeRates(db: Database.Database): void {
 export function initDb(db: Database.Database): void {
   initSchema(db);
   migrateSchema(db);
+  migrateAmountToCents(db);
   seedCategories(db);
   seedExchangeRates(db);
 }
