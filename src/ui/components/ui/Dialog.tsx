@@ -41,12 +41,19 @@ export function Dialog({ title, closeLabel, onClose, children }: DialogProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
 
+  // Keep the latest onClose in a ref so the open/close effect runs exactly once
+  // per mount. Depending on `onClose` directly would re-run the effect whenever
+  // the parent passes a fresh handler (e.g. an inline arrow), stealing focus
+  // back to the close button mid-interaction and clobbering focus restoration.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   useEffect(() => {
     const previouslyFocused = document.activeElement as HTMLElement | null;
 
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
-        onClose();
+        onCloseRef.current();
       } else if (event.key === 'Tab') {
         trapTab(event, panelRef.current);
       }
@@ -59,7 +66,7 @@ export function Dialog({ title, closeLabel, onClose, children }: DialogProps) {
       document.removeEventListener('keydown', onKeyDown);
       previouslyFocused?.focus?.();
     };
-  }, [onClose]);
+  }, []);
 
   return (
     <div

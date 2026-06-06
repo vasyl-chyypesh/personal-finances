@@ -90,5 +90,11 @@ export function useLedger(period: Period, opts: UseLedgerOptions = {}): UseLedge
     [load],
   );
 
-  return { result, loading, error, refresh: load, create, update, remove };
+  // Zero-arg wrapper so callers can wire `refresh` to an event handler without
+  // the DOM event being passed as `load`'s optional `isActive` predicate.
+  const refresh = useCallback(() => {
+    void load();
+  }, [load]);
+
+  return { result, loading, error, refresh, create, update, remove };
 }

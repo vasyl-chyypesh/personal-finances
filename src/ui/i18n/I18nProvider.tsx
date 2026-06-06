@@ -6,11 +6,17 @@ import { I18nContext, type I18nValue } from './i18nContext.ts';
 const STORAGE_KEY = 'locale';
 
 function initialLocale(): Locale {
-  const stored = localStorage.getItem(STORAGE_KEY) as Locale | null;
-  if (stored && LOCALES.includes(stored)) {
-    return stored;
+  // localStorage/navigator can throw in private-mode or sandboxed contexts; a
+  // throw here is above the ErrorBoundary, so fall back instead of white-screening.
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY) as Locale | null;
+    if (stored && LOCALES.includes(stored)) {
+      return stored;
+    }
+    return navigator.language.startsWith('uk') ? 'uk' : 'en';
+  } catch {
+    return 'en';
   }
-  return navigator.language.startsWith('uk') ? 'uk' : 'en';
 }
 
 export function I18nProvider({ children }: { children: ReactNode }) {
@@ -18,7 +24,11 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   const setLocale = useCallback((next: Locale) => {
     setLocaleState(next);
-    localStorage.setItem(STORAGE_KEY, next);
+    try {
+      localStorage.setItem(STORAGE_KEY, next);
+    } catch {
+      /* storage unavailable (private mode / sandbox) — locale just won't persist */
+    }
   }, []);
 
   const value = useMemo<I18nValue>(() => {

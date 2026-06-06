@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Category } from '../../../types.ts';
 import { useI18n } from '../../../i18n/i18nContext.ts';
 import { EmptyState } from '../../../components/ui/EmptyState.tsx';
@@ -29,6 +29,25 @@ export function CategoryList({
 }: CategoryListProps) {
   const { t } = useI18n();
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+  // After a keyboard reorder the moved row re-renders and the button that was
+  // pressed may now be disabled at a list boundary, dropping focus to <body>.
+  // Remember which category to refocus and restore it once the new order paints.
+  const pendingFocus = useRef<{ id: number; dir: 'up' | 'down' } | null>(null);
+
+  useEffect(() => {
+    const pending = pendingFocus.current;
+    if (!pending) {
+      return;
+    }
+    pendingFocus.current = null;
+    const preferred = document.getElementById(`cat-move-${pending.dir}-${pending.id}`);
+    const otherDir = pending.dir === 'up' ? 'down' : 'up';
+    const fallback = document.getElementById(`cat-move-${otherDir}-${pending.id}`);
+    const target = preferred instanceof HTMLButtonElement && !preferred.disabled ? preferred : fallback;
+    if (target instanceof HTMLButtonElement) {
+      target.focus();
+    }
+  }, [categories]);
 
   if (loading) {
     return <TableSkeleton rows={4} />;
@@ -46,6 +65,12 @@ export function CategoryList({
     const [moved] = next.splice(from, 1);
     next.splice(to, 0, moved);
     onReorder(next.map((c) => c.id));
+  }
+
+  function moveByKeyboard(index: number, dir: 'up' | 'down') {
+    // eslint-disable-next-line security/detect-object-injection -- index is the bounded map index
+    pendingFocus.current = { id: categories[index].id, dir };
+    reorderTo(index, dir === 'up' ? index - 1 : index + 1);
   }
 
   function handleDrop(targetIndex: number) {
@@ -97,7 +122,8 @@ export function CategoryList({
                       <span className="flex flex-col leading-none">
                         <button
                           type="button"
-                          onClick={() => reorderTo(index, index - 1)}
+                          id={`cat-move-up-${category.id}`}
+                          onClick={() => moveByKeyboard(index, 'up')}
                           disabled={index === 0}
                           aria-label={t('categories.moveUp')}
                           className={moveButtonClass}
@@ -106,7 +132,8 @@ export function CategoryList({
                         </button>
                         <button
                           type="button"
-                          onClick={() => reorderTo(index, index + 1)}
+                          id={`cat-move-down-${category.id}`}
+                          onClick={() => moveByKeyboard(index, 'down')}
                           disabled={index === categories.length - 1}
                           aria-label={t('categories.moveDown')}
                           className={moveButtonClass}
