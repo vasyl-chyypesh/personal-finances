@@ -1,8 +1,8 @@
-import { useState } from 'react';
 import type { Category, CreateLedgerEntryDto, LedgerEntry, LedgerEntryType } from '../../../types.ts';
 import { LedgerForm } from './LedgerForm.tsx';
 import { categoryName } from '../../../i18n/categoryName.ts';
 import { useI18n } from '../../../i18n/i18nContext.ts';
+import { useEditableList } from '../../../hooks/useEditableList.ts';
 import { centsToMajor } from '../../../lib/money.ts';
 
 export interface CellDescriptor {
@@ -31,25 +31,14 @@ export function CellEntriesModal({
   onClose,
 }: CellEntriesModalProps) {
   const { locale, t } = useI18n();
-  const [editing, setEditing] = useState<LedgerEntry | null>(null);
-
-  async function handleCreate(dto: CreateLedgerEntryDto) {
-    await onCreate(dto);
-  }
+  const { editing, setEditing, stopEditing, confirmDelete } = useEditableList<LedgerEntry>(
+    onDelete,
+    t('app.deleteConfirm'),
+  );
 
   async function handleUpdate(id: number, dto: CreateLedgerEntryDto) {
     await onUpdate(id, dto);
-    setEditing(null);
-  }
-
-  async function handleDelete(id: number) {
-    if (!confirm(t('app.deleteConfirm'))) {
-      return;
-    }
-    if (editing?.id === id) {
-      setEditing(null);
-    }
-    await onDelete(id);
+    stopEditing();
   }
 
   return (
@@ -96,7 +85,7 @@ export function CellEntriesModal({
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleDelete(entry.id)}
+                    onClick={() => confirmDelete(entry.id)}
                     className="text-red-600 hover:text-red-800 hover:underline"
                   >
                     {t('list.delete')}
@@ -110,9 +99,9 @@ export function CellEntriesModal({
         <LedgerForm
           categories={categories}
           editing={editing}
-          onCreate={handleCreate}
+          onCreate={onCreate}
           onUpdate={handleUpdate}
-          onCancelEdit={() => setEditing(null)}
+          onCancelEdit={stopEditing}
           defaults={{ type: cell.type, categoryId: cell.category.id, date: cell.date }}
         />
       </div>

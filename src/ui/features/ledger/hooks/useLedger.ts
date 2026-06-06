@@ -32,45 +32,39 @@ export function useLedger(period: Period, opts: UseLedgerOptions = {}): UseLedge
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(() => {
-    setLoading(true);
-    return listLedger(period, { year, month })
-      .then((data) => {
-        setResult(data);
-        setError(null);
-      })
-      .catch((err: unknown) => {
-        setError(toMessage(err, 'Failed to load entries'));
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [period, year, month]);
+  // Single fetch implementation shared by the initial effect and post-mutation
+  // refreshes. `isActive` lets the effect drop results from a stale render.
+  const load = useCallback(
+    (isActive: () => boolean = () => true) => {
+      setLoading(true);
+      return listLedger(period, { year, month })
+        .then((data) => {
+          if (isActive()) {
+            setResult(data);
+            setError(null);
+          }
+        })
+        .catch((err: unknown) => {
+          if (isActive()) {
+            setError(toMessage(err, 'Failed to load entries'));
+          }
+        })
+        .finally(() => {
+          if (isActive()) {
+            setLoading(false);
+          }
+        });
+    },
+    [period, year, month],
+  );
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
-    listLedger(period, { year, month })
-      .then((data) => {
-        if (active) {
-          setResult(data);
-          setError(null);
-        }
-      })
-      .catch((err: unknown) => {
-        if (active) {
-          setError(toMessage(err, 'Failed to load entries'));
-        }
-      })
-      .finally(() => {
-        if (active) {
-          setLoading(false);
-        }
-      });
+    void load(() => active);
     return () => {
       active = false;
     };
-  }, [period, year, month]);
+  }, [load]);
 
   const create = useCallback(
     async (dto: CreateLedgerEntryDto) => {

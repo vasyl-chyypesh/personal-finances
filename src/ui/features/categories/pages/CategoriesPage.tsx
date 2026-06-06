@@ -2,34 +2,24 @@ import { useState } from 'react';
 import { CategoryForm } from '../components/CategoryForm.tsx';
 import { CategoryList } from '../components/CategoryList.tsx';
 import { useManageCategories } from '../hooks/useManageCategories.ts';
+import { useEditableList } from '../../../hooks/useEditableList.ts';
 import { useI18n } from '../../../i18n/i18nContext.ts';
-import type { Category, CreateCategoryDto, LocalizedName } from '../../../types.ts';
+import type { Category, LocalizedName } from '../../../types.ts';
 
 export function CategoriesPage() {
   const { t } = useI18n();
   const [showDeleted, setShowDeleted] = useState(false);
-  const [editing, setEditing] = useState<Category | null>(null);
 
   const { categories, loading, error, create, updateNames, remove, restore, reorder } =
     useManageCategories(showDeleted);
-
-  async function handleCreate(dto: CreateCategoryDto) {
-    await create(dto);
-  }
+  const { editing, setEditing, stopEditing, confirmDelete } = useEditableList<Category>(
+    remove,
+    t('categories.deleteConfirm'),
+  );
 
   async function handleUpdate(id: number, names: LocalizedName) {
     await updateNames(id, names);
-    setEditing(null);
-  }
-
-  async function handleDelete(id: number) {
-    if (!confirm(t('categories.deleteConfirm'))) {
-      return;
-    }
-    if (editing?.id === id) {
-      setEditing(null);
-    }
-    await remove(id);
+    stopEditing();
   }
 
   return (
@@ -37,9 +27,9 @@ export function CategoriesPage() {
       <div className="mb-6">
         <CategoryForm
           editing={editing}
-          onCreate={handleCreate}
+          onCreate={create}
           onUpdate={handleUpdate}
-          onCancelEdit={() => setEditing(null)}
+          onCancelEdit={stopEditing}
         />
       </div>
 
@@ -63,7 +53,7 @@ export function CategoriesPage() {
         loading={loading}
         reorderable={!showDeleted}
         onEdit={setEditing}
-        onDelete={handleDelete}
+        onDelete={confirmDelete}
         onRestore={restore}
         onReorder={reorder}
       />

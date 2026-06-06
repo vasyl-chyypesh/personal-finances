@@ -4,34 +4,24 @@ import { LedgerForm } from '../components/LedgerForm.tsx';
 import { LedgerList } from '../components/LedgerList.tsx';
 import { useCategories } from '../../categories/hooks/useCategories.ts';
 import { useLedger } from '../hooks/useLedger.ts';
+import { useEditableList } from '../../../hooks/useEditableList.ts';
 import { useI18n } from '../../../i18n/i18nContext.ts';
 import type { CreateLedgerEntryDto, LedgerEntry, Period } from '../../../types.ts';
 
 export function ListPage() {
   const { t } = useI18n();
   const [period, setPeriod] = useState<Period>('month');
-  const [editing, setEditing] = useState<LedgerEntry | null>(null);
 
   const { categories, error: categoriesError } = useCategories();
   const { result, loading, error, create, update, remove } = useLedger(period);
-
-  async function handleCreate(dto: CreateLedgerEntryDto) {
-    await create(dto);
-  }
+  const { editing, setEditing, stopEditing, confirmDelete } = useEditableList<LedgerEntry>(
+    remove,
+    t('app.deleteConfirm'),
+  );
 
   async function handleUpdate(id: number, dto: CreateLedgerEntryDto) {
     await update(id, dto);
-    setEditing(null);
-  }
-
-  async function handleDelete(id: number) {
-    if (!confirm(t('app.deleteConfirm'))) {
-      return;
-    }
-    if (editing?.id === id) {
-      setEditing(null);
-    }
-    await remove(id);
+    stopEditing();
   }
 
   const entries = result?.records ?? [];
@@ -48,9 +38,9 @@ export function ListPage() {
         <LedgerForm
           categories={categories}
           editing={editing}
-          onCreate={handleCreate}
+          onCreate={create}
           onUpdate={handleUpdate}
-          onCancelEdit={() => setEditing(null)}
+          onCancelEdit={stopEditing}
         />
       </div>
 
@@ -69,7 +59,7 @@ export function ListPage() {
         <p className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
       ) : null}
 
-      <LedgerList entries={entries} loading={loading} onEdit={setEditing} onDelete={handleDelete} />
+      <LedgerList entries={entries} loading={loading} onEdit={setEditing} onDelete={confirmDelete} />
     </div>
   );
 }
