@@ -28,9 +28,11 @@ The categories data model and API live on the server — see `src/api/CLAUDE.md`
 
 The locale toggle itself is a component, `components/LanguageSwitcher.tsx` (not under `i18n/`). Components call `t(key, vars?)` (with `{name}` interpolation) — no hard-coded display strings.
 
-## Linting
+## Linting & formatting
 
 A dedicated ESLint flat-config block targets `src/ui/**/*.{ts,tsx}` (JSX + browser globals + `react-hooks` rules); the API block is scoped to `src/api/**/*.ts`. `no-console` applies to the UI too — there is no shared logger in the browser, so avoid `console.*` in committed code.
+
+Run `npm run format` (Prettier, writes) before committing UI changes — long Tailwind `className` strings and multi-import lists routinely exceed the print width and need rewrapping. CI runs `npm run format:check`, so unformatted files fail the build; the husky pre-commit hook runs ESLint + ls-lint but **not** Prettier, so formatting won't be caught locally on commit.
 
 ## Testing
 
