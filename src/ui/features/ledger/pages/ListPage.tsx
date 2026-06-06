@@ -6,6 +6,7 @@ import { useCategories } from '../../categories/hooks/useCategories.ts';
 import { useLedger } from '../hooks/useLedger.ts';
 import { useEditableList } from '../../../hooks/useEditableList.ts';
 import { useI18n } from '../../../i18n/i18nContext.ts';
+import { Alert } from '../../../components/ui/Alert.tsx';
 import type { CreateLedgerEntryDto, LedgerEntry, Period } from '../../../types.ts';
 
 export function ListPage() {
@@ -28,11 +29,7 @@ export function ListPage() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      {categoriesError ? (
-        <p className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
-          {categoriesError}
-        </p>
-      ) : null}
+      {categoriesError ? <Alert className="mb-4">{categoriesError}</Alert> : null}
 
       <div className="mb-6">
         <LedgerForm
@@ -55,9 +52,7 @@ export function ListPage() {
         <PeriodFilter value={period} onChange={setPeriod} />
       </div>
 
-      {error ? (
-        <p className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
-      ) : null}
+      {error ? <Alert className="mb-4">{error}</Alert> : null}
 
       <LedgerList entries={entries} loading={loading} onEdit={setEditing} onDelete={confirmDelete} />
     </div>

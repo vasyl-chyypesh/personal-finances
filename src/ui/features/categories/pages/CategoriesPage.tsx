@@ -4,6 +4,7 @@ import { CategoryList } from '../components/CategoryList.tsx';
 import { useManageCategories } from '../hooks/useManageCategories.ts';
 import { useEditableList } from '../../../hooks/useEditableList.ts';
 import { useI18n } from '../../../i18n/i18nContext.ts';
+import { Alert } from '../../../components/ui/Alert.tsx';
 import type { Category, LocalizedName } from '../../../types.ts';
 
 export function CategoriesPage() {
@@ -44,9 +45,7 @@ export function CategoriesPage() {
         </label>
       </div>
 
-      {error ? (
-        <p className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
-      ) : null}
+      {error ? <Alert className="mb-4">{error}</Alert> : null}
 
       <CategoryList
         categories={categories}

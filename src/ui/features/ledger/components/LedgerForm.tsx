@@ -11,6 +11,11 @@ import {
 import { useI18n } from '../../../i18n/i18nContext.ts';
 import { categoryName } from '../../../i18n/categoryName.ts';
 import { centsToMajor, majorToCents } from '../../../lib/money.ts';
+import { Field } from '../../../components/ui/Field.tsx';
+import { Input } from '../../../components/ui/Input.tsx';
+import { Select } from '../../../components/ui/Select.tsx';
+import { Button } from '../../../components/ui/Button.tsx';
+import { Alert } from '../../../components/ui/Alert.tsx';
 
 /** Prefilled values for the "add" form (ignored while editing). */
 export interface LedgerFormDefaults {
@@ -62,10 +67,6 @@ function stateFromEntry(entry: LedgerEntry): FormState {
     date: entry.date,
   };
 }
-
-const inputClass =
-  'w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500';
-const labelClass = 'mb-1 block text-xs font-medium text-slate-600';
 
 export function LedgerForm({
   categories,
@@ -145,13 +146,9 @@ export function LedgerForm({
       </h2>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div>
-          <label className={labelClass} htmlFor="type">
-            {t('form.type')}
-          </label>
-          <select
+        <Field htmlFor="type" label={t('form.type')}>
+          <Select
             id="type"
-            className={inputClass}
             value={form.type}
             onChange={(e) => set('type', e.target.value as LedgerEntryType)}
           >
@@ -160,16 +157,12 @@ export function LedgerForm({
                 {t(`type.${type}`)}
               </option>
             ))}
-          </select>
-        </div>
+          </Select>
+        </Field>
 
-        <div>
-          <label className={labelClass} htmlFor="category">
-            {t('form.category')}
-          </label>
-          <select
+        <Field htmlFor="category" label={t('form.category')}>
+          <Select
             id="category"
-            className={inputClass}
             value={form.categoryId}
             onChange={(e) => set('categoryId', e.target.value)}
           >
@@ -179,32 +172,24 @@ export function LedgerForm({
                 {categoryName(c, locale)}
               </option>
             ))}
-          </select>
-        </div>
+          </Select>
+        </Field>
 
-        <div>
-          <label className={labelClass} htmlFor="amount">
-            {t('form.amount')}
-          </label>
-          <input
+        <Field htmlFor="amount" label={t('form.amount')}>
+          <Input
             id="amount"
             type="number"
             step="0.01"
             min="0"
-            className={inputClass}
             value={form.amount}
             onChange={(e) => set('amount', e.target.value)}
             placeholder="0.00"
           />
-        </div>
+        </Field>
 
-        <div>
-          <label className={labelClass} htmlFor="currency">
-            {t('form.currency')}
-          </label>
-          <select
+        <Field htmlFor="currency" label={t('form.currency')}>
+          <Select
             id="currency"
-            className={inputClass}
             value={form.currency}
             onChange={(e) => set('currency', e.target.value as Currency)}
           >
@@ -213,55 +198,43 @@ export function LedgerForm({
                 {c}
               </option>
             ))}
-          </select>
-        </div>
+          </Select>
+        </Field>
 
-        <div>
-          <label className={labelClass} htmlFor="date">
-            {t('form.date')}
-          </label>
-          <input
+        <Field htmlFor="date" label={t('form.date')}>
+          <Input
             id="date"
             type="date"
-            className={inputClass}
             value={form.date}
             onChange={(e) => set('date', e.target.value)}
           />
-        </div>
+        </Field>
 
-        <div>
-          <label className={labelClass} htmlFor="description">
-            {t('form.description')}
-          </label>
-          <input
+        <Field htmlFor="description" label={t('form.description')}>
+          <Input
             id="description"
             type="text"
-            className={inputClass}
             value={form.description}
             onChange={(e) => set('description', e.target.value)}
             placeholder={t('form.descriptionPlaceholder')}
           />
-        </div>
+        </Field>
       </div>
 
-      {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
+      {error ? (
+        <Alert className="mt-3" tone="error">
+          {error}
+        </Alert>
+      ) : null}
 
       <div className="mt-4 flex gap-2">
-        <button
-          type="submit"
-          disabled={submitting}
-          className="rounded-md bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
-        >
+        <Button type="submit" disabled={submitting}>
           {editing ? t('form.submitSave') : t('form.submitAdd')}
-        </button>
+        </Button>
         {editing ? (
-          <button
-            type="button"
-            onClick={onCancelEdit}
-            className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
-          >
+          <Button type="button" variant="secondary" onClick={onCancelEdit}>
             {t('form.cancel')}
-          </button>
+          </Button>
         ) : null}
       </div>
     </form>

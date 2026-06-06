@@ -2,6 +2,8 @@ import type { LedgerEntry } from '../../../types.ts';
 import { useI18n } from '../../../i18n/i18nContext.ts';
 import { categoryName } from '../../../i18n/categoryName.ts';
 import { centsToMajor } from '../../../lib/money.ts';
+import { EmptyState } from '../../../components/ui/EmptyState.tsx';
+import { TextButton } from '../../../components/ui/TextButton.tsx';
 
 interface LedgerListProps {
   entries: LedgerEntry[];
@@ -19,11 +21,11 @@ export function LedgerList({ entries, loading, onEdit, onDelete }: LedgerListPro
   const { locale, t } = useI18n();
 
   if (loading) {
-    return <p className="py-8 text-center text-sm text-slate-500">{t('list.loading')}</p>;
+    return <EmptyState message={t('list.loading')} />;
   }
 
   if (entries.length === 0) {
-    return <p className="py-8 text-center text-sm text-slate-500">{t('list.empty')}</p>;
+    return <EmptyState message={t('list.empty')} />;
   }
 
   return (
@@ -52,20 +54,12 @@ export function LedgerList({ entries, loading, onEdit, onDelete }: LedgerListPro
                 {formatAmount(entry)}
               </td>
               <td className="whitespace-nowrap px-4 py-3 text-right">
-                <button
-                  type="button"
-                  onClick={() => onEdit(entry)}
-                  className="mr-3 text-slate-600 hover:text-slate-900 hover:underline"
-                >
+                <TextButton onClick={() => onEdit(entry)} className="mr-3">
                   {t('list.edit')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onDelete(entry.id)}
-                  className="text-red-600 hover:text-red-800 hover:underline"
-                >
+                </TextButton>
+                <TextButton tone="danger" onClick={() => onDelete(entry.id)}>
                   {t('list.delete')}
-                </button>
+                </TextButton>
               </td>
             </tr>
           ))}

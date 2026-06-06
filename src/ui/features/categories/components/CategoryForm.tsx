@@ -1,6 +1,10 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import type { Category, CreateCategoryDto, LocalizedName } from '../../../types.ts';
 import { useI18n } from '../../../i18n/i18nContext.ts';
+import { Field } from '../../../components/ui/Field.tsx';
+import { Input } from '../../../components/ui/Input.tsx';
+import { Button } from '../../../components/ui/Button.tsx';
+import { Alert } from '../../../components/ui/Alert.tsx';
 
 interface CategoryFormProps {
   editing: Category | null;
@@ -19,10 +23,6 @@ function stateFromCategory(category: Category): FormState {
 }
 
 const EMPTY_STATE: FormState = { en: '', uk: '' };
-
-const inputClass =
-  'w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500';
-const labelClass = 'mb-1 block text-xs font-medium text-slate-600';
 
 export function CategoryForm({ editing, onCreate, onUpdate, onCancelEdit }: CategoryFormProps) {
   const { t } = useI18n();
@@ -80,31 +80,13 @@ export function CategoryForm({ editing, onCreate, onUpdate, onCancelEdit }: Cate
       </h2>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div>
-          <label className={labelClass} htmlFor="name-en">
-            {t('categories.nameEn')}
-          </label>
-          <input
-            id="name-en"
-            type="text"
-            className={inputClass}
-            value={form.en}
-            onChange={(e) => set('en', e.target.value)}
-          />
-        </div>
+        <Field htmlFor="name-en" label={t('categories.nameEn')}>
+          <Input id="name-en" type="text" value={form.en} onChange={(e) => set('en', e.target.value)} />
+        </Field>
 
-        <div>
-          <label className={labelClass} htmlFor="name-uk">
-            {t('categories.nameUk')}
-          </label>
-          <input
-            id="name-uk"
-            type="text"
-            className={inputClass}
-            value={form.uk}
-            onChange={(e) => set('uk', e.target.value)}
-          />
-        </div>
+        <Field htmlFor="name-uk" label={t('categories.nameUk')}>
+          <Input id="name-uk" type="text" value={form.uk} onChange={(e) => set('uk', e.target.value)} />
+        </Field>
       </div>
 
       {editing ? (
@@ -113,24 +95,20 @@ export function CategoryForm({ editing, onCreate, onUpdate, onCancelEdit }: Cate
         </p>
       ) : null}
 
-      {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
+      {error ? (
+        <Alert className="mt-3" tone="error">
+          {error}
+        </Alert>
+      ) : null}
 
       <div className="mt-4 flex gap-2">
-        <button
-          type="submit"
-          disabled={submitting}
-          className="rounded-md bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
-        >
+        <Button type="submit" disabled={submitting}>
           {editing ? t('categories.submitSave') : t('categories.submitAdd')}
-        </button>
+        </Button>
         {editing ? (
-          <button
-            type="button"
-            onClick={onCancelEdit}
-            className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
-          >
+          <Button type="button" variant="secondary" onClick={onCancelEdit}>
             {t('categories.cancel')}
-          </button>
+          </Button>
         ) : null}
       </div>
     </form>

@@ -4,12 +4,9 @@ import { ListPage } from '../features/ledger/pages/ListPage.tsx';
 import { TablePage } from '../features/ledger/pages/TablePage.tsx';
 import { CategoriesPage } from '../features/categories/pages/CategoriesPage.tsx';
 import { useI18n } from '../i18n/i18nContext.ts';
+import { segmentGroupClass, segmentItemClass } from '../components/ui/segmented.ts';
 
-function navClass({ isActive }: { isActive: boolean }): string {
-  return `rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-    isActive ? 'bg-slate-800 text-white' : 'text-slate-600 hover:bg-slate-100'
-  }`;
-}
+const navClass = ({ isActive }: { isActive: boolean }): string => segmentItemClass(isActive);
 
 export default function App() {
   const { t } = useI18n();
@@ -25,7 +22,7 @@ export default function App() {
           <LanguageSwitcher />
         </header>
 
-        <nav className="mb-6 inline-flex rounded-lg border border-slate-300 bg-white p-1 shadow-sm">
+        <nav className={`mb-6 ${segmentGroupClass}`}>
           <NavLink to="/list" className={navClass}>
             {t('nav.list')}
           </NavLink>

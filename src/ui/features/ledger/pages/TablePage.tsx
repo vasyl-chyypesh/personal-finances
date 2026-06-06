@@ -9,6 +9,8 @@ import { useLedger } from '../hooks/useLedger.ts';
 import { useExchangeRates } from '../../exchange-rates/hooks/useExchangeRates.ts';
 import { useI18n } from '../../../i18n/i18nContext.ts';
 import { pivot } from '../lib/pivot.ts';
+import { Alert } from '../../../components/ui/Alert.tsx';
+import { EmptyState } from '../../../components/ui/EmptyState.tsx';
 import type { Category, Currency, LedgerEntryType } from '../../../types.ts';
 
 function pad(n: number): string {
@@ -73,19 +75,13 @@ export function TablePage() {
         <h2 className="text-lg font-semibold capitalize text-slate-700">{monthLabel}</h2>
       </div>
 
-      {ratesError ? (
-        <p className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
-          {t('table.ratesError')}
-        </p>
-      ) : null}
-      {error ? (
-        <p className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
-      ) : null}
+      {ratesError ? <Alert className="mb-4">{t('table.ratesError')}</Alert> : null}
+      {error ? <Alert className="mb-4">{error}</Alert> : null}
 
       {loading || !pivoted ? (
-        <p className="py-8 text-center text-sm text-slate-500">{t('table.loading')}</p>
+        <EmptyState message={t('table.loading')} />
       ) : records.length === 0 ? (
-        <p className="py-8 text-center text-sm text-slate-500">{t('table.empty')}</p>
+        <EmptyState message={t('table.empty')} />
       ) : (
         <LedgerTable pivot={pivoted} currency={currency} onCellClick={handleCellClick} />
       )}

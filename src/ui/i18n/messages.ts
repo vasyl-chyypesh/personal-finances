@@ -9,6 +9,10 @@ export const MESSAGES: Record<Locale, Record<string, string>> = {
     'app.language': 'Language',
     'categories.loadError': 'Failed to load categories',
 
+    'error.title': 'Something went wrong',
+    'error.body': 'The page hit an unexpected error. Try again.',
+    'error.retry': 'Reload',
+
     'type.income': 'Income',
     'type.expense': 'Expense',
     'period.week': 'Week',
@@ -96,6 +100,10 @@ export const MESSAGES: Record<Locale, Record<string, string>> = {
     'app.deleteConfirm': 'Видалити цей запис?',
     'app.language': 'Мова',
     'categories.loadError': 'Не вдалося завантажити категорії',
+
+    'error.title': 'Щось пішло не так',
+    'error.body': 'Сторінка зіткнулася з неочікуваною помилкою. Спробуйте ще раз.',
+    'error.retry': 'Перезавантажити',
 
     'type.income': 'Дохід',
     'type.expense': 'Витрата',

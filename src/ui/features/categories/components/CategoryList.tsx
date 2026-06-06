@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import type { Category } from '../../../types.ts';
 import { useI18n } from '../../../i18n/i18nContext.ts';
+import { EmptyState } from '../../../components/ui/EmptyState.tsx';
+import { TextButton } from '../../../components/ui/TextButton.tsx';
 
 interface CategoryListProps {
   categories: Category[];
@@ -25,11 +27,11 @@ export function CategoryList({
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
   if (loading) {
-    return <p className="py-8 text-center text-sm text-slate-500">{t('categories.loading')}</p>;
+    return <EmptyState message={t('categories.loading')} />;
   }
 
   if (categories.length === 0) {
-    return <p className="py-8 text-center text-sm text-slate-500">{t('categories.empty')}</p>;
+    return <EmptyState message={t('categories.empty')} />;
   }
 
   function handleDrop(targetIndex: number) {
@@ -84,29 +86,17 @@ export function CategoryList({
                 <td className="px-4 py-3 font-mono text-xs text-slate-500">{category.slug}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-right">
                   {deleted ? (
-                    <button
-                      type="button"
-                      onClick={() => onRestore(category.id)}
-                      className="text-green-600 hover:text-green-800 hover:underline"
-                    >
+                    <TextButton tone="success" onClick={() => onRestore(category.id)}>
                       {t('categories.restore')}
-                    </button>
+                    </TextButton>
                   ) : (
                     <>
-                      <button
-                        type="button"
-                        onClick={() => onEdit(category)}
-                        className="mr-3 text-slate-600 hover:text-slate-900 hover:underline"
-                      >
+                      <TextButton onClick={() => onEdit(category)} className="mr-3">
                         {t('categories.edit')}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onDelete(category.id)}
-                        className="text-red-600 hover:text-red-800 hover:underline"
-                      >
+                      </TextButton>
+                      <TextButton tone="danger" onClick={() => onDelete(category.id)}>
                         {t('categories.delete')}
-                      </button>
+                      </TextButton>
                     </>
                   )}
                 </td>
