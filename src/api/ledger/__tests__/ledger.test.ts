@@ -12,6 +12,7 @@ function makeMockLedgerRepo(overrides: Partial<ILedgerRepository> = {}): ILedger
     },
     findById: () => undefined,
     findByDateRange: () => [],
+    countByDateRange: () => 0,
     update: () => {
       throw new Error('not implemented');
     },
@@ -46,7 +47,7 @@ const stubCategory = {
 const stubEntry: LedgerEntry = {
   id: 1,
   type: 'expense',
-  amount: 100,
+  amount: 10000,
   currency: 'UAH',
   category: stubCategory,
   date: '2026-06-01',
@@ -228,5 +229,43 @@ describe('LedgerService (unit)', () => {
     const year = new Date().getFullYear();
     assert.equal(result.startDate, `${year}-01-01`);
     assert.equal(result.endDate, `${year}-12-31`);
+  });
+
+  it('list honors year alone for period=year (does not require month)', () => {
+    const service = new LedgerService(
+      makeMockLedgerRepo({ findByDateRange: () => [] }),
+      makeMockCategoriesRepo(),
+    );
+    const result = service.list('year', 2023);
+    assert.equal(result.startDate, '2023-01-01');
+    assert.equal(result.endDate, '2023-12-31');
+  });
+
+  it('list honors month alone, defaulting the year to the current one', () => {
+    const service = new LedgerService(
+      makeMockLedgerRepo({ findByDateRange: () => [] }),
+      makeMockCategoriesRepo(),
+    );
+    const year = new Date().getFullYear();
+    const result = service.list('month', undefined, 3);
+    assert.equal(result.startDate, `${year}-03-01`);
+    assert.equal(result.endDate, `${year}-03-31`);
+  });
+
+  it('list passes limit/offset to the repo and returns the unpaged total', () => {
+    let pageCapture: { limit?: number; offset?: number } | undefined;
+    const service = new LedgerService(
+      makeMockLedgerRepo({
+        findByDateRange: (_start, _end, opts) => {
+          pageCapture = opts;
+          return [];
+        },
+        countByDateRange: () => 42,
+      }),
+      makeMockCategoriesRepo(),
+    );
+    const result = service.list('month', 2026, 4, 10, 20);
+    assert.deepEqual(pageCapture, { limit: 10, offset: 20 });
+    assert.equal(result.total, 42);
   });
 });

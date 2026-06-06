@@ -40,7 +40,7 @@ describe('LedgerRepository (integration)', () => {
   it('create inserts and returns a full entry with category', () => {
     const dto: CreateLedgerEntryDto = {
       type: 'expense',
-      amount: 150.5,
+      amount: 15050, // 150.50 in integer minor units (cents)
       currency: 'UAH',
       categoryId,
       description: 'supermarket run',
@@ -48,7 +48,7 @@ describe('LedgerRepository (integration)', () => {
     };
     const entry = repo.create(dto);
     assert.equal(entry.type, 'expense');
-    assert.equal(entry.amount, 150.5);
+    assert.equal(entry.amount, 15050);
     assert.equal(entry.currency, 'UAH');
     assert.equal(entry.category.id, categoryId);
     assert.equal(entry.description, 'supermarket run');
@@ -71,6 +71,20 @@ describe('LedgerRepository (integration)', () => {
 
     const mayEntries = repo.findByDateRange('2026-05-01', '2026-05-31');
     assert.ok(mayEntries.some((e) => e.date === '2026-05-15'));
+  });
+
+  it('findByDateRange applies limit/offset while countByDateRange ignores them', () => {
+    const all = repo.findByDateRange('2026-06-01', '2026-06-30');
+    const total = repo.countByDateRange('2026-06-01', '2026-06-30');
+    assert.equal(total, all.length);
+
+    const firstPage = repo.findByDateRange('2026-06-01', '2026-06-30', { limit: 1 });
+    assert.equal(firstPage.length, Math.min(1, all.length));
+
+    const secondPage = repo.findByDateRange('2026-06-01', '2026-06-30', { limit: 1, offset: 1 });
+    if (all.length > 1) {
+      assert.notEqual(secondPage[0].id, firstPage[0].id);
+    }
   });
 
   it('update modifies only provided fields and bumps updatedAt', async () => {
@@ -244,6 +258,49 @@ describe('Ledger routes (HTTP integration)', () => {
     assert.equal(body.endDate, '2026-04-30');
     assert.ok(body.records.some((e) => e.id === inApril.id));
     assert.ok(body.records.every((e) => e.date >= '2026-04-01' && e.date <= '2026-04-30'));
+  });
+
+  it('POST / returns 400 for an impossible calendar date', async () => {
+    const res = await request(app).post('/api/ledger').send({
+      type: 'expense',
+      amount: 100,
+      currency: 'UAH',
+      categoryId: validCategoryId,
+      date: '2026-02-30',
+    });
+    assert.equal(res.status, 400);
+  });
+
+  it('GET /?period=year&year=2023 scopes to that year without requiring month', async () => {
+    const in2023 = (
+      await request(app).post('/api/ledger').send({
+        type: 'income',
+        amount: 7777,
+        currency: 'UAH',
+        categoryId: validCategoryId,
+        date: '2023-08-08',
+      })
+    ).body as LedgerEntry;
+
+    const res = await request(app).get('/api/ledger?period=year&year=2023');
+    assert.equal(res.status, 200);
+    const body = res.body as { records: LedgerEntry[]; startDate: string; endDate: string };
+    assert.equal(body.startDate, '2023-01-01');
+    assert.equal(body.endDate, '2023-12-31');
+    assert.ok(body.records.some((e) => e.id === in2023.id));
+  });
+
+  it('GET / paginates with limit/offset and reports the unpaged total', async () => {
+    const res = await request(app).get('/api/ledger?period=year&year=2023&limit=1&offset=0');
+    assert.equal(res.status, 200);
+    const body = res.body as { records: LedgerEntry[]; total: number };
+    assert.equal(body.records.length, 1);
+    assert.ok(body.total >= 1);
+  });
+
+  it('GET / rejects offset without limit (would otherwise be silently ignored)', async () => {
+    const res = await request(app).get('/api/ledger?period=year&year=2023&offset=5');
+    assert.equal(res.status, 400);
   });
 
   it('PUT /:id updates the entry', async () => {

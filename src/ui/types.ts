@@ -31,6 +31,7 @@ export interface CreateCategoryDto {
 export interface LedgerEntry {
   id: number;
   type: LedgerEntryType;
+  /** Integer minor units (cents). */
   amount: number;
   currency: Currency;
   category: Category;
@@ -42,6 +43,7 @@ export interface LedgerEntry {
 
 export interface CreateLedgerEntryDto {
   type: LedgerEntryType;
+  /** Integer minor units (cents). */
   amount: number;
   currency: Currency;
   categoryId: number;
@@ -56,6 +58,8 @@ export interface LedgerListResult {
   period: Period;
   startDate: string;
   endDate: string;
+  /** Total entries in the range, ignoring limit/offset. */
+  total: number;
 }
 
 export const LEDGER_TYPES: LedgerEntryType[] = ['income', 'expense'];

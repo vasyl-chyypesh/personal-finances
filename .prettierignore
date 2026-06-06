@@ -1,0 +1,3 @@
+# Agent tooling and docs — hand-tuned, not subject to the app's formatter.
+# (Prettier also mangles escaped backticks in the skill markdown.)
+.claude/

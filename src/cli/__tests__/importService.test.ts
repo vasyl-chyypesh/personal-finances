@@ -124,6 +124,21 @@ describe('ImportService', () => {
     assert.equal(ledger.inserts[1].description, undefined);
   });
 
+  it('stores amounts as integer minor units (cents), rounding sub-cent values', () => {
+    const cats = makeCategoriesRepo();
+    const ledger = makeLedgerRepo();
+    new ImportService(fakeDb, ledger.repo, cats.repo).import(sheet);
+
+    assert.deepEqual(
+      ledger.inserts.map((dto) => dto.amount),
+      [80000, 10000, 26732570], // 800, 100, 267325.695 -> *100, rounded
+    );
+    assert.ok(
+      ledger.inserts.every((dto) => Number.isInteger(dto.amount)),
+      'every stored amount is an integer',
+    );
+  });
+
   it('returns an accurate summary', () => {
     const cats = makeCategoriesRepo();
     const ledger = makeLedgerRepo();

@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "sqlite": {
+      "command": "npx",
+      "args": ["-y", "mcp-server-sqlite-npx", "test.db"]
+    },
+    "sqlite-prod": {
+      "command": "npx",
+      "args": ["-y", "mcp-server-sqlite-npx", "finance.db"]
+    }
+  }
+}

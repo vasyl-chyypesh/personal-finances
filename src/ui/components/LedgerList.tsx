@@ -1,6 +1,7 @@
 import type { LedgerEntry } from '../types.ts';
 import { useI18n } from '../i18n/i18nContext.ts';
 import { categoryName } from '../i18n/categoryName.ts';
+import { centsToMajor } from '../lib/money.ts';
 
 interface LedgerListProps {
   entries: LedgerEntry[];
@@ -11,7 +12,7 @@ interface LedgerListProps {
 
 function formatAmount(entry: LedgerEntry): string {
   const sign = entry.type === 'expense' ? '−' : '+';
-  return `${sign}${entry.amount.toLocaleString()} ${entry.currency}`;
+  return `${sign}${centsToMajor(entry.amount).toLocaleString()} ${entry.currency}`;
 }
 
 export function LedgerList({ entries, loading, onEdit, onDelete }: LedgerListProps) {

@@ -7,6 +7,7 @@ export type Period = 'week' | 'month' | 'year';
 export interface LedgerEntry {
   id: number;
   type: LedgerEntryType;
+  /** Integer minor units (cents). */
   amount: number;
   currency: Currency;
   category: Category;
@@ -18,6 +19,7 @@ export interface LedgerEntry {
 
 export interface CreateLedgerEntryDto {
   type: LedgerEntryType;
+  /** Integer minor units (cents). */
   amount: number;
   currency: Currency;
   categoryId: number;

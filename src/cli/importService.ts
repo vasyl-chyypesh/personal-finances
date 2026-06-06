@@ -59,7 +59,8 @@ export class ImportService {
       for (const row of rows) {
         this.ledgerRepo.create({
           type: row.type,
-          amount: row.amount,
+          // xls cells are decimal major units; store as integer minor units (cents).
+          amount: Math.round(row.amount * 100),
           currency: IMPORT_CURRENCY,
           categoryId: resolveCategoryId(row.category),
           description: row.description ?? undefined,

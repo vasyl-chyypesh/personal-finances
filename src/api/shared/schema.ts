@@ -15,7 +15,7 @@ export function initSchema(db: Database.Database): void {
     CREATE TABLE IF NOT EXISTS ledger_entries (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
       type        TEXT    NOT NULL CHECK(type IN ('income', 'expense')),
-      amount      REAL    NOT NULL CHECK(amount > 0),
+      amount      INTEGER NOT NULL CHECK(amount > 0),
       currency    TEXT    NOT NULL CHECK(currency IN ('UAH', 'USD', 'EUR')),
       category_id INTEGER NOT NULL REFERENCES categories(id),
       description TEXT,

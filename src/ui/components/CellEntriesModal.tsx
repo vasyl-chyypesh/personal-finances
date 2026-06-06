@@ -3,6 +3,7 @@ import type { Category, CreateLedgerEntryDto, LedgerEntry, LedgerEntryType } fro
 import { LedgerForm } from './LedgerForm.tsx';
 import { categoryName } from '../i18n/categoryName.ts';
 import { useI18n } from '../i18n/i18nContext.ts';
+import { centsToMajor } from '../lib/money.ts';
 
 export interface CellDescriptor {
   type: LedgerEntryType;
@@ -80,7 +81,7 @@ export function CellEntriesModal({
             {entries.map((entry) => (
               <li key={entry.id} className="flex items-center justify-between gap-3 px-3 py-2">
                 <span className="text-sm tabular-nums text-slate-800">
-                  {entry.amount.toLocaleString(locale)} {entry.currency}
+                  {centsToMajor(entry.amount).toLocaleString(locale)} {entry.currency}
                 </span>
                 <span className="flex-1 truncate text-sm text-slate-500">
                   {entry.description ?? '—'}

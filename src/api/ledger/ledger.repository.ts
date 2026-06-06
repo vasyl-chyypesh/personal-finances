@@ -54,10 +54,16 @@ const SELECT_WITH_CATEGORY = `
   JOIN categories c ON c.id = le.category_id
 `;
 
+export interface PageOptions {
+  limit?: number;
+  offset?: number;
+}
+
 export interface ILedgerRepository {
   create(dto: CreateLedgerEntryDto): LedgerEntry;
   findById(id: number): LedgerEntry | undefined;
-  findByDateRange(startDate: string, endDate: string): LedgerEntry[];
+  findByDateRange(startDate: string, endDate: string, opts?: PageOptions): LedgerEntry[];
+  countByDateRange(startDate: string, endDate: string): number;
   update(id: number, dto: UpdateLedgerEntryDto): LedgerEntry;
   deleteById(id: number): boolean;
   deleteByDateRange(startDate: string, endDate: string): number;
@@ -94,13 +100,22 @@ export class LedgerRepository implements ILedgerRepository {
     return row ? mapRow(row) : undefined;
   }
 
-  findByDateRange(startDate: string, endDate: string): LedgerEntry[] {
-    const rows = this.db
-      .prepare(
-        `${SELECT_WITH_CATEGORY} WHERE le.date >= ? AND le.date <= ? ORDER BY le.date DESC, le.id DESC`,
-      )
-      .all(startDate, endDate) as LedgerRow[];
+  findByDateRange(startDate: string, endDate: string, opts: PageOptions = {}): LedgerEntry[] {
+    let sql = `${SELECT_WITH_CATEGORY} WHERE le.date >= ? AND le.date <= ? ORDER BY le.date DESC, le.id DESC`;
+    const params: (string | number)[] = [startDate, endDate];
+    if (opts.limit !== undefined) {
+      sql += ' LIMIT ? OFFSET ?';
+      params.push(opts.limit, opts.offset ?? 0);
+    }
+    const rows = this.db.prepare(sql).all(...params) as LedgerRow[];
     return rows.map(mapRow);
+  }
+
+  countByDateRange(startDate: string, endDate: string): number {
+    const { n } = this.db
+      .prepare('SELECT COUNT(*) AS n FROM ledger_entries WHERE date >= ? AND date <= ?')
+      .get(startDate, endDate) as { n: number };
+    return n;
   }
 
   update(id: number, dto: UpdateLedgerEntryDto): LedgerEntry {
