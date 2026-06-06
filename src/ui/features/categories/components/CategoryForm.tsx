@@ -5,6 +5,7 @@ import { Field } from '../../../components/ui/Field.tsx';
 import { Input } from '../../../components/ui/Input.tsx';
 import { Button } from '../../../components/ui/Button.tsx';
 import { Alert } from '../../../components/ui/Alert.tsx';
+import { Spinner } from '../../../components/ui/Spinner.tsx';
 
 export interface CategoryFormProps {
   editing: Category | null;
@@ -73,9 +74,9 @@ export function CategoryForm({ editing, onCreate, onUpdate, onCancelEdit }: Cate
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+      className="rounded-lg border border-line bg-surface p-5 shadow-sm"
     >
-      <h2 className="mb-4 text-lg font-semibold text-slate-800">
+      <h2 className="mb-4 text-lg font-semibold text-fg">
         {editing ? t('categories.editTitle', { slug: editing.slug }) : t('categories.addTitle')}
       </h2>
 
@@ -90,7 +91,7 @@ export function CategoryForm({ editing, onCreate, onUpdate, onCancelEdit }: Cate
       </div>
 
       {editing ? (
-        <p className="mt-3 text-xs text-slate-500">
+        <p className="mt-3 text-xs text-fg-muted">
           {t('categories.slug')}: <span className="font-mono">{editing.slug}</span>
         </p>
       ) : null}
@@ -103,6 +104,7 @@ export function CategoryForm({ editing, onCreate, onUpdate, onCancelEdit }: Cate
 
       <div className="mt-4 flex gap-2">
         <Button type="submit" disabled={submitting}>
+          {submitting ? <Spinner /> : null}
           {editing ? t('categories.submitSave') : t('categories.submitAdd')}
         </Button>
         {editing ? (

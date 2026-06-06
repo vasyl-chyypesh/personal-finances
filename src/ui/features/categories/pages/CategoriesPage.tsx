@@ -35,11 +35,12 @@ export function CategoriesPage() {
       </div>
 
       <div className="mb-4 flex items-center justify-end">
-        <label className="flex items-center gap-2 text-sm text-slate-600">
+        <label className="flex items-center gap-2 text-sm text-fg-muted">
           <input
             type="checkbox"
             checked={showDeleted}
             onChange={(e) => setShowDeleted(e.target.checked)}
+            className="accent-primary-600"
           />
           {t('categories.showDeleted')}
         </label>

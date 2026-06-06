@@ -13,7 +13,7 @@ export interface FieldProps {
 export function Field({ htmlFor, label, children }: FieldProps) {
   return (
     <div>
-      <label htmlFor={htmlFor} className="mb-1 block text-xs font-medium text-slate-600">
+      <label htmlFor={htmlFor} className="mb-1 block text-xs font-medium text-fg-muted">
         {label}
       </label>
       {children}

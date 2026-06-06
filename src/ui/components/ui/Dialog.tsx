@@ -63,7 +63,7 @@ export function Dialog({ title, closeLabel, onClose, children }: DialogProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/40 p-4"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/50 p-4 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
@@ -71,18 +71,18 @@ export function Dialog({ title, closeLabel, onClose, children }: DialogProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="mt-10 w-full max-w-lg rounded-xl bg-white p-5 shadow-xl"
+        className="mt-10 w-full max-w-lg rounded-lg border border-line bg-surface p-5 text-fg shadow-xl"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="mb-4 flex items-start justify-between gap-4">
-          <h2 id={titleId} className="text-lg font-semibold text-slate-800">
+          <h2 id={titleId} className="text-lg font-semibold text-fg">
             {title}
           </h2>
           <button
             type="button"
             onClick={onClose}
             aria-label={closeLabel}
-            className="rounded-md px-2 py-1 text-sm text-slate-500 hover:bg-slate-100"
+            className="rounded-md px-2 py-1 text-sm text-fg-subtle transition-colors duration-150 hover:bg-surface-muted hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
           >
             {closeLabel}
           </button>

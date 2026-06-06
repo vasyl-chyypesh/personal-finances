@@ -50,15 +50,15 @@ export function CellEntriesModal({
       onClose={onClose}
     >
       {entries.length === 0 ? (
-        <p className="mb-4 text-sm text-slate-500">{t('cell.none')}</p>
+        <p className="mb-4 text-sm text-fg-muted">{t('cell.none')}</p>
       ) : (
-        <ul className="mb-4 divide-y divide-slate-100 rounded-lg border border-slate-200">
+        <ul className="mb-4 divide-y divide-line rounded-md border border-line">
           {entries.map((entry) => (
             <li key={entry.id} className="flex items-center justify-between gap-3 px-3 py-2">
-              <span className="text-sm tabular-nums text-slate-800">
+              <span className="text-sm tabular-nums text-fg">
                 {centsToMajor(entry.amount).toLocaleString(locale)} {entry.currency}
               </span>
-              <span className="flex-1 truncate text-sm text-slate-500">
+              <span className="flex-1 truncate text-sm text-fg-muted">
                 {entry.description ?? '—'}
               </span>
               <span className="flex gap-2 whitespace-nowrap text-sm">

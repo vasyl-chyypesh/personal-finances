@@ -10,11 +10,11 @@ export function CurrencySelector({ value, onChange }: CurrencySelectorProps) {
   const { t } = useI18n();
   return (
     <label className="inline-flex items-center gap-2">
-      <span className="text-xs font-medium text-slate-500">{t('table.currency')}</span>
+      <span className="text-xs font-medium text-fg-muted">{t('table.currency')}</span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value as Currency)}
-        className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
+        className="rounded-md border border-line-strong bg-surface px-2.5 py-1.5 text-sm text-fg shadow-sm transition-colors duration-150 [color-scheme:light] focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:[color-scheme:dark]"
       >
         {CURRENCIES.map((c) => (
           <option key={c} value={c}>

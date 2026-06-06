@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Category } from '../../../types.ts';
 import { useI18n } from '../../../i18n/i18nContext.ts';
 import { EmptyState } from '../../../components/ui/EmptyState.tsx';
+import { TableSkeleton } from '../../../components/ui/Skeleton.tsx';
 import { TextButton } from '../../../components/ui/TextButton.tsx';
 
 export interface CategoryListProps {
@@ -13,6 +14,9 @@ export interface CategoryListProps {
   onRestore: (id: number) => void;
   onReorder: (ids: number[]) => void;
 }
+
+const moveButtonClass =
+  'rounded-sm px-1 text-fg-subtle transition-colors duration-150 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-30';
 
 export function CategoryList({
   categories,
@@ -27,38 +31,46 @@ export function CategoryList({
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
   if (loading) {
-    return <EmptyState message={t('categories.loading')} />;
+    return <TableSkeleton rows={4} />;
   }
 
   if (categories.length === 0) {
     return <EmptyState message={t('categories.empty')} />;
   }
 
-  function handleDrop(targetIndex: number) {
-    if (dragIndex === null || dragIndex === targetIndex) {
-      setDragIndex(null);
+  function reorderTo(from: number, to: number) {
+    if (to < 0 || to >= categories.length || from === to) {
       return;
     }
     const next = [...categories];
-    const [moved] = next.splice(dragIndex, 1);
-    next.splice(targetIndex, 0, moved);
-    setDragIndex(null);
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
     onReorder(next.map((c) => c.id));
   }
 
+  function handleDrop(targetIndex: number) {
+    if (dragIndex === null) {
+      return;
+    }
+    reorderTo(dragIndex, targetIndex);
+    setDragIndex(null);
+  }
+
+  // BEFORE: drag-and-drop only (mouse-only, no keyboard path)
+  // AFTER: token-driven table + keyboard move up/down buttons alongside drag
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+    <div className="overflow-x-auto rounded-lg border border-line bg-surface shadow-sm">
       <table className="w-full text-left text-sm">
-        <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+        <thead className="border-b border-line bg-surface-muted text-xs uppercase text-fg-subtle">
           <tr>
-            {reorderable ? <th className="w-8 px-2 py-3" aria-hidden="true" /> : null}
+            {reorderable ? <th className="w-16 px-2 py-3" aria-hidden="true" /> : null}
             <th className="px-4 py-3 font-medium">{t('categories.nameEn')}</th>
             <th className="px-4 py-3 font-medium">{t('categories.nameUk')}</th>
             <th className="px-4 py-3 font-medium">{t('categories.slug')}</th>
             <th className="px-4 py-3 text-right font-medium">{t('categories.actions')}</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-line">
           {categories.map((category, index) => {
             const deleted = Boolean(category.deletedAt);
             return (
@@ -68,22 +80,46 @@ export function CategoryList({
                 onDragStart={reorderable ? () => setDragIndex(index) : undefined}
                 onDragOver={reorderable ? (e) => e.preventDefault() : undefined}
                 onDrop={reorderable ? () => handleDrop(index) : undefined}
-                className={`${deleted ? 'bg-slate-50 text-slate-400' : 'hover:bg-slate-50'} ${
-                  dragIndex === index ? 'opacity-50' : ''
-                }`}
+                className={`transition-colors duration-150 ${
+                  deleted ? 'bg-surface-muted text-fg-subtle' : 'hover:bg-surface-muted'
+                } ${dragIndex === index ? 'opacity-50' : ''}`}
               >
                 {reorderable ? (
-                  <td
-                    className="cursor-move select-none px-2 py-3 text-center text-slate-400"
-                    aria-label={t('categories.dragHandle')}
-                    title={t('categories.dragHint')}
-                  >
-                    ⠿
+                  <td className="px-2 py-3">
+                    <div className="flex items-center gap-1">
+                      <span
+                        className="cursor-move select-none text-fg-subtle"
+                        aria-hidden="true"
+                        title={t('categories.dragHint')}
+                      >
+                        ⠿
+                      </span>
+                      <span className="flex flex-col leading-none">
+                        <button
+                          type="button"
+                          onClick={() => reorderTo(index, index - 1)}
+                          disabled={index === 0}
+                          aria-label={t('categories.moveUp')}
+                          className={moveButtonClass}
+                        >
+                          ▲
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => reorderTo(index, index + 1)}
+                          disabled={index === categories.length - 1}
+                          aria-label={t('categories.moveDown')}
+                          className={moveButtonClass}
+                        >
+                          ▼
+                        </button>
+                      </span>
+                    </div>
                   </td>
                 ) : null}
-                <td className="px-4 py-3">{category.names.en ?? '—'}</td>
-                <td className="px-4 py-3">{category.names.uk ?? '—'}</td>
-                <td className="px-4 py-3 font-mono text-xs text-slate-500">{category.slug}</td>
+                <td className="px-4 py-3 text-fg">{category.names.en ?? '—'}</td>
+                <td className="px-4 py-3 text-fg">{category.names.uk ?? '—'}</td>
+                <td className="px-4 py-3 font-mono text-xs text-fg-subtle">{category.slug}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-right">
                   {deleted ? (
                     <TextButton tone="success" onClick={() => onRestore(category.id)}>

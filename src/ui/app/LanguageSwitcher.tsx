@@ -13,7 +13,7 @@ export function LanguageSwitcher() {
 
   return (
     <div className="inline-flex items-center gap-2">
-      <span className="text-xs font-medium text-slate-500">{t('app.language')}</span>
+      <span className="text-xs font-medium text-fg-muted">{t('app.language')}</span>
       <SegmentedControl<Locale>
         options={options}
         value={locale}

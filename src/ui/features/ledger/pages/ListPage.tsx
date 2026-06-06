@@ -42,7 +42,7 @@ export function ListPage() {
       </div>
 
       <div className="mb-4 flex items-center justify-between">
-        <div className="text-sm text-slate-500">
+        <div className="text-sm text-fg-muted">
           {result ? (
             <span>
               {result.startDate} → {result.endDate}

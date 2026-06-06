@@ -10,7 +10,7 @@ export interface TextButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>
 function toneClass(tone: TextButtonTone): string {
   switch (tone) {
     case 'neutral':
-      return 'text-slate-600 hover:text-slate-900';
+      return 'text-fg-muted hover:text-fg';
     case 'danger':
       return 'text-error hover:text-error-strong';
     case 'success':
@@ -18,13 +18,11 @@ function toneClass(tone: TextButtonTone): string {
   }
 }
 
+// AFTER: token tones + focus-visible ring so keyboard users can see the target
+const BASE =
+  'rounded-sm text-sm transition-colors duration-150 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 focus-visible:ring-offset-surface';
+
 /** Inline, link-style button for compact row actions (edit / delete / restore). */
 export function TextButton({ tone = 'neutral', type = 'button', className = '', ...rest }: TextButtonProps) {
-  return (
-    <button
-      type={type}
-      className={`text-sm transition-colors hover:underline ${toneClass(tone)} ${className}`}
-      {...rest}
-    />
-  );
+  return <button type={type} className={`${BASE} ${toneClass(tone)} ${className}`} {...rest} />;
 }

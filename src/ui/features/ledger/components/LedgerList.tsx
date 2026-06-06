@@ -3,6 +3,7 @@ import { useI18n } from '../../../i18n/i18nContext.ts';
 import { categoryName } from '../../../i18n/categoryName.ts';
 import { centsToMajor } from '../../../lib/money.ts';
 import { EmptyState } from '../../../components/ui/EmptyState.tsx';
+import { TableSkeleton } from '../../../components/ui/Skeleton.tsx';
 import { TextButton } from '../../../components/ui/TextButton.tsx';
 
 export interface LedgerListProps {
@@ -20,8 +21,10 @@ function formatAmount(entry: LedgerEntry): string {
 export function LedgerList({ entries, loading, onEdit, onDelete }: LedgerListProps) {
   const { locale, t } = useI18n();
 
+  // BEFORE: plain "Loading…" text and a flat slate table
+  // AFTER: skeleton loader + token-driven, dark-aware surface table
   if (loading) {
-    return <EmptyState message={t('list.loading')} />;
+    return <TableSkeleton rows={5} />;
   }
 
   if (entries.length === 0) {
@@ -29,9 +32,9 @@ export function LedgerList({ entries, loading, onEdit, onDelete }: LedgerListPro
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+    <div className="overflow-x-auto rounded-lg border border-line bg-surface shadow-sm">
       <table className="w-full text-left text-sm">
-        <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+        <thead className="border-b border-line bg-surface-muted text-xs uppercase text-fg-subtle">
           <tr>
             <th className="px-4 py-3 font-medium">{t('list.date')}</th>
             <th className="px-4 py-3 font-medium">{t('list.category')}</th>
@@ -40,12 +43,12 @@ export function LedgerList({ entries, loading, onEdit, onDelete }: LedgerListPro
             <th className="px-4 py-3 text-right font-medium">{t('list.actions')}</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-line">
           {entries.map((entry) => (
-            <tr key={entry.id} className="hover:bg-slate-50">
-              <td className="whitespace-nowrap px-4 py-3 text-slate-600">{entry.date}</td>
-              <td className="px-4 py-3 text-slate-800">{categoryName(entry.category, locale)}</td>
-              <td className="px-4 py-3 text-slate-500">{entry.description ?? '—'}</td>
+            <tr key={entry.id} className="transition-colors duration-150 hover:bg-surface-muted">
+              <td className="whitespace-nowrap px-4 py-3 text-fg-muted">{entry.date}</td>
+              <td className="px-4 py-3 text-fg">{categoryName(entry.category, locale)}</td>
+              <td className="px-4 py-3 text-fg-muted">{entry.description ?? '—'}</td>
               <td
                 className={`whitespace-nowrap px-4 py-3 text-right font-medium ${
                   entry.type === 'expense' ? 'text-error' : 'text-success'

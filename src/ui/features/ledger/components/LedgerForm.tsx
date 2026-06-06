@@ -16,6 +16,7 @@ import { Input } from '../../../components/ui/Input.tsx';
 import { Select } from '../../../components/ui/Select.tsx';
 import { Button } from '../../../components/ui/Button.tsx';
 import { Alert } from '../../../components/ui/Alert.tsx';
+import { Spinner } from '../../../components/ui/Spinner.tsx';
 
 /** Prefilled values for the "add" form (ignored while editing). */
 export interface LedgerFormDefaults {
@@ -139,9 +140,9 @@ export function LedgerForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+      className="rounded-lg border border-line bg-surface p-5 shadow-sm"
     >
-      <h2 className="mb-4 text-lg font-semibold text-slate-800">
+      <h2 className="mb-4 text-lg font-semibold text-fg">
         {editing ? t('form.editTitle', { id: editing.id }) : t('form.addTitle')}
       </h2>
 
@@ -229,6 +230,7 @@ export function LedgerForm({
 
       <div className="mt-4 flex gap-2">
         <Button type="submit" disabled={submitting}>
+          {submitting ? <Spinner /> : null}
           {editing ? t('form.submitSave') : t('form.submitAdd')}
         </Button>
         {editing ? (

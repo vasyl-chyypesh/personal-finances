@@ -13,6 +13,14 @@ export const MESSAGES = {
     'error.body': 'The page hit an unexpected error. Try again.',
     'error.retry': 'Reload',
 
+    'theme.toLight': 'Switch to light mode',
+    'theme.toDark': 'Switch to dark mode',
+
+    'categories.moveUp': 'Move up',
+    'categories.moveDown': 'Move down',
+
+    'table.openCell': 'Open {category} on day {day}',
+
     'type.income': 'Income',
     'type.expense': 'Expense',
     'period.week': 'Week',
@@ -104,6 +112,14 @@ export const MESSAGES = {
     'error.title': 'Щось пішло не так',
     'error.body': 'Сторінка зіткнулася з неочікуваною помилкою. Спробуйте ще раз.',
     'error.retry': 'Перезавантажити',
+
+    'theme.toLight': 'Увімкнути світлу тему',
+    'theme.toDark': 'Увімкнути темну тему',
+
+    'categories.moveUp': 'Перемістити вгору',
+    'categories.moveDown': 'Перемістити вниз',
+
+    'table.openCell': 'Відкрити {category} за день {day}',
 
     'type.income': 'Дохід',
     'type.expense': 'Витрата',

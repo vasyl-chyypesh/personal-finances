@@ -14,9 +14,9 @@ interface ErrorBoundaryState {
 function ErrorFallback() {
   const { t } = useI18n();
   return (
-    <div className="mx-auto mt-16 max-w-md rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-      <h1 className="mb-2 text-lg font-semibold text-slate-800">{t('error.title')}</h1>
-      <p className="mb-5 text-sm text-slate-500">{t('error.body')}</p>
+    <div className="mx-auto mt-16 max-w-md rounded-lg border border-line bg-surface p-8 text-center shadow-sm">
+      <h1 className="mb-2 text-lg font-semibold text-fg">{t('error.title')}</h1>
+      <p className="mb-5 text-sm text-fg-muted">{t('error.body')}</p>
       <Button onClick={() => window.location.reload()}>{t('error.retry')}</Button>
     </div>
   );

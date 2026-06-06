@@ -11,6 +11,7 @@ import { useI18n } from '../../../i18n/i18nContext.ts';
 import { pivot } from '../lib/pivot.ts';
 import { Alert } from '../../../components/ui/Alert.tsx';
 import { EmptyState } from '../../../components/ui/EmptyState.tsx';
+import { TableSkeleton } from '../../../components/ui/Skeleton.tsx';
 import type { Category, Currency, LedgerEntryType } from '../../../types.ts';
 
 function pad(n: number): string {
@@ -72,14 +73,14 @@ export function TablePage() {
           />
           <CurrencySelector value={currency} onChange={setCurrency} />
         </div>
-        <h2 className="text-lg font-semibold capitalize text-slate-700">{monthLabel}</h2>
+        <h2 className="text-lg font-semibold capitalize text-fg">{monthLabel}</h2>
       </div>
 
       {ratesError ? <Alert className="mb-4">{t('table.ratesError')}</Alert> : null}
       {error ? <Alert className="mb-4">{error}</Alert> : null}
 
       {loading || !pivoted ? (
-        <EmptyState message={t('table.loading')} />
+        <TableSkeleton rows={6} />
       ) : records.length === 0 ? (
         <EmptyState message={t('table.empty')} />
       ) : (

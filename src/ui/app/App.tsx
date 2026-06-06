@@ -1,5 +1,6 @@
 import { NavLink, Navigate, Route, Routes } from 'react-router';
 import { LanguageSwitcher } from './LanguageSwitcher.tsx';
+import { ThemeSwitcher } from './ThemeSwitcher.tsx';
 import { ListPage } from '../features/ledger/pages/ListPage.tsx';
 import { TablePage } from '../features/ledger/pages/TablePage.tsx';
 import { CategoriesPage } from '../features/categories/pages/CategoriesPage.tsx';
@@ -12,14 +13,17 @@ export default function App() {
   const { t } = useI18n();
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900">
+    <div className="min-h-screen bg-canvas text-fg">
       <div className="mx-auto max-w-7xl px-4 py-8">
-        <header className="mb-6 flex items-start justify-between gap-4">
+        <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">{t('app.title')}</h1>
-            <p className="text-sm text-slate-500">{t('app.subtitle')}</p>
+            <h1 className="text-2xl font-bold tracking-tight text-fg">{t('app.title')}</h1>
+            <p className="text-sm text-fg-muted">{t('app.subtitle')}</p>
           </div>
-          <LanguageSwitcher />
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <ThemeSwitcher />
+          </div>
         </header>
 
         <nav className={`mb-6 ${segmentGroupClass}`}>
