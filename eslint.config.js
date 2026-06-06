@@ -17,7 +17,14 @@ const compat = new FlatCompat({
 
 export default [
   {
-    ignores: ['**/dist', '**/node_modules', 'eslint.config.js', 'vite.config.ts', '.husky/'],
+    ignores: [
+      '**/dist',
+      '**/node_modules',
+      'eslint.config.js',
+      'vite.config.ts',
+      '.husky/',
+      '.claude/',
+    ],
   },
   ...compat.extends(
     'eslint:recommended',
