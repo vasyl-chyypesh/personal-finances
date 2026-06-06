@@ -6,7 +6,7 @@ import { Input } from '../../../components/ui/Input.tsx';
 import { Button } from '../../../components/ui/Button.tsx';
 import { Alert } from '../../../components/ui/Alert.tsx';
 
-interface CategoryFormProps {
+export interface CategoryFormProps {
   editing: Category | null;
   onCreate: (dto: CreateCategoryDto) => Promise<void>;
   onUpdate: (id: number, names: LocalizedName) => Promise<void>;

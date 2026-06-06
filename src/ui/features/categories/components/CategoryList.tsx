@@ -4,7 +4,7 @@ import { useI18n } from '../../../i18n/i18nContext.ts';
 import { EmptyState } from '../../../components/ui/EmptyState.tsx';
 import { TextButton } from '../../../components/ui/TextButton.tsx';
 
-interface CategoryListProps {
+export interface CategoryListProps {
   categories: Category[];
   loading: boolean;
   reorderable: boolean;

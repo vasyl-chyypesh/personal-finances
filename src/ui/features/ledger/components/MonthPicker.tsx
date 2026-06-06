@@ -1,6 +1,6 @@
 import { useI18n } from '../../../i18n/i18nContext.ts';
 
-interface MonthPickerProps {
+export interface MonthPickerProps {
   year: number;
   month: number; // 1-12
   onChange: (year: number, month: number) => void;

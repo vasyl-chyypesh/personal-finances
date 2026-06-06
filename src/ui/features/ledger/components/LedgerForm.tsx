@@ -24,7 +24,7 @@ export interface LedgerFormDefaults {
   date?: string;
 }
 
-interface LedgerFormProps {
+export interface LedgerFormProps {
   categories: Category[];
   editing: LedgerEntry | null;
   onCreate: (dto: CreateLedgerEntryDto) => Promise<void>;

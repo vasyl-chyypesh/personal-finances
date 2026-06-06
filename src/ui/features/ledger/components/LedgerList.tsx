@@ -5,7 +5,7 @@ import { centsToMajor } from '../../../lib/money.ts';
 import { EmptyState } from '../../../components/ui/EmptyState.tsx';
 import { TextButton } from '../../../components/ui/TextButton.tsx';
 
-interface LedgerListProps {
+export interface LedgerListProps {
   entries: LedgerEntry[];
   loading: boolean;
   onEdit: (entry: LedgerEntry) => void;

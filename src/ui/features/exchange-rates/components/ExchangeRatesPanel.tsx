@@ -1,7 +1,7 @@
 import type { Currency, ExchangeRates } from '../../../types.ts';
 import { useI18n } from '../../../i18n/i18nContext.ts';
 
-interface ExchangeRatesPanelProps {
+export interface ExchangeRatesPanelProps {
   rates: ExchangeRates;
 }
 

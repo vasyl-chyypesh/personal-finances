@@ -13,7 +13,7 @@ export interface CellDescriptor {
   date: string;
 }
 
-interface CellEntriesModalProps {
+export interface CellEntriesModalProps {
   cell: CellDescriptor;
   entries: LedgerEntry[];
   categories: Category[];

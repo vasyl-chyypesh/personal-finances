@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { LOCALES, type Locale } from '../types.ts';
-import { MESSAGES } from './messages.ts';
+import { MESSAGES, type MessageKey } from './messages.ts';
 import { I18nContext, type I18nValue } from './i18nContext.ts';
 
 const STORAGE_KEY = 'locale';
@@ -24,7 +24,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const value = useMemo<I18nValue>(() => {
     // eslint-disable-next-line security/detect-object-injection -- locale is a typed union
     const dict = MESSAGES[locale];
-    const t = (key: string, vars?: Record<string, string | number>): string => {
+    const t = (key: MessageKey, vars?: Record<string, string | number>): string => {
       // eslint-disable-next-line security/detect-object-injection -- key indexes a static catalog
       const template = dict[key] ?? key;
       if (!vars) {

@@ -2,7 +2,7 @@ import { PERIODS, type Period } from '../../../types.ts';
 import { useI18n } from '../../../i18n/i18nContext.ts';
 import { SegmentedControl } from '../../../components/ui/SegmentedControl.tsx';
 
-interface PeriodFilterProps {
+export interface PeriodFilterProps {
   value: Period;
   onChange: (period: Period) => void;
 }

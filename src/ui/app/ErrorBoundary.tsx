@@ -2,7 +2,7 @@ import { Component, type ReactNode } from 'react';
 import { useI18n } from '../i18n/i18nContext.ts';
 import { Button } from '../components/ui/Button.tsx';
 
-interface ErrorBoundaryProps {
+export interface ErrorBoundaryProps {
   children: ReactNode;
 }
 

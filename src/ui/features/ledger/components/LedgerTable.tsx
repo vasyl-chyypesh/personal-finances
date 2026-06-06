@@ -4,13 +4,13 @@ import { categoryName } from '../../../i18n/categoryName.ts';
 import { useI18n } from '../../../i18n/i18nContext.ts';
 import { centsToMajor } from '../../../lib/money.ts';
 
-interface LedgerTableProps {
+export interface LedgerTableProps {
   pivot: PivotResult;
   currency: Currency;
   onCellClick: (type: LedgerEntryType, category: Category, day: number) => void;
 }
 
-interface SectionProps {
+export interface SectionProps {
   title: string;
   type: LedgerEntryType;
   section: PivotSection;
