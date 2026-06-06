@@ -11,6 +11,11 @@ export function PeriodFilter({ value, onChange }: PeriodFilterProps) {
   const { t } = useI18n();
   const options = PERIODS.map((period) => ({ value: period, label: t(`period.${period}`) }));
   return (
-    <SegmentedControl options={options} value={value} onChange={onChange} ariaLabel={t('nav.list')} />
+    <SegmentedControl
+      options={options}
+      value={value}
+      onChange={onChange}
+      ariaLabel={t('nav.list')}
+    />
   );
 }

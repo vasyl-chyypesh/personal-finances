@@ -23,6 +23,11 @@ const BASE =
   'rounded-sm text-sm transition-colors duration-150 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 focus-visible:ring-offset-surface';
 
 /** Inline, link-style button for compact row actions (edit / delete / restore). */
-export function TextButton({ tone = 'neutral', type = 'button', className = '', ...rest }: TextButtonProps) {
+export function TextButton({
+  tone = 'neutral',
+  type = 'button',
+  className = '',
+  ...rest
+}: TextButtonProps) {
   return <button type={type} className={`${BASE} ${toneClass(tone)} ${className}`} {...rest} />;
 }

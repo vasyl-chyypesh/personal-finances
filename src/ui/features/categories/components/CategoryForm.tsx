@@ -82,11 +82,21 @@ export function CategoryForm({ editing, onCreate, onUpdate, onCancelEdit }: Cate
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field htmlFor="name-en" label={t('categories.nameEn')}>
-          <Input id="name-en" type="text" value={form.en} onChange={(e) => set('en', e.target.value)} />
+          <Input
+            id="name-en"
+            type="text"
+            value={form.en}
+            onChange={(e) => set('en', e.target.value)}
+          />
         </Field>
 
         <Field htmlFor="name-uk" label={t('categories.nameUk')}>
-          <Input id="name-uk" type="text" value={form.uk} onChange={(e) => set('uk', e.target.value)} />
+          <Input
+            id="name-uk"
+            type="text"
+            value={form.uk}
+            onChange={(e) => set('uk', e.target.value)}
+          />
         </Field>
       </div>
 

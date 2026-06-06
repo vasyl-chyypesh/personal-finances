@@ -54,7 +54,12 @@ export function ListPage() {
 
       {error ? <Alert className="mb-4">{error}</Alert> : null}
 
-      <LedgerList entries={entries} loading={loading} onEdit={setEditing} onDelete={confirmDelete} />
+      <LedgerList
+        entries={entries}
+        loading={loading}
+        onEdit={setEditing}
+        onDelete={confirmDelete}
+      />
     </div>
   );
 }

@@ -1,4 +1,9 @@
-import type { Category, CreateLedgerEntryDto, LedgerEntry, LedgerEntryType } from '../../../types.ts';
+import type {
+  Category,
+  CreateLedgerEntryDto,
+  LedgerEntry,
+  LedgerEntryType,
+} from '../../../types.ts';
 import { LedgerForm } from './LedgerForm.tsx';
 import { categoryName } from '../../../i18n/categoryName.ts';
 import { useI18n } from '../../../i18n/i18nContext.ts';

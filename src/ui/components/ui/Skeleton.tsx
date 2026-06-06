@@ -5,7 +5,9 @@ export interface SkeletonProps {
 
 /** A single pulsing placeholder block for loading states. */
 export function Skeleton({ className = '' }: SkeletonProps) {
-  return <div aria-hidden="true" className={`animate-pulse rounded-md bg-surface-muted ${className}`} />;
+  return (
+    <div aria-hidden="true" className={`animate-pulse rounded-md bg-surface-muted ${className}`} />
+  );
 }
 
 export interface TableSkeletonProps {
@@ -22,7 +24,10 @@ export function TableSkeleton({ rows = 5 }: TableSkeletonProps) {
       className="overflow-hidden rounded-lg border border-line bg-surface shadow-sm"
     >
       {Array.from({ length: rows }, (_, i) => (
-        <div key={i} className="flex items-center gap-4 border-b border-line px-4 py-3 last:border-b-0">
+        <div
+          key={i}
+          className="flex items-center gap-4 border-b border-line px-4 py-3 last:border-b-0"
+        >
           <Skeleton className="h-4 w-20" />
           <Skeleton className="h-4 flex-1" />
           <Skeleton className="h-4 w-16" />

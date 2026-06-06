@@ -43,7 +43,8 @@ export function CategoryList({
     const preferred = document.getElementById(`cat-move-${pending.dir}-${pending.id}`);
     const otherDir = pending.dir === 'up' ? 'down' : 'up';
     const fallback = document.getElementById(`cat-move-${otherDir}-${pending.id}`);
-    const target = preferred instanceof HTMLButtonElement && !preferred.disabled ? preferred : fallback;
+    const target =
+      preferred instanceof HTMLButtonElement && !preferred.disabled ? preferred : fallback;
     if (target instanceof HTMLButtonElement) {
       target.focus();
     }
