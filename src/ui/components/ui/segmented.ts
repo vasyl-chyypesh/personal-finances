@@ -8,6 +8,6 @@ export const segmentGroupClass =
 export const segmentItemClass = (active: boolean, size: SegmentSize = 'md'): string => {
   const sizing =
     size === 'sm' ? 'px-2.5 py-1 text-xs font-semibold' : 'px-3 py-1.5 text-sm font-medium';
-  const state = active ? 'bg-slate-800 text-white' : 'text-slate-600 hover:bg-slate-100';
+  const state = active ? 'bg-primary-600 text-white' : 'text-slate-600 hover:bg-slate-100';
   return `rounded-md transition-colors ${sizing} ${state}`;
 };

@@ -13,7 +13,7 @@ export interface AlertProps {
 function toneClass(tone: AlertTone): string {
   switch (tone) {
     case 'error':
-      return 'bg-red-50 text-red-700';
+      return 'bg-error/10 text-error-strong';
   }
 }
 

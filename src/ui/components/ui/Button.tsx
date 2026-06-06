@@ -10,7 +10,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 function variantClass(variant: ButtonVariant): string {
   switch (variant) {
     case 'primary':
-      return 'bg-slate-800 text-white hover:bg-slate-700 disabled:opacity-50';
+      return 'bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50';
     case 'secondary':
       return 'border border-slate-300 text-slate-600 hover:bg-slate-100';
   }

@@ -48,7 +48,7 @@ export function LedgerList({ entries, loading, onEdit, onDelete }: LedgerListPro
               <td className="px-4 py-3 text-slate-500">{entry.description ?? '—'}</td>
               <td
                 className={`whitespace-nowrap px-4 py-3 text-right font-medium ${
-                  entry.type === 'expense' ? 'text-red-600' : 'text-green-600'
+                  entry.type === 'expense' ? 'text-error' : 'text-success'
                 }`}
               >
                 {formatAmount(entry)}

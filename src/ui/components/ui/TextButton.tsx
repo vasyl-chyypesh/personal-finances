@@ -12,9 +12,9 @@ function toneClass(tone: TextButtonTone): string {
     case 'neutral':
       return 'text-slate-600 hover:text-slate-900';
     case 'danger':
-      return 'text-red-600 hover:text-red-800';
+      return 'text-error hover:text-error-strong';
     case 'success':
-      return 'text-green-600 hover:text-green-800';
+      return 'text-success hover:text-success-strong';
   }
 }
 
