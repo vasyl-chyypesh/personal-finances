@@ -1,1 +1,74 @@
 @import 'tailwindcss';
+
+/* Class-based dark mode: toggled by `.dark` on <html> (see ThemeProvider). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Design tokens (Tailwind v4 @theme).
+ *
+ * The 4px-based spacing, typography, radius and shadow scales are Tailwind's
+ * defaults. This block adds the brand (teal) `primary` scale, semantic accents,
+ * and surface/foreground/line tokens that flip between light and dark. Components
+ * reference tokens (e.g. `bg-surface`, `text-fg-muted`, `bg-primary-600`)
+ * instead of raw palette values. `inline` lets tokens alias other variables.
+ */
+@theme inline {
+  /* Brand / primary — teal accent */
+  --color-primary-50: var(--color-teal-50);
+  --color-primary-100: var(--color-teal-100);
+  --color-primary-200: var(--color-teal-200);
+  --color-primary-300: var(--color-teal-300);
+  --color-primary-400: var(--color-teal-400);
+  --color-primary-500: var(--color-teal-500);
+  --color-primary-600: var(--color-teal-600);
+  --color-primary-700: var(--color-teal-700);
+  --color-primary-800: var(--color-teal-800);
+  --color-primary-900: var(--color-teal-900);
+  --color-primary-950: var(--color-teal-950);
+
+  /* Semantic accents */
+  --color-success: var(--color-green-600);
+  --color-success-strong: var(--color-green-700);
+  --color-warning: var(--color-amber-500);
+  --color-error: var(--color-red-600);
+  --color-error-strong: var(--color-red-700);
+  --color-info: var(--color-sky-600);
+
+  /* Surfaces & text — resolved from the light/dark variables below */
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+}
+
+:root {
+  --canvas: var(--color-slate-100);
+  --surface: #ffffff;
+  --surface-muted: var(--color-slate-50);
+  --fg: var(--color-slate-900);
+  --fg-muted: var(--color-slate-600);
+  --fg-subtle: var(--color-slate-500);
+  --line: var(--color-slate-200);
+  --line-strong: var(--color-slate-300);
+}
+
+.dark {
+  --canvas: var(--color-slate-950);
+  --surface: var(--color-slate-900);
+  --surface-muted: var(--color-slate-800);
+  --fg: var(--color-slate-100);
+  --fg-muted: var(--color-slate-300);
+  --fg-subtle: var(--color-slate-400);
+  --line: var(--color-slate-800);
+  --line-strong: var(--color-slate-700);
+}
+
+/* Smooth the light/dark transition without animating every paint. */
+body {
+  background-color: var(--color-canvas);
+  color: var(--color-fg);
+}

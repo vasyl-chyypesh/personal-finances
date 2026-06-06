@@ -1,13 +1,25 @@
 import type { Locale } from '../types.ts';
 
 // Flat key → string catalogs. Placeholders use {name} and are filled by `t`.
-export const MESSAGES: Record<Locale, Record<string, string>> = {
+export const MESSAGES = {
   en: {
     'app.title': 'Personal Finances',
     'app.subtitle': 'Track your income and expenses.',
     'app.deleteConfirm': 'Delete this entry?',
     'app.language': 'Language',
     'categories.loadError': 'Failed to load categories',
+
+    'error.title': 'Something went wrong',
+    'error.body': 'The page hit an unexpected error. Try again.',
+    'error.retry': 'Reload',
+
+    'theme.toLight': 'Switch to light mode',
+    'theme.toDark': 'Switch to dark mode',
+
+    'categories.moveUp': 'Move up',
+    'categories.moveDown': 'Move down',
+
+    'table.openCell': 'Open {category} on day {day}',
 
     'type.income': 'Income',
     'type.expense': 'Expense',
@@ -97,6 +109,18 @@ export const MESSAGES: Record<Locale, Record<string, string>> = {
     'app.language': 'Мова',
     'categories.loadError': 'Не вдалося завантажити категорії',
 
+    'error.title': 'Щось пішло не так',
+    'error.body': 'Сторінка зіткнулася з неочікуваною помилкою. Спробуйте ще раз.',
+    'error.retry': 'Перезавантажити',
+
+    'theme.toLight': 'Увімкнути світлу тему',
+    'theme.toDark': 'Увімкнути темну тему',
+
+    'categories.moveUp': 'Перемістити вгору',
+    'categories.moveDown': 'Перемістити вниз',
+
+    'table.openCell': 'Відкрити {category} за день {day}',
+
     'type.income': 'Дохід',
     'type.expense': 'Витрата',
     'period.week': 'Тиждень',
@@ -178,7 +202,10 @@ export const MESSAGES: Record<Locale, Record<string, string>> = {
     'cell.add': 'Додати до цієї комірки',
     'cell.close': 'Закрити',
   },
-};
+} satisfies Record<Locale, Record<string, string>>;
+
+/** Every valid `t()` key, derived from the English catalog. */
+export type MessageKey = keyof (typeof MESSAGES)['en'];
 
 export const LOCALE_LABELS: Record<Locale, string> = {
   en: 'EN',
