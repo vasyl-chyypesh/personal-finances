@@ -298,6 +298,11 @@ describe('Ledger routes (HTTP integration)', () => {
     assert.ok(body.total >= 1);
   });
 
+  it('GET / rejects offset without limit (would otherwise be silently ignored)', async () => {
+    const res = await request(app).get('/api/ledger?period=year&year=2023&offset=5');
+    assert.equal(res.status, 400);
+  });
+
   it('PUT /:id updates the entry', async () => {
     const created = (
       await request(app).post('/api/ledger').send({

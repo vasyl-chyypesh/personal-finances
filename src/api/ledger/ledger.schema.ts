@@ -17,10 +17,17 @@ export const UpdateSchema = CreateSchema.partial().refine((data) => Object.keys(
   message: 'At least one field required',
 });
 
-export const ListQuerySchema = z.object({
-  period: z.enum(['week', 'month', 'year']).default('month'),
-  year: z.coerce.number().int().min(1970).max(9999).optional(),
-  month: z.coerce.number().int().min(1).max(12).optional(),
-  limit: z.coerce.number().int().positive().max(500).optional(),
-  offset: z.coerce.number().int().min(0).optional(),
-});
+export const ListQuerySchema = z
+  .object({
+    period: z.enum(['week', 'month', 'year']).default('month'),
+    year: z.coerce.number().int().min(1970).max(9999).optional(),
+    month: z.coerce.number().int().min(1).max(12).optional(),
+    limit: z.coerce.number().int().positive().max(500).optional(),
+    offset: z.coerce.number().int().min(0).optional(),
+  })
+  // `offset` without `limit` would be silently ignored by the repository, so
+  // reject it rather than returning the full unpaged range.
+  .refine((q) => q.offset === undefined || q.limit !== undefined, {
+    message: 'limit is required when offset is provided',
+    path: ['limit'],
+  });
