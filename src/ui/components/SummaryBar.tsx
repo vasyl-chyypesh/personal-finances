@@ -67,15 +67,6 @@ export function SummaryBar({ records, base, rates, loading }: SummaryBarProps) {
 
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      <Card label={t('summary.balance')} hint={hint}>
-        <AmountDisplay
-          amount={balance}
-          currency={base}
-          type={balance < 0 ? 'expense' : 'neutral'}
-          size="lg"
-          showSign={false}
-        />
-      </Card>
       <Card label={t('summary.income')} hint={hint}>
         <AmountDisplay amount={income} currency={base} type="income" size="lg" showSign={false} />
       </Card>
@@ -84,6 +75,15 @@ export function SummaryBar({ records, base, rates, loading }: SummaryBarProps) {
           amount={expenses}
           currency={base}
           type="expense"
+          size="lg"
+          showSign={false}
+        />
+      </Card>
+      <Card label={t('summary.balance')} hint={hint}>
+        <AmountDisplay
+          amount={balance}
+          currency={base}
+          type={balance < 0 ? 'expense' : 'neutral'}
           size="lg"
           showSign={false}
         />
