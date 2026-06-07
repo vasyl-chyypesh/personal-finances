@@ -154,6 +154,14 @@ export const MESSAGES = {
     'ledger.emptyBody': 'Nothing recorded for this period. Add your first entry.',
     'ledger.sortBy': 'Sort by {column}',
     'ledger.editRow': 'Edit record',
+    'ledger.viewCalendar': 'Calendar',
+
+    'calendar.expenses': 'Expenses',
+    'calendar.income': 'Income',
+    'calendar.category': 'Expense item',
+    'calendar.source': 'Income source',
+    'calendar.total': 'TOTAL',
+    'calendar.percent': '%',
   },
   uk: {
     'app.title': 'Особисті фінанси',
@@ -307,6 +315,14 @@ export const MESSAGES = {
     'ledger.emptyBody': 'За цей період нічого не записано. Додайте перший запис.',
     'ledger.sortBy': 'Сортувати за {column}',
     'ledger.editRow': 'Редагувати запис',
+    'ledger.viewCalendar': 'Календар',
+
+    'calendar.expenses': 'Витрати',
+    'calendar.income': 'Доходи',
+    'calendar.category': 'Стаття витрат',
+    'calendar.source': 'Джерело доходу',
+    'calendar.total': 'РАЗОМ',
+    'calendar.percent': '%',
   },
 } satisfies Record<Locale, Record<string, string>>;
 

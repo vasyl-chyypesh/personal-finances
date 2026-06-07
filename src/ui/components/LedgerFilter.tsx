@@ -20,6 +20,9 @@ export interface LedgerFilterProps {
 
   typeFilter: TypeFilter;
   onTypeFilterChange: (t: TypeFilter) => void;
+
+  /** Hide the week/month toggle (calendar view is month-only). */
+  hideGranularity?: boolean;
 }
 
 const segBase =
@@ -159,6 +162,7 @@ export function LedgerFilter({
   onSelectedCategoriesChange,
   typeFilter,
   onTypeFilterChange,
+  hideGranularity,
 }: LedgerFilterProps) {
   return (
     <div className="flex flex-wrap items-center gap-3">
@@ -167,6 +171,7 @@ export function LedgerFilter({
         onPeriodChange={onPeriodChange}
         date={date}
         onDateChange={onDateChange}
+        hideGranularity={hideGranularity}
       />
       <div className="ml-auto flex flex-wrap items-center gap-3">
         <TypeToggle value={typeFilter} onChange={onTypeFilterChange} />

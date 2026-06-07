@@ -3,21 +3,51 @@ import { useI18n } from '../i18n/i18nContext.ts';
 import { useLedger, useLedgerRecord } from '../hooks/useLedger.ts';
 import { useCategories } from '../hooks/useCategories.ts';
 import { useCurrencies } from '../hooks/useCurrencies.ts';
-import { useLedgerFilters } from '../hooks/useLedgerFilters.ts';
+import { useLedgerFilters, type LedgerView } from '../hooks/useLedgerFilters.ts';
 import { isWithinPeriod, toISODate } from '../lib/datePeriod.ts';
 import { PageHeader } from '../components/PageHeader.tsx';
 import { SummaryBar } from '../components/SummaryBar.tsx';
 import { LedgerFilter } from '../components/LedgerFilter.tsx';
 import { LedgerListItem } from '../components/LedgerListItem.tsx';
 import { LedgerTable } from '../components/LedgerTable.tsx';
+import { LedgerCalendar } from '../components/LedgerCalendar.tsx';
+import { CellEntriesModal } from '../components/CellEntriesModal.tsx';
 import { RecordSidePanel } from '../components/RecordSidePanel.tsx';
 import { EmptyState } from '../components/EmptyState.tsx';
 import { SkeletonRow } from '../components/SkeletonRow.tsx';
 import { AlertIcon, InboxIcon, PlusIcon } from '../components/icons.tsx';
-import type { Currency, CreateLedgerEntryDto, LedgerEntry } from '../types.ts';
+import type {
+  Category,
+  CreateLedgerEntryDto,
+  Currency,
+  LedgerEntry,
+  LedgerEntryType,
+} from '../types.ts';
 
 const segBase =
   'px-3 py-1 text-xs font-medium transition-colors duration-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary';
+
+interface PanelState {
+  open: boolean;
+  id: number | null;
+  createDefaults?: { categoryId?: number; date?: string; type?: LedgerEntryType };
+}
+
+interface CellState {
+  open: boolean;
+  category: Category | null;
+  date: string | null;
+  type: LedgerEntryType;
+}
+
+const VIEWS: {
+  key: LedgerView;
+  labelKey: 'ledger.viewList' | 'ledger.viewTable' | 'ledger.viewCalendar';
+}[] = [
+  { key: 'list', labelKey: 'ledger.viewList' },
+  { key: 'table', labelKey: 'ledger.viewTable' },
+  { key: 'calendar', labelKey: 'ledger.viewCalendar' },
+];
 
 export function LedgerPage() {
   const { t } = useI18n();
@@ -36,9 +66,12 @@ export function LedgerPage() {
     setSort,
   } = useLedgerFilters();
 
-  const [panel, setPanel] = useState<{ open: boolean; id: number | null }>({
+  const [panel, setPanel] = useState<PanelState>({ open: false, id: null });
+  const [cell, setCell] = useState<CellState>({
     open: false,
-    id: null,
+    category: null,
+    date: null,
+    type: 'expense',
   });
   const [saving, setSaving] = useState(false);
 
@@ -47,19 +80,24 @@ export function LedgerPage() {
   const { base, rates } = useCurrencies();
   const baseCurrency: Currency = base ?? 'UAH';
 
-  // Resolve the panel's record from the loaded cache (no GET /:id endpoint).
+  // Calendar is inherently a month grid; force month scope when it is active.
+  const calendarMode = view === 'calendar';
+  const scopePeriod = calendarMode ? 'month' : period;
+
   const editing = useLedgerRecord(ledger.records, panel.id);
 
-  // Period (+ category) scope feeds the summary; the type toggle narrows only
-  // the visible rows so both income and expenses still show in the cards.
-  const periodScoped = useMemo(
+  // Category-only scope (calendar pivots the whole month from this).
+  const categoryScoped = useMemo(
     () =>
-      ledger.records.filter(
-        (r) =>
-          isWithinPeriod(r.date, period, anchor) &&
-          (categoryIds.length === 0 || categoryIds.includes(r.category.id)),
-      ),
-    [ledger.records, period, anchor, categoryIds],
+      ledger.records.filter((r) => categoryIds.length === 0 || categoryIds.includes(r.category.id)),
+    [ledger.records, categoryIds],
+  );
+
+  // Period scope feeds the summary; the type toggle narrows only the visible
+  // list/table rows so both income and expenses still show in the cards.
+  const periodScoped = useMemo(
+    () => categoryScoped.filter((r) => isWithinPeriod(r.date, scopePeriod, anchor)),
+    [categoryScoped, scopePeriod, anchor],
   );
 
   const visible = useMemo(
@@ -67,9 +105,37 @@ export function LedgerPage() {
     [periodScoped, typeFilter],
   );
 
+  const cellEntries = useMemo(() => {
+    if (!cell.open || !cell.category || !cell.date) return [];
+    const categoryId = cell.category.id;
+    return categoryScoped.filter(
+      (r) => r.category.id === categoryId && r.date === cell.date && r.type === cell.type,
+    );
+  }, [cell, categoryScoped]);
+
   const openCreate = () => setPanel({ open: true, id: null });
   const openEdit = (record: LedgerEntry) => setPanel({ open: true, id: record.id });
   const closePanel = () => setPanel((p) => ({ ...p, open: false }));
+
+  const handleCellClick = (type: LedgerEntryType, category: Category, day: number) => {
+    const date = `${anchor.getUTCFullYear()}-${String(anchor.getUTCMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    setCell({ open: true, category, date, type });
+  };
+
+  const handleCellEdit = (record: LedgerEntry) => {
+    setCell((c) => ({ ...c, open: false }));
+    openEdit(record);
+  };
+
+  const handleCellAdd = () => {
+    if (!cell.category || !cell.date) return;
+    setPanel({
+      open: true,
+      id: null,
+      createDefaults: { categoryId: cell.category.id, date: cell.date, type: cell.type },
+    });
+    setCell((c) => ({ ...c, open: false }));
+  };
 
   const handleSave = async (dto: CreateLedgerEntryDto, id?: number) => {
     setSaving(true);
@@ -113,7 +179,7 @@ export function LedgerPage() {
         />
 
         <LedgerFilter
-          period={period}
+          period={scopePeriod}
           onPeriodChange={setPeriod}
           date={anchor}
           onDateChange={setDate}
@@ -122,26 +188,27 @@ export function LedgerPage() {
           onSelectedCategoriesChange={setCategoryIds}
           typeFilter={typeFilter}
           onTypeFilterChange={setType}
+          hideGranularity={calendarMode}
         />
 
         <div className="rounded-lg border-hairline border-line bg-surface">
           <div className="flex items-center justify-end border-b-hairline border-line px-3 py-2">
             <div className="inline-flex overflow-hidden rounded-md border-hairline border-line">
-              {(['list', 'table'] as const).map((v) => {
-                const active = view === v;
+              {VIEWS.map((v) => {
+                const active = view === v.key;
                 return (
                   <button
-                    key={v}
+                    key={v.key}
                     type="button"
                     aria-pressed={active}
-                    onClick={() => setView(v)}
+                    onClick={() => setView(v.key)}
                     className={`${segBase} ${
                       active
                         ? 'bg-primary text-white'
                         : 'bg-surface text-fg-muted hover:bg-surface-muted hover:text-fg'
                     }`}
                   >
-                    {v === 'list' ? t('ledger.viewList') : t('ledger.viewTable')}
+                    {t(v.labelKey)}
                   </button>
                 );
               })}
@@ -163,6 +230,17 @@ export function LedgerPage() {
                     {t('error.retry')}
                   </button>
                 }
+              />
+            ) : view === 'calendar' ? (
+              <LedgerCalendar
+                records={categoryScoped}
+                year={anchor.getUTCFullYear()}
+                month={anchor.getUTCMonth() + 1}
+                base={baseCurrency}
+                rates={rates}
+                typeFilter={typeFilter}
+                loading={ledger.loading}
+                onCellClick={handleCellClick}
               />
             ) : view === 'table' ? (
               <LedgerTable
@@ -195,11 +273,22 @@ export function LedgerPage() {
         </div>
       </div>
 
+      <CellEntriesModal
+        open={cell.open}
+        category={cell.category}
+        date={cell.date}
+        entries={cellEntries}
+        onEdit={handleCellEdit}
+        onAdd={handleCellAdd}
+        onClose={() => setCell((c) => ({ ...c, open: false }))}
+      />
+
       <RecordSidePanel
         open={panel.open}
         record={editing}
         categories={categories}
         defaultDate={toISODate(anchor)}
+        createDefaults={panel.createDefaults}
         saving={saving}
         onSave={handleSave}
         onDelete={handleDelete}

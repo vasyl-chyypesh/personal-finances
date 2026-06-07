@@ -20,6 +20,8 @@ export interface RecordSidePanelProps {
   categories: Category[];
   /** ISO date prefilled in create mode. */
   defaultDate?: string;
+  /** Prefill for create mode (e.g. opened from a calendar cell). */
+  createDefaults?: { categoryId?: number; date?: string; type?: LedgerEntryType };
   saving?: boolean;
   onSave: (dto: CreateLedgerEntryDto, id?: number) => void | Promise<void>;
   onDelete?: (id: number) => void | Promise<void>;
@@ -35,7 +37,11 @@ interface FormState {
   description: string;
 }
 
-function seed(record: LedgerEntry | null, defaultDate: string): FormState {
+function seed(
+  record: LedgerEntry | null,
+  fallbackDate: string,
+  createDefaults?: RecordSidePanelProps['createDefaults'],
+): FormState {
   if (record) {
     return {
       type: record.type,
@@ -47,11 +53,11 @@ function seed(record: LedgerEntry | null, defaultDate: string): FormState {
     };
   }
   return {
-    type: 'expense',
+    type: createDefaults?.type ?? 'expense',
     amount: '',
     currency: 'UAH',
-    categoryId: '',
-    date: defaultDate,
+    categoryId: createDefaults?.categoryId != null ? String(createDefaults.categoryId) : '',
+    date: createDefaults?.date ?? fallbackDate,
     description: '',
   };
 }
@@ -65,6 +71,7 @@ export function RecordSidePanel({
   record,
   categories,
   defaultDate,
+  createDefaults,
   saving = false,
   onSave,
   onDelete,
@@ -74,7 +81,7 @@ export function RecordSidePanel({
   const titleId = useId();
   const today = defaultDate ?? new Date().toISOString().slice(0, 10);
 
-  const [form, setForm] = useState<FormState>(() => seed(record, today));
+  const [form, setForm] = useState<FormState>(() => seed(record, today, createDefaults));
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const firstFieldRef = useRef<HTMLButtonElement>(null);
@@ -82,7 +89,7 @@ export function RecordSidePanel({
   // Re-seed whenever the panel opens or targets a different record.
   useEffect(() => {
     if (open) {
-      setForm(seed(record, today));
+      setForm(seed(record, today, createDefaults));
       setError(null);
       setConfirming(false);
     }

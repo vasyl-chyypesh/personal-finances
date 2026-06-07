@@ -7,6 +7,8 @@ export interface PeriodPickerProps {
   onPeriodChange: (p: 'week' | 'month') => void;
   date: Date;
   onDateChange: (d: Date) => void;
+  /** Hide the week/month toggle (e.g. calendar view is month-only). */
+  hideGranularity?: boolean;
   className?: string;
 }
 
@@ -23,6 +25,7 @@ export function PeriodPicker({
   onPeriodChange,
   date,
   onDateChange,
+  hideGranularity = false,
   className = '',
 }: PeriodPickerProps) {
   const { t } = useI18n();
@@ -45,7 +48,7 @@ export function PeriodPicker({
       }}
     >
       <div
-        className="inline-flex overflow-hidden rounded-md border-hairline border-line"
+        className={`${hideGranularity ? 'hidden' : 'inline-flex'} overflow-hidden rounded-md border-hairline border-line`}
         role="tablist"
       >
         {(['week', 'month'] as const).map((p) => {

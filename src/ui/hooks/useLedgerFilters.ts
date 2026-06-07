@@ -4,7 +4,7 @@ import { parseISODate, toISODate } from '../lib/datePeriod.ts';
 import type { TypeFilter } from '../components/LedgerFilter.tsx';
 import type { LedgerSort, LedgerSortKey, SortDir } from '../components/LedgerTable.tsx';
 
-export type LedgerView = 'list' | 'table';
+export type LedgerView = 'list' | 'table' | 'calendar';
 
 export interface LedgerFiltersState {
   period: 'week' | 'month';
@@ -61,7 +61,8 @@ export function useLedgerFilters(): LedgerFiltersState {
   );
 
   const period = params.get('period') === 'week' ? 'week' : 'month';
-  const view = params.get('view') === 'table' ? 'table' : 'list';
+  const viewRaw = params.get('view');
+  const view: LedgerView = viewRaw === 'table' || viewRaw === 'calendar' ? viewRaw : 'list';
   const typeRaw = params.get('type');
   const type: TypeFilter = typeRaw === 'income' || typeRaw === 'expense' ? typeRaw : 'all';
 
