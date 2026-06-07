@@ -6,6 +6,10 @@
       "Bash(npm start)",
       "Bash(node --import tsx *)",
       "Bash(npx tsx *)"
+    ],
+    "deny": [
+      "mcp__sqlite-prod__write_query",
+      "mcp__sqlite-prod__create_table"
     ]
   }
 }
