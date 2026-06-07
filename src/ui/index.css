@@ -4,35 +4,83 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*
- * Design tokens (Tailwind v4 @theme).
+ * Design tokens (Tailwind v4 @theme) — mirror of src/ui/styles/tokens.ts.
  *
- * The 4px-based spacing, typography, radius and shadow scales are Tailwind's
- * defaults. This block adds the brand (teal) `primary` scale, semantic accents,
- * and surface/foreground/line tokens that flip between light and dark. Components
- * reference tokens (e.g. `bg-surface`, `text-fg-muted`, `bg-primary-600`)
- * instead of raw palette values. `inline` lets tokens alias other variables.
+ * Tailwind v4 is CSS-first: there is no tailwind.config.ts. Tokens declared
+ * here become utilities automatically per namespace:
+ *   color    -> bg- / text- / border- utilities
+ *   text     -> font-size utilities
+ *   font     -> font-family utilities
+ *   radius   -> rounded- utilities
+ *   ease     -> transition-timing utilities
+ *   spacing  -> p- / m- / gap- (multiples of 4px)
+ * z-index has no theme namespace — use z-10 (dropdown) / z-20 (sidepanel) /
+ * z-30 (tooltip), matching tokens.ts.
  */
-@theme inline {
-  /* Brand / primary — teal accent */
-  --color-primary-50: var(--color-teal-50);
-  --color-primary-100: var(--color-teal-100);
-  --color-primary-200: var(--color-teal-200);
-  --color-primary-300: var(--color-teal-300);
-  --color-primary-400: var(--color-teal-400);
-  --color-primary-500: var(--color-teal-500);
-  --color-primary-600: var(--color-teal-600);
-  --color-primary-700: var(--color-teal-700);
-  --color-primary-800: var(--color-teal-800);
-  --color-primary-900: var(--color-teal-900);
-  --color-primary-950: var(--color-teal-950);
+@theme {
+  /* Fonts */
+  --font-sans: 'DM Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
 
-  /* Semantic accents */
-  --color-success: var(--color-green-600);
-  --color-success-strong: var(--color-green-700);
-  --color-warning: var(--color-amber-500);
-  --color-error: var(--color-red-600);
-  --color-error-strong: var(--color-red-700);
-  --color-info: var(--color-sky-600);
+  /* Type scale (px) — weights restricted to 400/500 in components */
+  --text-2xs: 11px;
+  --text-2xs--line-height: 16px;
+  --text-xs: 12px;
+  --text-xs--line-height: 16px;
+  --text-sm: 13px;
+  --text-sm--line-height: 18px;
+  --text-base: 14px;
+  --text-base--line-height: 20px;
+  --text-md: 16px;
+  --text-md--line-height: 24px;
+  --text-lg: 18px;
+  --text-lg--line-height: 26px;
+  --text-xl: 22px;
+  --text-xl--line-height: 30px;
+
+  /* Spacing — 4px base (keeps Tailwind's numeric steps: p-1=4px … p-12=48px) */
+  --spacing: 4px;
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 9999px;
+
+  /* Transition easing */
+  --ease-fast: ease;
+  --ease-base: ease;
+  --ease-slow: ease;
+
+  /* Financial semantic colors */
+  --color-income-bg: #eaf3de;
+  --color-income-text: #3b6d11;
+  --color-income-strong: #639922;
+
+  --color-expense-bg: #fcebeb;
+  --color-expense-text: #a32d2d;
+  --color-expense-strong: #e24b4a;
+
+  --color-pending-bg: #faeeda;
+  --color-pending-text: #854f0b;
+  --color-pending-strong: #ef9f27;
+
+  --color-transfer-bg: #e6f1fb;
+  --color-transfer-text: #185fa5;
+  --color-transfer-strong: #378add;
+
+  /* Primary / accent */
+  --color-primary: #185fa5;
+  --color-primary-hover: #14528f;
+  --color-primary-active: #0f4576;
+  --color-primary-soft: #e6f1fb;
+  --color-accent: #3c3489;
+
+  /* Neutrals */
+  --color-neutral-50: #f1efe8;
+  --color-neutral-200: #b4b2a9;
+  --color-neutral-500: #888780;
+  --color-neutral-800: #444441;
 
   /* Surfaces & text — resolved from the light/dark variables below */
   --color-canvas: var(--canvas);
@@ -46,29 +94,61 @@
 }
 
 :root {
-  --canvas: var(--color-slate-100);
+  --canvas: #f1efe8;
   --surface: #ffffff;
-  --surface-muted: var(--color-slate-50);
-  --fg: var(--color-slate-900);
-  --fg-muted: var(--color-slate-600);
-  --fg-subtle: var(--color-slate-500);
-  --line: var(--color-slate-200);
-  --line-strong: var(--color-slate-300);
+  --surface-muted: #f7f6f1;
+  --fg: #444441;
+  --fg-muted: #6f6e68;
+  --fg-subtle: #888780;
+  --line: #e2e0d8;
+  --line-strong: #b4b2a9;
 }
 
 .dark {
-  --canvas: var(--color-slate-950);
-  --surface: var(--color-slate-900);
-  --surface-muted: var(--color-slate-800);
-  --fg: var(--color-slate-100);
-  --fg-muted: var(--color-slate-300);
-  --fg-subtle: var(--color-slate-400);
-  --line: var(--color-slate-800);
-  --line-strong: var(--color-slate-700);
+  --canvas: #1c1c1a;
+  --surface: #262623;
+  --surface-muted: #2f2f2b;
+  --fg: #f1efe8;
+  --fg-muted: #b4b2a9;
+  --fg-subtle: #888780;
+  --line: #3a3a36;
+  --line-strong: #4c4c47;
 }
 
-/* Smooth the light/dark transition without animating every paint. */
+/*
+ * 0.5px hairline borders — lighter than Tailwind's 1px default `border`.
+ * Pair with a border-color utility, e.g. `border-hairline border-line`.
+ */
+@utility border-hairline {
+  border-width: 0.5px;
+}
+@utility border-b-hairline {
+  border-bottom-width: 0.5px;
+}
+@utility border-t-hairline {
+  border-top-width: 0.5px;
+}
+@utility border-r-hairline {
+  border-right-width: 0.5px;
+}
+@utility border-l-hairline {
+  border-left-width: 0.5px;
+}
+
+html {
+  font-family: var(--font-sans);
+  /* DM Sans / DM Mono ship only 400 & 500; keep rendering honest. */
+  font-synthesis-weight: none;
+}
+
 body {
   background-color: var(--color-canvas);
   color: var(--color-fg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Monospaced amounts: tabular figures so digits align in columns. */
+.font-mono {
+  font-variant-numeric: tabular-nums;
 }
