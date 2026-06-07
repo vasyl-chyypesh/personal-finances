@@ -26,9 +26,19 @@ const totalFmt = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 2,
 });
 
-const numCell = 'min-w-12 px-1.5 py-1.5 text-right font-mono tabular-nums whitespace-nowrap';
-const firstCol =
-  'sticky left-0 z-10 w-40 min-w-40 max-w-40 truncate px-2 py-1.5 text-left bg-surface';
+// Column class constants — shared across head/body/foot so columns stay aligned.
+// Vertical lines: day cells get a thin right border; the category and total
+// columns are separated from the day grid by a stronger divider.
+const catCol =
+  'sticky left-0 z-10 w-40 min-w-40 max-w-40 truncate px-2 py-1.5 text-left border-r-hairline border-line-strong';
+const dayHeadCell =
+  'min-w-12 border-r-hairline border-line px-1.5 py-1.5 text-right font-medium tabular-nums';
+const dayCell =
+  'min-w-12 border-r-hairline border-line px-1.5 py-1.5 text-right font-mono tabular-nums whitespace-nowrap';
+const totalCol =
+  'min-w-20 border-l-hairline border-line-strong px-2 py-1.5 text-right font-mono font-medium tabular-nums whitespace-nowrap';
+const pctCol =
+  'min-w-14 border-l-hairline border-line px-2 py-1.5 text-right font-mono tabular-nums';
 
 function SectionTable({
   section,
@@ -42,6 +52,7 @@ function SectionTable({
   const { t, locale } = useI18n();
   const dayList = Array.from({ length: days }, (_, i) => i + 1);
   const isExpense = section.type === 'expense';
+  // Section tint used for the header/footer bands and the Total column body.
   const tint = isExpense ? 'bg-expense-bg text-expense-text' : 'bg-income-bg text-income-text';
   const colLabel = isExpense ? t('calendar.category') : t('calendar.source');
 
@@ -50,30 +61,30 @@ function SectionTable({
       <table className="border-collapse text-xs">
         <thead>
           <tr className={tint}>
-            <th className={`${firstCol} z-20 ${tint} font-medium`}>{colLabel}</th>
+            <th className={`${catCol} z-20 ${tint} font-medium`}>{colLabel}</th>
             {dayList.map((d) => (
-              <th key={d} className="min-w-12 px-1.5 py-1.5 text-right font-medium tabular-nums">
+              <th key={d} className={dayHeadCell}>
                 {d}
               </th>
             ))}
-            <th className="min-w-20 px-2 py-1.5 text-right font-medium">{t('calendar.total')}</th>
-            <th className="min-w-14 px-2 py-1.5 text-right font-medium">{t('calendar.percent')}</th>
+            <th className={`${totalCol} font-medium`}>{t('calendar.total')}</th>
+            <th className={`${pctCol} font-medium`}>{t('calendar.percent')}</th>
           </tr>
         </thead>
         <tbody>
           {section.rows.map((row) => (
-            <tr
-              key={row.category.id}
-              className="border-b-hairline border-line hover:bg-surface-muted"
-            >
-              <th scope="row" className={`${firstCol} text-base font-normal text-fg`}>
+            <tr key={row.category.id} className="border-b-hairline border-line">
+              <th
+                scope="row"
+                className={`${catCol} bg-surface-muted text-base font-normal text-fg`}
+              >
                 {categoryName(row.category, locale)}
               </th>
               {row.cells.map((value, i) => {
                 // eslint-disable-next-line security/detect-object-injection -- i is the bounded map index
                 const note = row.notes[i];
                 return (
-                  <td key={i} className={numCell}>
+                  <td key={i} className={dayCell}>
                     {value ? (
                       <button
                         type="button"
@@ -92,10 +103,8 @@ function SectionTable({
                   </td>
                 );
               })}
-              <td className={`${numCell} font-medium text-fg`}>
-                {totalFmt.format(centsToMajor(row.total))}
-              </td>
-              <td className="min-w-14 px-2 py-1.5 text-right font-mono text-fg-muted tabular-nums">
+              <td className={`${totalCol} ${tint}`}>{totalFmt.format(centsToMajor(row.total))}</td>
+              <td className={`${pctCol} bg-pending-bg text-fg`}>
                 {section.total > 0 ? ((row.total / section.total) * 100).toFixed(2) : '0.00'}
               </td>
             </tr>
@@ -103,16 +112,16 @@ function SectionTable({
         </tbody>
         <tfoot>
           <tr className={`${tint} font-medium`}>
-            <th scope="row" className={`${firstCol} z-20 ${tint}`}>
+            <th scope="row" className={`${catCol} z-20 ${tint}`}>
               {t('calendar.total')}
             </th>
             {section.dayTotals.map((value, i) => (
-              <td key={i} className={numCell}>
+              <td key={i} className={dayCell}>
                 {value ? cellFmt.format(centsToMajor(value)) : ''}
               </td>
             ))}
-            <td className={numCell}>{totalFmt.format(centsToMajor(section.total))}</td>
-            <td className="min-w-14 px-2 py-1.5 text-right font-mono tabular-nums">100%</td>
+            <td className={totalCol}>{totalFmt.format(centsToMajor(section.total))}</td>
+            <td className={pctCol}>100%</td>
           </tr>
         </tfoot>
       </table>
