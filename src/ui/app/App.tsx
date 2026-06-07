@@ -1,50 +1,48 @@
-import { NavLink, Navigate, Route, Routes } from 'react-router';
-import { LanguageSwitcher } from './LanguageSwitcher.tsx';
-import { ThemeSwitcher } from './ThemeSwitcher.tsx';
-import { ListPage } from '../features/ledger/pages/ListPage.tsx';
-import { TablePage } from '../features/ledger/pages/TablePage.tsx';
-import { CategoriesPage } from '../features/categories/pages/CategoriesPage.tsx';
-import { useI18n } from '../i18n/i18nContext.ts';
-import { segmentGroupClass, segmentItemClass } from '../components/ui/segmented.ts';
+import { Navigate, Route, Routes } from 'react-router';
+import { AppLayout } from './AppLayout.tsx';
+import { ErrorBoundary } from './ErrorBoundary.tsx';
+import { LedgerPage } from '../pages/LedgerPage.tsx';
+import { CategoriesPage } from '../pages/CategoriesPage.tsx';
+import { CurrenciesPage } from '../pages/CurrenciesPage.tsx';
+import type { ReactNode } from 'react';
 
-const navClass = ({ isActive }: { isActive: boolean }): string => segmentItemClass(isActive);
+/** Page-level boundary: an error in one page shows a recoverable state, not a
+ * blank app. Each route gets its own so navigating away clears the error. */
+function Page({ children }: { children: ReactNode }) {
+  return <ErrorBoundary inline>{children}</ErrorBoundary>;
+}
 
 export default function App() {
-  const { t } = useI18n();
-
   return (
-    <div className="min-h-screen bg-canvas text-fg">
-      <div className="mx-auto max-w-7xl px-4 py-8">
-        <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-fg">{t('app.title')}</h1>
-            <p className="text-sm text-fg-muted">{t('app.subtitle')}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <LanguageSwitcher />
-            <ThemeSwitcher />
-          </div>
-        </header>
-
-        <nav className={`mb-6 ${segmentGroupClass}`}>
-          <NavLink to="/list" className={navClass}>
-            {t('nav.list')}
-          </NavLink>
-          <NavLink to="/table" className={navClass}>
-            {t('nav.table')}
-          </NavLink>
-          <NavLink to="/categories" className={navClass}>
-            {t('nav.categories')}
-          </NavLink>
-        </nav>
-
-        <Routes>
-          <Route path="/list" element={<ListPage />} />
-          <Route path="/table" element={<TablePage />} />
-          <Route path="/categories" element={<CategoriesPage />} />
-          <Route path="*" element={<Navigate to="/list" replace />} />
-        </Routes>
-      </div>
-    </div>
+    <Routes>
+      <Route element={<AppLayout />}>
+        <Route index element={<Navigate to="/ledger" replace />} />
+        <Route
+          path="/ledger"
+          element={
+            <Page>
+              <LedgerPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/categories"
+          element={
+            <Page>
+              <CategoriesPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/currencies"
+          element={
+            <Page>
+              <CurrenciesPage />
+            </Page>
+          }
+        />
+        <Route path="*" element={<Navigate to="/ledger" replace />} />
+      </Route>
+    </Routes>
   );
 }

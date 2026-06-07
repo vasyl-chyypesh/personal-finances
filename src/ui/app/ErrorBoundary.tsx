@@ -1,30 +1,56 @@
 import { Component, type ReactNode } from 'react';
 import { useI18n } from '../i18n/i18nContext.ts';
-import { Button } from '../components/ui/Button.tsx';
+import { EmptyState } from '../components/EmptyState.tsx';
+import { AlertIcon } from '../components/icons.tsx';
 
 export interface ErrorBoundaryProps {
   children: ReactNode;
+  /** When true, render a compact in-page fallback (page-level boundary). */
+  inline?: boolean;
 }
 
 interface ErrorBoundaryState {
   hasError: boolean;
 }
 
-/** Localized fallback shown when a descendant throws during render. */
-function ErrorFallback() {
+/** Localized fallback. `onRetry` resets the boundary so children re-mount and
+ * re-run their data fetches — recoverable without a full page reload. */
+function ErrorFallback({ onRetry, inline }: { onRetry: () => void; inline?: boolean }) {
   const { t } = useI18n();
+  const retry = (
+    <button
+      type="button"
+      onClick={onRetry}
+      className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-white transition-colors duration-100 hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+    >
+      {t('error.retry')}
+    </button>
+  );
+
+  if (inline) {
+    return (
+      <EmptyState
+        icon={<AlertIcon size={22} />}
+        title={t('error.title')}
+        description={t('error.body')}
+        action={retry}
+      />
+    );
+  }
+
   return (
-    <div className="mx-auto mt-16 max-w-md rounded-lg border border-line bg-surface p-8 text-center shadow-sm">
-      <h1 className="mb-2 text-lg font-semibold text-fg">{t('error.title')}</h1>
+    <div className="mx-auto mt-16 max-w-md rounded-lg border-hairline border-line bg-surface p-8 text-center">
+      <h1 className="mb-2 text-lg font-medium text-fg">{t('error.title')}</h1>
       <p className="mb-5 text-sm text-fg-muted">{t('error.body')}</p>
-      <Button onClick={() => window.location.reload()}>{t('error.retry')}</Button>
+      {retry}
     </div>
   );
 }
 
 /**
- * Top-level error boundary. Catches render-time errors anywhere below it and
- * shows a recoverable fallback instead of a blank screen. Must render inside the
+ * Catches render-time errors in its subtree and shows a recoverable fallback
+ * instead of a blank screen. Used both at the app root and per page (`inline`).
+ * Retrying clears the error state, re-mounting children. Must render inside the
  * i18n provider so the fallback can resolve strings.
  */
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
@@ -34,7 +60,13 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     return { hasError: true };
   }
 
+  private retry = () => this.setState({ hasError: false });
+
   render(): ReactNode {
-    return this.state.hasError ? <ErrorFallback /> : this.props.children;
+    return this.state.hasError ? (
+      <ErrorFallback onRetry={this.retry} inline={this.props.inline} />
+    ) : (
+      this.props.children
+    );
   }
 }
