@@ -8,7 +8,7 @@ export const CreateSchema = z.object({
   amount: z.number().int().positive(),
   currency: z.enum(['UAH', 'USD', 'EUR']),
   categoryId: z.number().int().positive(),
-  description: z.string().optional(),
+  description: z.string().max(500).optional(),
   // Real calendar date (rejects 2026-02-30, 2026-13-01, etc.), not just the shape.
   date: z.iso.date(),
 });

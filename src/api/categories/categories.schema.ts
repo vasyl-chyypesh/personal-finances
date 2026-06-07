@@ -4,8 +4,8 @@ export { IdParamSchema } from '../shared/validation.js';
 
 const NamesSchema = z
   .object({
-    en: z.string().trim().min(1).optional(),
-    uk: z.string().trim().min(1).optional(),
+    en: z.string().trim().min(1).max(100).optional(),
+    uk: z.string().trim().min(1).max(100).optional(),
   })
   .refine((names) => names.en !== undefined || names.uk !== undefined, {
     message: 'At least one locale name required',
