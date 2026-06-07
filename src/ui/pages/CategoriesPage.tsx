@@ -1,82 +1,85 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useI18n } from '../i18n/i18nContext.ts';
 import { useCategories } from '../hooks/useCategories.ts';
-import { useLedger } from '../hooks/useLedger.ts';
-import { useCurrencies } from '../hooks/useCurrencies.ts';
-import { convertCents } from '../lib/currencyMeta.ts';
 import { PageHeader } from '../components/PageHeader.tsx';
 import { CategoryListItem } from '../components/CategoryListItem.tsx';
 import { EmptyState } from '../components/EmptyState.tsx';
 import { SkeletonRow } from '../components/SkeletonRow.tsx';
 import { AlertIcon, PlusIcon, TagIcon } from '../components/icons.tsx';
-import type { Currency } from '../types.ts';
+import type { LocalizedName } from '../types.ts';
+
+const inputClass =
+  'w-full rounded-md border-hairline border-line bg-surface px-3 py-2 text-base text-fg transition-colors duration-100 focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-primary';
 
 export function CategoriesPage() {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const { categories, loading, error, refresh, create, rename, remove } = useCategories();
-  const { records } = useLedger(new Date().getUTCFullYear());
-  const { base, rates } = useCurrencies();
-  const baseCurrency: Currency = base ?? 'UAH';
 
-  const [newName, setNewName] = useState('');
+  const [en, setEn] = useState('');
+  const [uk, setUk] = useState('');
   const [adding, setAdding] = useState(false);
 
-  // Expense spend per category (this year), converted to the base currency.
-  const spentByCategory = useMemo(() => {
-    const map = new Map<number, number>();
-    if (rates) {
-      for (const r of records) {
-        if (r.type !== 'expense') continue;
-        const cents = convertCents(r.amount, r.currency, baseCurrency, rates);
-        map.set(r.category.id, (map.get(r.category.id) ?? 0) + cents);
-      }
-    }
-    return map;
-  }, [records, rates, baseCurrency]);
-
-  const maxSpent = useMemo(() => Math.max(0, ...spentByCategory.values()), [spentByCategory]);
-
   const submitNew = async () => {
-    const name = newName.trim();
-    if (!name) return;
+    const names: LocalizedName = {};
+    if (en.trim()) names.en = en.trim();
+    if (uk.trim()) names.uk = uk.trim();
+    if (Object.keys(names).length === 0) return; // at least one locale required
     setAdding(true);
     try {
-      await create({ names: { [locale]: name } });
-      setNewName('');
+      await create({ names });
+      setEn('');
+      setUk('');
     } finally {
       setAdding(false);
     }
   };
+
+  const canAdd = Boolean(en.trim() || uk.trim());
 
   return (
     <>
       <PageHeader title={t('nav.categories')} />
 
       <div className="rounded-lg border-hairline border-line bg-surface">
-        {/* Add form */}
-        <div className="flex items-center gap-2 border-b-hairline border-line p-3">
-          <input
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                void submitNew();
-              }
-            }}
-            placeholder={t('categories.nameEn')}
-            className="flex-1 rounded-md border-hairline border-line bg-surface px-3 py-2 text-base text-fg transition-colors duration-100 focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-primary"
-          />
+        {/* Add form: name + translations */}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void submitNew();
+          }}
+          className="flex flex-col gap-2 border-b-hairline border-line p-3 sm:flex-row sm:items-end"
+        >
+          <label className="flex-1">
+            <span className="block text-xs font-medium text-fg-muted">
+              {t('categories.nameEn')}
+            </span>
+            <input
+              value={en}
+              onChange={(e) => setEn(e.target.value)}
+              placeholder={t('categories.nameEn')}
+              className={`mt-1 ${inputClass}`}
+            />
+          </label>
+          <label className="flex-1">
+            <span className="block text-xs font-medium text-fg-muted">
+              {t('categories.nameUk')}
+            </span>
+            <input
+              value={uk}
+              onChange={(e) => setUk(e.target.value)}
+              placeholder={t('categories.nameUk')}
+              className={`mt-1 ${inputClass}`}
+            />
+          </label>
           <button
-            type="button"
-            onClick={() => void submitNew()}
-            disabled={adding || !newName.trim()}
-            className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-medium text-white transition-colors duration-100 hover:bg-primary-hover active:bg-primary-active disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            type="submit"
+            disabled={adding || !canAdd}
+            className="flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-medium text-white transition-colors duration-100 hover:bg-primary-hover active:bg-primary-active disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             <PlusIcon size={16} />
             {t('categories.submitAdd')}
           </button>
-        </div>
+        </form>
 
         <div className="p-2">
           {error ? (
@@ -105,15 +108,7 @@ export function CategoriesPage() {
           ) : (
             <div className="divide-y divide-line">
               {categories.map((c) => (
-                <CategoryListItem
-                  key={c.id}
-                  category={c}
-                  spent={spentByCategory.get(c.id) ?? 0}
-                  maxSpent={maxSpent}
-                  currency={baseCurrency}
-                  onRename={rename}
-                  onDelete={remove}
-                />
+                <CategoryListItem key={c.id} category={c} onRename={rename} onDelete={remove} />
               ))}
             </div>
           )}
