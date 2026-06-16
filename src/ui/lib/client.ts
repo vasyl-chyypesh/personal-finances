@@ -7,6 +7,7 @@ import type {
   LedgerListResult,
   LocalizedName,
   Period,
+  RateHistoryResponse,
   UpdateLedgerEntryDto,
 } from '../types.ts';
 
@@ -92,6 +93,17 @@ export function reorderCategories(ids: number[]): Promise<void> {
 
 export function getExchangeRates(): Promise<ExchangeRatesResponse> {
   return request<ExchangeRatesResponse>('/exchange-rates');
+}
+
+export function getRatesHistory(opts?: {
+  from?: string;
+  to?: string;
+}): Promise<RateHistoryResponse> {
+  const params = new URLSearchParams();
+  if (opts?.from) params.set('from', opts.from);
+  if (opts?.to) params.set('to', opts.to);
+  const query = params.toString();
+  return request<RateHistoryResponse>(`/exchange-rates/history${query ? `?${query}` : ''}`);
 }
 
 export function listLedger(
