@@ -9,6 +9,7 @@ import { initDb } from './shared/schema.js';
 import categoriesRouter from './categories/categories.routes.js';
 import ledgerRouter from './ledger/ledger.routes.js';
 import exchangeRatesRouter from './exchange-rates/exchangeRates.routes.js';
+import chatRouter from './chat/chat.routes.js';
 
 initDb(db);
 
@@ -27,6 +28,7 @@ app.get('/health', (_req, res) => {
 app.use('/api/categories', categoriesRouter);
 app.use('/api/ledger', ledgerRouter);
 app.use('/api/exchange-rates', exchangeRatesRouter);
+app.use('/api/chat', chatRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

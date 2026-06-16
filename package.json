@@ -31,6 +31,7 @@
     "express": "5.2.1",
     "express-rate-limit": "8.5.2",
     "helmet": "8.2.0",
+    "node-llama-cpp": "3.18.1",
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "react-router": "7.17.0",

@@ -1,5 +1,7 @@
 import type {
   Category,
+  ChatExtractResult,
+  ChatStatus,
   CreateCategoryDto,
   CreateLedgerEntryDto,
   ExchangeRatesResponse,
@@ -134,4 +136,15 @@ export function updateLedger(id: number, dto: UpdateLedgerEntryDto): Promise<Led
 
 export function deleteLedger(id: number): Promise<void> {
   return request<void>(`/ledger/${id}`, { method: 'DELETE' });
+}
+
+export function getChatStatus(): Promise<ChatStatus> {
+  return request<ChatStatus>('/chat/status');
+}
+
+export function extractChat(message: string): Promise<ChatExtractResult> {
+  return request<ChatExtractResult>('/chat/extract', {
+    method: 'POST',
+    body: JSON.stringify({ message }),
+  });
 }

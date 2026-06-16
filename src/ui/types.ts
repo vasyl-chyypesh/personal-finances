@@ -75,6 +75,36 @@ export interface CreateLedgerEntryDto {
 
 export type UpdateLedgerEntryDto = Partial<CreateLedgerEntryDto>;
 
+// --- AI chat (draft ledger entries from natural language) ---
+
+export type UncertainField = 'type' | 'amount' | 'currency' | 'category' | 'date';
+
+/** A draft entry extracted from a chat message; `categoryId` may be unresolved. */
+export interface DraftLedgerEntry {
+  type: LedgerEntryType;
+  /** Integer minor units (cents). */
+  amount: number;
+  currency: Currency;
+  categoryId: number | null;
+  description?: string;
+  date: string;
+}
+
+export interface ChatExtractResult {
+  draft: DraftLedgerEntry;
+  /** Fields the user should double-check (defaulted or low-confidence). */
+  uncertainFields: UncertainField[];
+  /** True when no category resolved — the user must pick one before saving. */
+  unresolvedCategory: boolean;
+}
+
+export interface ChatStatus {
+  /** Whether the feature is configured (a model is set up). */
+  available: boolean;
+  /** Whether the model file is already downloaded (no wait on first use). */
+  ready: boolean;
+}
+
 export interface LedgerListResult {
   records: LedgerEntry[];
   period: Period;
