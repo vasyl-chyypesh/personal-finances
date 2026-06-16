@@ -38,6 +38,7 @@ When working inside a part, read its nested `CLAUDE.md` for the detailed convent
 - **No `any` without justification**: `@typescript-eslint/no-explicit-any` is a warning. Avoid it; use proper types.
 - **Commit messages MUST follow Conventional Commits** (e.g. `feat:`, `fix:`, `chore:`). commitlint enforces this via husky on every commit.
 - **Layer imports** (API): Routes → Services → Repositories only. Cross-layer imports in the wrong direction will be rejected in review.
+- **Exact dependency versions**: Entries under `dependencies` in `package.json` MUST be pinned to an exact version (no `^` or `~` ranges). `devDependencies` may use caret ranges.
 
 ## Naming Conventions
 
