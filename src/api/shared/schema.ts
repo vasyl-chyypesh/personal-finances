@@ -1,6 +1,11 @@
 import type Database from 'better-sqlite3';
 import { CATEGORY_CATALOG } from '../categories/categories.catalog.js';
-import { DEFAULT_EXCHANGE_RATES } from '../exchange-rates/exchangeRates.catalog.js';
+import {
+  BASE_CURRENCY,
+  DEFAULT_EXCHANGE_RATES,
+  QUOTE_CURRENCIES,
+} from '../exchange-rates/exchangeRates.catalog.js';
+import { todayIso } from '../exchange-rates/exchangeRates.window.js';
 
 export function initSchema(db: Database.Database): void {
   db.exec(`
@@ -25,10 +30,11 @@ export function initSchema(db: Database.Database): void {
     );
 
     CREATE TABLE IF NOT EXISTS exchange_rates (
-      from_currency TEXT NOT NULL CHECK(from_currency IN ('UAH', 'USD', 'EUR')),
-      to_currency   TEXT NOT NULL CHECK(to_currency IN ('UAH', 'USD', 'EUR')),
-      rate          REAL NOT NULL CHECK(rate > 0),
-      PRIMARY KEY (from_currency, to_currency)
+      date  TEXT NOT NULL,
+      base  TEXT NOT NULL CHECK(base IN ('UAH', 'USD', 'EUR')),
+      quote TEXT NOT NULL CHECK(quote IN ('UAH', 'USD', 'EUR')),
+      rate  REAL NOT NULL CHECK(rate > 0),
+      PRIMARY KEY (date, base, quote)
     );
   `);
 }
@@ -42,6 +48,15 @@ export function migrateSchema(db: Database.Database): void {
   if (!columns.some((c) => c.name === 'sort_order')) {
     db.exec('ALTER TABLE categories ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0');
     backfillSortOrder(db);
+  }
+
+  // The original exchange_rates table was a single (from,to) snapshot. The
+  // date-keyed shape supersedes it; the data is reconstructable from the
+  // provider, so drop the legacy table and let initSchema recreate + reseed it.
+  const rateColumns = db.prepare('PRAGMA table_info(exchange_rates)').all() as { name: string }[];
+  if (rateColumns.length > 0 && !rateColumns.some((c) => c.name === 'date')) {
+    db.exec('DROP TABLE exchange_rates');
+    initSchema(db);
   }
 }
 
@@ -72,18 +87,22 @@ export function seedCategories(db: Database.Database): void {
   });
 }
 
-/** Seeds the predefined conversion matrix only when no rates are stored yet. */
+/**
+ * Seeds today's base→quote rates from the offline fallback matrix, only when no
+ * rates are stored yet. The provider sync overrides these on first success; this
+ * just guarantees the API has a matrix to serve before the network is reached.
+ */
 export function seedExchangeRates(db: Database.Database): void {
   const { n } = db.prepare('SELECT COUNT(*) AS n FROM exchange_rates').get() as { n: number };
   if (n > 0) return;
 
   const insert = db.prepare(
-    'INSERT INTO exchange_rates (from_currency, to_currency, rate) VALUES (?, ?, ?)',
+    'INSERT INTO exchange_rates (date, base, quote, rate) VALUES (?, ?, ?, ?)',
   );
-  for (const [from, row] of Object.entries(DEFAULT_EXCHANGE_RATES)) {
-    for (const [to, rate] of Object.entries(row)) {
-      insert.run(from, to, rate);
-    }
+  const today = todayIso();
+  for (const quote of QUOTE_CURRENCIES) {
+    /* eslint-disable-next-line security/detect-object-injection -- keys are typed literals */
+    insert.run(today, BASE_CURRENCY, quote, DEFAULT_EXCHANGE_RATES[BASE_CURRENCY][quote]);
   }
 }
 

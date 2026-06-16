@@ -13,7 +13,29 @@ export type ExchangeRates = Record<Currency, Record<Currency, number>>;
 
 export interface ExchangeRatesResponse {
   base: Currency;
+  /** ISO date the served matrix was sourced for. */
+  asOf: string;
+  /** True when the served rates are older than the freshness threshold. */
+  stale: boolean;
   rates: ExchangeRates;
+}
+
+/** Quote currencies charted against the base (USD/EUR). */
+export type QuoteCurrency = Exclude<Currency, 'UAH'>;
+export const QUOTE_CURRENCIES: QuoteCurrency[] = ['USD', 'EUR'];
+
+export interface RateHistoryPoint {
+  date: string;
+  /** `rates[quote]` = how many base units 1 unit of `quote` is worth. */
+  rates: Record<QuoteCurrency, number>;
+}
+
+export interface RateHistoryResponse {
+  base: Currency;
+  /** Effective (clamped) range covered by the series. */
+  from: string;
+  to: string;
+  series: RateHistoryPoint[];
 }
 
 export interface Category {

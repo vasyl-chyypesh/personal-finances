@@ -1,31 +1,92 @@
 import type Database from 'better-sqlite3';
-import type { Currency } from '../ledger/ledger.types.js';
-import type { ExchangeRates } from './exchangeRates.types.js';
+import { QUOTE_CURRENCIES } from './exchangeRates.catalog.js';
+import type { DailyQuotes, ProviderDaily, QuoteCurrency } from './exchangeRates.types.js';
 
-interface RateRow {
-  from_currency: Currency;
-  to_currency: Currency;
+interface QuoteRow {
+  date: string;
+  quote: QuoteCurrency;
   rate: number;
 }
 
+const QUOTE_SET = new Set<string>(QUOTE_CURRENCIES);
+
 export interface IExchangeRatesRepository {
-  getAll(): ExchangeRates;
+  /** Most recent stored day, or `null` when nothing is stored yet. */
+  getLatest(): ProviderDaily | null;
+  /** Distinct stored dates (base→quote rows) within an inclusive range. */
+  getStoredDates(from: string, to: string): Set<string>;
+  /** Complete daily quotes within an inclusive range, ascending by date. */
+  getSeries(from: string, to: string): ProviderDaily[];
+  /** Insert or replace the base→quote rows for a single day. */
+  upsertDaily(date: string, quotes: DailyQuotes): void;
 }
 
 export class ExchangeRatesRepository implements IExchangeRatesRepository {
   constructor(private readonly db: Database.Database) {}
 
-  /** Reads every stored pair and rebuilds the `rates[from][to]` matrix. */
-  getAll(): ExchangeRates {
+  getLatest(): ProviderDaily | null {
     const rows = this.db
-      .prepare('SELECT from_currency, to_currency, rate FROM exchange_rates')
-      .all() as RateRow[];
-    const rates = {} as ExchangeRates;
-    for (const { from_currency, to_currency, rate } of rows) {
-      /* eslint-disable security/detect-object-injection -- keys are CHECK-constrained Currency values */
-      (rates[from_currency] ??= {} as Record<Currency, number>)[to_currency] = rate;
-      /* eslint-enable security/detect-object-injection */
+      .prepare(
+        `SELECT date, quote, rate FROM exchange_rates
+         WHERE base = 'UAH'
+           AND date = (SELECT MAX(date) FROM exchange_rates WHERE base = 'UAH')`,
+      )
+      .all() as QuoteRow[];
+    return this.groupByDate(rows)[0] ?? null;
+  }
+
+  getStoredDates(from: string, to: string): Set<string> {
+    const rows = this.db
+      .prepare(
+        `SELECT DISTINCT date FROM exchange_rates
+         WHERE base = 'UAH' AND date BETWEEN ? AND ?`,
+      )
+      .all(from, to) as { date: string }[];
+    return new Set(rows.map((r) => r.date));
+  }
+
+  getSeries(from: string, to: string): ProviderDaily[] {
+    const rows = this.db
+      .prepare(
+        `SELECT date, quote, rate FROM exchange_rates
+         WHERE base = 'UAH' AND date BETWEEN ? AND ?
+         ORDER BY date ASC`,
+      )
+      .all(from, to) as QuoteRow[];
+    return this.groupByDate(rows);
+  }
+
+  upsertDaily(date: string, quotes: DailyQuotes): void {
+    const insert = this.db.prepare(
+      `INSERT OR REPLACE INTO exchange_rates (date, base, quote, rate)
+       VALUES (?, 'UAH', ?, ?)`,
+    );
+    this.db.transaction(() => {
+      for (const quote of QUOTE_CURRENCIES) {
+        /* eslint-disable-next-line security/detect-object-injection -- quote is a typed literal */
+        insert.run(date, quote, quotes[quote]);
+      }
+    })();
+  }
+
+  /** Collapse base→quote rows into entries that carry every quote, by date. */
+  private groupByDate(rows: QuoteRow[]): ProviderDaily[] {
+    const byDate = new Map<string, Partial<DailyQuotes>>();
+    for (const { date, quote, rate } of rows) {
+      if (!QUOTE_SET.has(quote)) continue;
+      const entry = byDate.get(date) ?? {};
+      /* eslint-disable-next-line security/detect-object-injection -- quote is QUOTE_SET-checked */
+      entry[quote] = rate;
+      byDate.set(date, entry);
     }
-    return rates;
+    const complete: ProviderDaily[] = [];
+    for (const [date, quotes] of byDate) {
+      /* eslint-disable-next-line security/detect-object-injection -- c is a typed literal */
+      if (QUOTE_CURRENCIES.every((c) => quotes[c] !== undefined)) {
+        complete.push({ date, quotes: quotes as DailyQuotes });
+      }
+    }
+    complete.sort((a, b) => a.date.localeCompare(b.date));
+    return complete;
   }
 }
