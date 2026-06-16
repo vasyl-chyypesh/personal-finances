@@ -8,7 +8,9 @@ export function todayIso(): string {
 /** `from` shifted back `months`, clamped against an ISO `YYYY-MM-DD` date in UTC. */
 export function monthsAgoIso(months: number, from: string = todayIso()): string {
   const [y, m, d] = from.split('-').map(Number);
-  // Day-of-month is clamped by Date when the target month is shorter.
+  // If the target month is shorter, Date rolls the overflow day forward (e.g. a
+  // 31st becomes early next month) rather than clamping — fine here, since these
+  // dates are approximate window floors/chunk bounds, not exact calendar months.
   const shifted = new Date(Date.UTC(y, m - 1 - months, d));
   return shifted.toISOString().slice(0, 10);
 }
