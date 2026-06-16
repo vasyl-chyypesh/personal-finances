@@ -85,6 +85,8 @@ export function RecordSidePanel({
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const firstFieldRef = useRef<HTMLButtonElement>(null);
+  // The control that had focus before the panel opened, so we can restore it on close.
+  const triggerRef = useRef<HTMLElement | null>(null);
 
   // Re-seed whenever the panel opens or targets a different record.
   useEffect(() => {
@@ -97,7 +99,14 @@ export function RecordSidePanel({
   }, [open, record?.id]);
 
   useEffect(() => {
-    if (open) firstFieldRef.current?.focus();
+    if (open) {
+      triggerRef.current = document.activeElement as HTMLElement | null;
+      firstFieldRef.current?.focus();
+    } else {
+      // Return focus to the trigger so keyboard users land where they left off.
+      triggerRef.current?.focus();
+      triggerRef.current = null;
+    }
   }, [open]);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
@@ -130,7 +139,10 @@ export function RecordSidePanel({
   };
 
   return (
-    <div className={`fixed inset-0 z-20 ${open ? '' : 'pointer-events-none'}`} aria-hidden={!open}>
+    <div
+      className={`fixed inset-0 z-20 ${open ? '' : 'pointer-events-none'}`}
+      inert={!open ? true : undefined}
+    >
       {/* Backdrop */}
       <div
         onClick={onClose}

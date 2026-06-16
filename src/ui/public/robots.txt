@@ -1,0 +1,3 @@
+# Personal Finances is a private app — keep it out of search indexes.
+User-agent: *
+Disallow: /
