@@ -98,8 +98,8 @@
   --surface: #ffffff;
   --surface-muted: #f7f6f1;
   --fg: #444441;
-  --fg-muted: #6f6e68;
-  --fg-subtle: #888780;
+  --fg-muted: #5f5e58;
+  --fg-subtle: #76756e;
   --line: #e2e0d8;
   --line-strong: #b4b2a9;
 }
@@ -110,7 +110,7 @@
   --surface-muted: #2f2f2b;
   --fg: #f1efe8;
   --fg-muted: #b4b2a9;
-  --fg-subtle: #888780;
+  --fg-subtle: #a3a199;
   --line: #3a3a36;
   --line-strong: #4c4c47;
 }

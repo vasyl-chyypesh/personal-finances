@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { LOCALES, type Locale } from '../types.ts';
 import { MESSAGES, type MessageKey } from './messages.ts';
 import { I18nContext, type I18nValue } from './i18nContext.ts';
@@ -21,6 +21,12 @@ function initialLocale(): Locale {
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(initialLocale);
+
+  // Keep the document language in sync so assistive tech announces content
+  // with the right voice (the static index.html only declares `en`).
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
 
   const setLocale = useCallback((next: Locale) => {
     setLocaleState(next);
