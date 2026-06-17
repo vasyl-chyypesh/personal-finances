@@ -1,5 +1,7 @@
 import { Ollama } from 'ollama';
 import { Logger } from '../shared/logger.js';
+import { HttpError } from '../shared/errors/httpError.js';
+import { CODES } from '../shared/errors/codes.js';
 import type { ExtractContext, ILedgerExtractor, RawExtraction } from './chat.types.js';
 
 /** Default model: Gemma 4 12B (MLX), served by a local Ollama daemon. */
@@ -162,6 +164,35 @@ function buildSystemPrompt(ctx: ExtractContext): string {
 }
 
 /**
+ * Parse the model's reply into a {@link RawExtraction}. Ollama enforces the
+ * JSON-schema `format` for llama.cpp models, but some engines (e.g. MLX) ignore
+ * it and wrap the JSON in a ```json code fence or surround it with prose — so
+ * strip a fence and fall back to the outermost `{ … }` before parsing.
+ */
+export function parseExtraction(content: string): RawExtraction {
+  let text = content.trim();
+
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  if (fenced) text = fenced[1].trim();
+
+  if (!text.startsWith('{')) {
+    const start = text.indexOf('{');
+    const end = text.lastIndexOf('}');
+    if (start !== -1 && end > start) text = text.slice(start, end + 1);
+  }
+
+  try {
+    return JSON.parse(text) as RawExtraction;
+  } catch {
+    throw new HttpError(
+      'The AI model returned a response that could not be parsed',
+      CODES.CHAT_BAD_RESPONSE,
+      502,
+    );
+  }
+}
+
+/**
  * Ollama-backed extractor. The model runs in a local Ollama daemon (no model
  * code in this process); it is pulled on first use if missing. The feature is
  * optional — an empty `CHAT_MODEL` disables it, and tests inject a fake.
@@ -217,7 +248,7 @@ export function createLedgerExtractor(): ILedgerExtractor {
           { role: 'user', content: message },
         ],
       });
-      return JSON.parse(res.message.content) as RawExtraction;
+      return parseExtraction(res.message.content);
     },
   };
 }
