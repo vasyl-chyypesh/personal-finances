@@ -51,33 +51,113 @@ function buildSchema(slugs: readonly string[]): object {
   };
 }
 
+/** The calendar day before an ISO date (UTC), for relative-date examples. */
+function previousDay(iso: string): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
+
 function buildSystemPrompt(ctx: ExtractContext): string {
   const categoryLines = ctx.categories
     .map((c) => `- ${c.slug}: ${c.names.en ?? c.slug}${c.names.uk ? ` / ${c.names.uk}` : ''}`)
     .join('\n');
 
+  const today = ctx.today;
+  const yesterday = previousDay(today);
+
+  // Examples use the real resolved dates so they stay consistent with the
+  // date rule (relative words -> YYYY-MM-DD; no date mentioned -> null).
+  const example = (message: string, json: Record<string, unknown>): string =>
+    `Message: "${message}"\nJSON: ${JSON.stringify(json)}`;
+
   return [
     'You extract a single personal-finance ledger entry from one short message.',
     'The user writes in English or Ukrainian. Reply ONLY with the JSON object the schema describes.',
-    `Today is ${ctx.today} (ISO). Resolve relative dates ("today/сьогодні", "yesterday/вчора") against it and output date as YYYY-MM-DD.`,
-    'Rules:',
-    '- amountMajor is the number in the message in its main unit (e.g. "500" -> 500, "12.50" -> 12.5).',
-    '- currency: UAH, USD or EUR. "грн"/"uah"/"₴" -> UAH, "$"/"usd" -> USD, "€"/"eur" -> EUR.',
-    '- type: "expense" for spending, "income" for money received (salary, refund, "отримав").',
-    '- categorySlug MUST be one of the slugs below, or null if none clearly fits. Never invent a slug.',
+    `Today is ${today} (ISO). Resolve relative dates against it and output date as YYYY-MM-DD: "today"/"сьогодні" -> ${today}, "yesterday"/"вчора" -> ${yesterday}. If no date is mentioned, set date to null.`,
+    '',
+    'Fields:',
+    '- amountMajor: the number in its main unit ("500" -> 500, "12.50" -> 12.5). Ignore thousands separators ("1 500"/"1,500" -> 1500). null if no amount is given.',
+    '- currency: UAH, USD or EUR. "грн"/"uah"/"₴" -> UAH, "$"/"usd" -> USD, "€"/"eur" -> EUR. null if not stated.',
+    '- type: "expense" for spending, "income" for money received (salary, refund, cashback, "отримав").',
+    '- categorySlug: exactly one slug from the list below, or null if none clearly fits. Never invent a slug, and prefer null over a weak guess.',
+    '- description: a short note such as the place or payee (e.g. "Silpo"), or null. Do not just repeat the category.',
     '- Set any field you cannot determine from the message to null.',
-    '- uncertainFields: list the fields you are unsure about or had to guess.',
+    '- If the message is not about a transaction (a greeting, a question, small talk), set every field to null and uncertainFields to [].',
+    '',
+    'Uncertain fields:',
+    '- uncertainFields flags values the user should double-check. List a field name ONLY when you set it to a NON-null value you are not fully confident about — e.g. you inferred "type" from weak cues, or "categorySlug" only loosely fits.',
+    '- Do NOT list a field you set to null; the app fills in defaults for missing values on its own.',
+    '- Allowed names: "type", "amount", "currency", "category", "date" (use "amount" for a doubtful amountMajor and "category" for a shaky categorySlug).',
+    '- When every value you set is clearly stated in the message, return an empty list.',
     '',
     'Available category slugs (slug: English / Ukrainian):',
     categoryLines,
     '',
     'Examples:',
-    'Message: "spent 500 on groceries today"',
-    'JSON: {"type":"expense","amountMajor":500,"currency":null,"categorySlug":"grocery","description":null,"date":null,"uncertainFields":["currency"]}',
-    'Message: "500 грн таксі вчора"',
-    'JSON: {"type":"expense","amountMajor":500,"currency":"UAH","categorySlug":"taxi","description":null,"date":null,"uncertainFields":[]}',
-    'Message: "got 20000 salary"',
-    'JSON: {"type":"income","amountMajor":20000,"currency":null,"categorySlug":"wages","description":null,"date":null,"uncertainFields":["currency"]}',
+    example('spent 500 on groceries', {
+      type: 'expense',
+      amountMajor: 500,
+      currency: null,
+      categorySlug: 'grocery',
+      description: null,
+      date: null,
+      uncertainFields: [],
+    }),
+    example('500 грн таксі вчора', {
+      type: 'expense',
+      amountMajor: 500,
+      currency: 'UAH',
+      categorySlug: 'transport',
+      description: null,
+      date: yesterday,
+      uncertainFields: [],
+    }),
+    example('got 20000 salary', {
+      type: 'income',
+      amountMajor: 20000,
+      currency: null,
+      categorySlug: 'salary',
+      description: null,
+      date: null,
+      uncertainFields: [],
+    }),
+    example('paid $15.50 for lunch at Puzata Hata today', {
+      type: 'expense',
+      amountMajor: 15.5,
+      currency: 'USD',
+      categorySlug: 'eating-out',
+      description: 'Puzata Hata',
+      date: today,
+      uncertainFields: [],
+    }),
+    example('1200 за світло', {
+      type: 'expense',
+      amountMajor: 1200,
+      currency: null,
+      categorySlug: 'electricity',
+      description: null,
+      date: null,
+      uncertainFields: [],
+    }),
+    example('1000 from John', {
+      type: 'income',
+      amountMajor: 1000,
+      currency: null,
+      categorySlug: null,
+      description: 'John',
+      date: null,
+      uncertainFields: ['type'],
+    }),
+    example('how much did I spend this month?', {
+      type: null,
+      amountMajor: null,
+      currency: null,
+      categorySlug: null,
+      description: null,
+      date: null,
+      uncertainFields: [],
+    }),
   ].join('\n');
 }
 
