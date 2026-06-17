@@ -10,8 +10,11 @@ const service = new ChatService(createLedgerExtractor(), new CategoriesRepositor
 
 const router = Router();
 
-router.get('/status', (_req, res) => {
-  res.json(service.status());
+router.get('/status', (_req, res, next) => {
+  service
+    .status()
+    .then((status) => res.json(status))
+    .catch(next);
 });
 
 router.post('/extract', requestValidator(ExtractSchema), (req, res, next) => {

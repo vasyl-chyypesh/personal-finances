@@ -4,11 +4,11 @@ import { rm } from 'node:fs/promises';
 import request from 'supertest';
 import type { Express } from 'express';
 
-// Disable the model so the route never downloads/loads a real GGUF — the chat
-// HTTP surface (status, validation, unavailable) is exercised model-free, the
-// same way RATES_OFFLINE keeps the exchange-rates HTTP tests network-free. Full
+// Disable the model so the route never reaches Ollama — the chat HTTP surface
+// (status, validation, unavailable) is exercised without a daemon, the same way
+// RATES_OFFLINE keeps the exchange-rates HTTP tests network-free. Full
 // extraction logic is covered by the service unit tests.
-process.env['CHAT_MODEL_URI'] = '';
+process.env['CHAT_MODEL'] = '';
 
 const ROUTES_TEST_DB = './chat-routes-test.db';
 process.env['DB_PATH'] = ROUTES_TEST_DB;
@@ -30,6 +30,7 @@ describe('Chat routes (HTTP integration)', () => {
   });
 
   it('GET /status reports the feature as unavailable when no model is configured', async () => {
+    // CHAT_MODEL='' -> available:false, and status must not probe the daemon.
     const res = await request(app).get('/api/chat/status');
     assert.equal(res.status, 200);
     const body = res.body as { available: boolean; ready: boolean };

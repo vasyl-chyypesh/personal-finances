@@ -45,11 +45,19 @@ The app is **multi-language** (English and Ukrainian). Use the language switcher
 
 The **AI Chat** view turns a natural-language message ("spent 500 on groceries today" / "500 грн таксі вчора", English or Ukrainian) into a **draft ledger entry** you review and confirm before it's saved. Nothing is auto-inserted; the conversation is kept in memory only (a reload clears it — the entries you confirm persist as normal).
 
-It runs a **local LLM in-process** via [`node-llama-cpp`](https://node-llama-cpp.withcat.ai/) — no cloud, no API key. The default model is **Gemma 4 E4B-it** (`Q4_K_M` GGUF), downloaded from Hugging Face **on first chat use** into a gitignored `./models` directory (set `CHAT_MODEL_URI` in `.env`). The first message is therefore slow while the model downloads (needs network once); afterwards it runs fully offline.
+It runs a **local LLM via [Ollama](https://ollama.com)** — no cloud, no API key. The app stays pure JS and talks to the local Ollama daemon over HTTP. To use it:
 
-The feature is **optional**: if `CHAT_MODEL_URI` is empty, the chat view shows an "AI chat is not configured" notice and the rest of the app is unaffected. Tests and CI inject a fake extractor and never download or load a model.
+```bash
+# 1. Install Ollama (https://ollama.com/download), then start the daemon
+ollama serve
 
-> **Note:** Gemma 4 is a newer architecture. If the model fails to load, your `node-llama-cpp` build's bundled `llama.cpp` may not support it yet — bump `node-llama-cpp`, or point `CHAT_MODEL_URI` at a known-good small instruct GGUF (e.g. `hf:bartowski/Qwen2.5-3B-Instruct-GGUF:Q4_K_M`). You can sanity-check a model from the CLI: `npx --no node-llama-cpp chat --prompt 'Hi' hf:unsloth/gemma-4-E4B-it-GGUF:Q4_K_M`.
+# 2. (Optional) pre-pull the model; otherwise it's pulled on first chat use
+ollama pull gemma4:12b-mlx
+```
+
+The default model is **`gemma4:12b-mlx`** (configurable via `CHAT_MODEL`); `OLLAMA_HOST` overrides the daemon URL (default `http://127.0.0.1:11434`). If the model isn't present, it's **pulled on first chat use**, so the first message is slow while it downloads (needs network once); afterwards it runs fully offline.
+
+The feature is **optional**: if `CHAT_MODEL` is empty (or Ollama isn't running), the chat view shows an "AI chat is not configured"/"not ready" state and the rest of the app is unaffected. Tests and CI inject a fake extractor and never contact a daemon. Any Ollama model works — to use a different one, set `CHAT_MODEL` to its tag (e.g. `gemma3`, `qwen2.5:3b`).
 
 The API follows a strict layered architecture: **Routes → Services → Repositories**. The UI lives under `src/ui/` (Vite SPA, plain `fetch` + hooks, no extra state library). See [CLAUDE.md](./CLAUDE.md) for the full architecture and contribution conventions.
 

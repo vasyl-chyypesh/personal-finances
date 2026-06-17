@@ -32,8 +32,11 @@ export class ChatService {
     private readonly categoriesRepo: ICategoriesRepository,
   ) {}
 
-  status(): ChatStatus {
-    return { available: this.extractor.isAvailable(), ready: this.extractor.isReady() };
+  async status(): Promise<ChatStatus> {
+    const available = this.extractor.isAvailable();
+    // Skip the daemon round-trip when the feature is disabled.
+    const ready = available ? await this.extractor.isReady() : false;
+    return { available, ready };
   }
 
   async extract(message: string): Promise<ChatExtractResult> {

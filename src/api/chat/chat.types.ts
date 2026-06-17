@@ -29,9 +29,9 @@ export interface ChatExtractResult {
 }
 
 export interface ChatStatus {
-  /** Whether the feature is configured (a model URI is set). */
+  /** Whether the feature is configured (a model is set). */
   available: boolean;
-  /** Whether a model file is already present locally (no download on next use). */
+  /** Whether the model is already present in the daemon (no pull on next use). */
   ready: boolean;
 }
 
@@ -67,13 +67,13 @@ export interface ExtractContext {
 
 /**
  * Turns a free-text message into a {@link RawExtraction}. Implemented by the
- * node-llama-cpp backed extractor in `chat.llm.ts`; injected as a fake in tests
- * so no model is downloaded or loaded.
+ * Ollama-backed extractor in `chat.llm.ts`; injected as a fake in tests so no
+ * daemon or model is needed.
  */
 export interface ILedgerExtractor {
-  /** Whether the feature is configured (a model URI is set). */
+  /** Whether the feature is configured (a model is set). */
   isAvailable(): boolean;
-  /** Whether a model file already exists locally (no download needed next use). */
-  isReady(): boolean;
+  /** Whether the model is already present in the daemon (no pull needed next use). */
+  isReady(): Promise<boolean>;
   extract(message: string, ctx: ExtractContext): Promise<RawExtraction>;
 }

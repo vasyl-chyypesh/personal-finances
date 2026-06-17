@@ -1,72 +1,54 @@
-import path from 'node:path';
-import { existsSync, readdirSync } from 'node:fs';
-import type {
-  GbnfJsonSchema,
-  Llama,
-  LlamaContext,
-  LlamaModel,
-  LlamaJsonSchemaGrammar,
-} from 'node-llama-cpp';
+import { Ollama } from 'ollama';
 import { Logger } from '../shared/logger.js';
 import type { ExtractContext, ILedgerExtractor, RawExtraction } from './chat.types.js';
 
-/** Default model: Gemma 4 E4B-it, Q4_K_M GGUF, fetched from Hugging Face on first use. */
-const DEFAULT_MODEL_URI = 'hf:unsloth/gemma-4-E4B-it-GGUF:Q4_K_M';
+/** Default model: Gemma 4 12B (MLX), served by a local Ollama daemon. */
+const DEFAULT_MODEL = 'gemma4:12b-mlx';
+const DEFAULT_HOST = 'http://127.0.0.1:11434';
 /** Keep extraction deterministic — we want parsing, not creativity. */
 const TEMPERATURE = 0.1;
 
-interface Engine {
-  llama: Llama;
-  model: LlamaModel;
-  context: LlamaContext;
-  /** The node-llama-cpp module namespace (loaded lazily). */
-  mod: typeof import('node-llama-cpp');
-}
-
-function modelUri(): string {
+function chatModel(): string {
   // An explicitly empty value disables the feature; unset falls back to default.
-  const raw = process.env['CHAT_MODEL_URI'];
-  return raw === undefined ? DEFAULT_MODEL_URI : raw.trim();
+  const raw = process.env['CHAT_MODEL'];
+  return raw === undefined ? DEFAULT_MODEL : raw.trim();
 }
 
-function modelsDir(): string {
-  return process.env['CHAT_MODELS_DIR']?.trim() || path.resolve(process.cwd(), 'models');
+function ollamaHost(): string {
+  return process.env['OLLAMA_HOST']?.trim() || DEFAULT_HOST;
 }
 
-/** A GGUF already sitting in the models dir means no download on next use. */
-function hasLocalModel(): boolean {
-  const dir = modelsDir();
-  // The path is operator config (env or ./models), never user input.
-  /* eslint-disable security/detect-non-literal-fs-filename */
-  if (!existsSync(dir)) return false;
-  try {
-    return readdirSync(dir).some((f) => f.endsWith('.gguf'));
-  } catch {
-    return false;
-  }
-  /* eslint-enable security/detect-non-literal-fs-filename */
-}
-
-/** JSON-schema grammar; `categorySlug` is constrained to real slugs (or null). */
-function buildSchema(slugs: readonly string[]): GbnfJsonSchema {
-  const categorySlug: GbnfJsonSchema =
-    slugs.length > 0 ? { oneOf: [{ enum: [...slugs] }, { type: 'null' }] } : { type: 'null' };
+/** JSON-schema constraint for Ollama; `categorySlug` is limited to real slugs (or null). */
+function buildSchema(slugs: readonly string[]): object {
+  const categorySlug =
+    slugs.length > 0
+      ? { anyOf: [{ type: 'string', enum: [...slugs] }, { type: 'null' }] }
+      : { type: 'null' };
 
   return {
     type: 'object',
     properties: {
-      type: { oneOf: [{ enum: ['income', 'expense'] }, { type: 'null' }] },
+      type: { anyOf: [{ type: 'string', enum: ['income', 'expense'] }, { type: 'null' }] },
       amountMajor: { type: ['number', 'null'] },
-      currency: { oneOf: [{ enum: ['UAH', 'USD', 'EUR'] }, { type: 'null' }] },
+      currency: { anyOf: [{ type: 'string', enum: ['UAH', 'USD', 'EUR'] }, { type: 'null' }] },
       categorySlug,
       description: { type: ['string', 'null'] },
       date: { type: ['string', 'null'] },
       uncertainFields: {
         type: 'array',
-        items: { enum: ['type', 'amount', 'currency', 'category', 'date'] },
+        items: { type: 'string', enum: ['type', 'amount', 'currency', 'category', 'date'] },
       },
     },
-  } satisfies GbnfJsonSchema;
+    required: [
+      'type',
+      'amountMajor',
+      'currency',
+      'categorySlug',
+      'description',
+      'date',
+      'uncertainFields',
+    ],
+  };
 }
 
 function buildSystemPrompt(ctx: ExtractContext): string {
@@ -100,83 +82,62 @@ function buildSystemPrompt(ctx: ExtractContext): string {
 }
 
 /**
- * node-llama-cpp backed extractor. The native module and model are loaded lazily
- * on the first {@link extract} call (never at import or app boot), so the feature
- * stays optional and tests/CI that inject a fake never touch it.
+ * Ollama-backed extractor. The model runs in a local Ollama daemon (no model
+ * code in this process); it is pulled on first use if missing. The feature is
+ * optional — an empty `CHAT_MODEL` disables it, and tests inject a fake.
  */
 export function createLedgerExtractor(): ILedgerExtractor {
-  let enginePromise: Promise<Engine> | null = null;
-  const grammarCache = new Map<string, LlamaJsonSchemaGrammar<GbnfJsonSchema>>();
-  // A context sequence is single-threaded; serialize prompts through this chain.
-  let queue: Promise<unknown> = Promise.resolve();
+  const model = chatModel();
+  const client = new Ollama({ host: ollamaHost() });
+  let ensured: Promise<void> | null = null;
 
-  async function getEngine(): Promise<Engine> {
-    if (!enginePromise) {
-      enginePromise = (async () => {
-        const mod = await import('node-llama-cpp');
-        const resolvedPath = await mod.resolveModelFile(modelUri(), modelsDir());
-        const llama = await mod.getLlama();
-        const model = await llama.loadModel({ modelPath: resolvedPath });
-        const context = await model.createContext();
-        Logger.log(`Chat model loaded: ${path.basename(resolvedPath)}`);
-        return { llama, model, context, mod };
+  async function hasModel(): Promise<boolean> {
+    const { models } = await client.list();
+    return models.some((m) => m.name === model || m.model === model);
+  }
+
+  /** Pull the model on first use if the daemon doesn't have it yet. */
+  async function ensureModel(): Promise<void> {
+    if (!ensured) {
+      ensured = (async () => {
+        if (!(await hasModel())) {
+          Logger.log(`Pulling chat model "${model}" (first use)…`);
+          await client.pull({ model });
+          Logger.log(`Chat model ready: ${model}`);
+        }
       })().catch((err) => {
-        enginePromise = null; // allow a later retry
+        ensured = null; // allow a later retry
         throw err;
       });
     }
-    return enginePromise;
-  }
-
-  async function getGrammar(
-    engine: Engine,
-    slugs: readonly string[],
-  ): Promise<LlamaJsonSchemaGrammar<GbnfJsonSchema>> {
-    const key = [...slugs].sort().join(',');
-    let grammar = grammarCache.get(key);
-    if (!grammar) {
-      // The schema is built dynamically (category slugs vary), so the strict
-      // `const T` inference can't apply — cast to satisfy the generic.
-      grammar = (await engine.llama.createGrammarForJsonSchema(
-        buildSchema(slugs) as never,
-      )) as LlamaJsonSchemaGrammar<GbnfJsonSchema>;
-      grammarCache.set(key, grammar);
-    }
-    return grammar;
-  }
-
-  async function runExtraction(message: string, ctx: ExtractContext): Promise<RawExtraction> {
-    const engine = await getEngine();
-    const grammar = await getGrammar(
-      engine,
-      ctx.categories.map((c) => c.slug),
-    );
-    const sequence = engine.context.getSequence();
-    const session = new engine.mod.LlamaChatSession({
-      contextSequence: sequence,
-      systemPrompt: buildSystemPrompt(ctx),
-    });
-    try {
-      const raw = await session.prompt(message, { grammar, temperature: TEMPERATURE });
-      return grammar.parse(raw) as unknown as RawExtraction;
-    } finally {
-      session.dispose();
-      sequence.dispose();
-    }
+    return ensured;
   }
 
   return {
     isAvailable() {
-      return modelUri().length > 0;
+      return model.length > 0;
     },
-    isReady() {
-      return hasLocalModel();
+    async isReady() {
+      try {
+        return await hasModel();
+      } catch {
+        // Daemon unreachable or errored — treat as not ready.
+        return false;
+      }
     },
-    extract(message, ctx) {
-      // Chain onto the queue so only one prompt runs on the sequence at a time.
-      const run = queue.then(() => runExtraction(message, ctx));
-      queue = run.catch(() => undefined);
-      return run;
+    async extract(message, ctx) {
+      await ensureModel();
+      const res = await client.chat({
+        model,
+        stream: false,
+        format: buildSchema(ctx.categories.map((c) => c.slug)),
+        options: { temperature: TEMPERATURE },
+        messages: [
+          { role: 'system', content: buildSystemPrompt(ctx) },
+          { role: 'user', content: message },
+        ],
+      });
+      return JSON.parse(res.message.content) as RawExtraction;
     },
   };
 }

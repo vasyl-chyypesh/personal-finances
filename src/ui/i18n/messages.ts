@@ -189,10 +189,10 @@ export const MESSAGES = {
     'chat.pickCategory': 'Pick a category to continue.',
     'chat.saved': 'Added to your ledger',
     'chat.downloadHint':
-      'The AI model downloads on first use — your first message may take a little longer.',
+      'The model is downloaded on first use via Ollama — your first message may take a little longer.',
     'chat.notConfiguredTitle': 'AI chat is not configured',
     'chat.notConfiguredBody':
-      'Set CHAT_MODEL_URI in your environment to enable adding ledger entries from chat.',
+      'Set CHAT_MODEL and run Ollama to enable adding ledger entries from chat.',
   },
   uk: {
     'app.title': 'Особисті фінанси',
@@ -381,10 +381,10 @@ export const MESSAGES = {
     'chat.pickCategory': 'Оберіть категорію, щоб продовжити.',
     'chat.saved': 'Додано до журналу',
     'chat.downloadHint':
-      'Модель ШІ завантажується під час першого використання — перше повідомлення може зайняти трохи більше часу.',
+      'Модель завантажується під час першого використання через Ollama — перше повідомлення може зайняти трохи більше часу.',
     'chat.notConfiguredTitle': 'ШІ-чат не налаштовано',
     'chat.notConfiguredBody':
-      'Встановіть CHAT_MODEL_URI у середовищі, щоб додавати записи журналу через чат.',
+      'Встановіть CHAT_MODEL і запустіть Ollama, щоб додавати записи журналу через чат.',
   },
 } satisfies Record<Locale, Record<string, string>>;
 

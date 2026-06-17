@@ -39,7 +39,7 @@ function fakeExtractor(
 ): ILedgerExtractor {
   return {
     isAvailable: () => opts.available ?? true,
-    isReady: () => opts.ready ?? false,
+    isReady: () => Promise.resolve(opts.ready ?? false),
     extract: (_message, ctx) => {
       opts.capture?.(ctx);
       return Promise.resolve(raw);
@@ -159,12 +159,27 @@ describe('ChatService', () => {
     );
   });
 
-  it('reports availability/readiness from the extractor', () => {
+  it('reports availability/readiness from the extractor', async () => {
     const service = new ChatService(
-      fakeExtractor(FULL, { available: true, ready: false }),
+      fakeExtractor(FULL, { available: true, ready: true }),
       mockCategoriesRepo(),
     );
-    assert.deepEqual(service.status(), { available: true, ready: false });
+    assert.deepEqual(await service.status(), { available: true, ready: true });
+  });
+
+  it('reports ready=false without probing the extractor when unavailable', async () => {
+    let probed = false;
+    const extractor = fakeExtractor(FULL, { available: false });
+    const wrapped = {
+      ...extractor,
+      isReady: () => {
+        probed = true;
+        return Promise.resolve(true);
+      },
+    };
+    const service = new ChatService(wrapped, mockCategoriesRepo());
+    assert.deepEqual(await service.status(), { available: false, ready: false });
+    assert.equal(probed, false, 'isReady must not be called when unavailable');
   });
 
   it('throws 503 CHAT_UNAVAILABLE when the extractor is unavailable', async () => {
