@@ -144,6 +144,12 @@ export const ChatIcon = (p: IconProps) => (
 
 export const SendIcon = (p: IconProps) => (
   <Svg {...p}>
-    <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z" />
+    <path d="M12 19V5M5 12l7-7 7 7" />
+  </Svg>
+);
+
+export const SpinnerIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M21 12a9 9 0 1 1-6.22-8.56" />
   </Svg>
 );

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useI18n } from '../i18n/i18nContext.ts';
 import { DraftEntryCard } from './DraftEntryCard.tsx';
+import { SpinnerIcon } from './icons.tsx';
 import type { ChatMessage } from '../hooks/useChat.ts';
 import type { Category, CreateLedgerEntryDto } from '../types.ts';
 
@@ -68,7 +69,8 @@ export function ChatMessageList({
 
       {sending ? (
         <div className="flex justify-start">
-          <p className="rounded-2xl rounded-bl-sm bg-surface-muted px-4 py-2 text-sm text-fg-muted">
+          <p className="flex items-center gap-2 rounded-2xl rounded-bl-sm bg-surface-muted px-4 py-2 text-sm text-fg-muted">
+            <SpinnerIcon size={16} className="animate-spin" />
             {t('chat.thinking')}
           </p>
         </div>

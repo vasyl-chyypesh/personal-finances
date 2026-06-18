@@ -48,7 +48,7 @@ export function ChatComposer({ disabled = false, onSend }: ChatComposerProps) {
         title={t('chat.send')}
         className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary text-white transition-colors duration-100 hover:bg-primary-hover active:bg-primary-active disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       >
-        <SendIcon size={18} />
+        <SendIcon size={22} />
       </button>
     </form>
   );
