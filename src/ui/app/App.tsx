@@ -4,6 +4,7 @@ import { ErrorBoundary } from './ErrorBoundary.tsx';
 import { LedgerPage } from '../pages/LedgerPage.tsx';
 import { CategoriesPage } from '../pages/CategoriesPage.tsx';
 import { CurrenciesPage } from '../pages/CurrenciesPage.tsx';
+import { ChatPage } from '../pages/ChatPage.tsx';
 import type { ReactNode } from 'react';
 
 /** Page-level boundary: an error in one page shows a recoverable state, not a
@@ -38,6 +39,14 @@ export default function App() {
           element={
             <Page>
               <CurrenciesPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/chat"
+          element={
+            <Page>
+              <ChatPage />
             </Page>
           }
         />

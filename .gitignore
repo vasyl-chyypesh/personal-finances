@@ -110,3 +110,9 @@ dist
 
 # test xls files
 test_data.xls
+
+# macOS
+.DS_Store
+
+# Security scan report
+scan-report.html

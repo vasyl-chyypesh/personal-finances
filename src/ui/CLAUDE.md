@@ -12,7 +12,7 @@ The frontend is a **Vite + React 19 + TypeScript** single-page app. It is fully 
 
 - `main.tsx` — React entry; wraps the app in `ThemeProvider` → `I18nProvider` → `ErrorBoundary` → `BrowserRouter`.
 - `app/` — shell and cross-cutting providers: `App.tsx` (routing), `AppLayout.tsx` (sidebar + scrollable main `<Outlet/>`), `Sidebar.tsx` (nav + theme/locale toggles), `ErrorBoundary.tsx` (reusable; `inline` mode for page-level use), `ThemeProvider.tsx` / `themeContext.ts`.
-- `pages/` — `PascalCase.tsx` top-level views, one per route: `LedgerPage`, `CategoriesPage`, `CurrenciesPage`. Routes: `/` → `/ledger`, plus `/categories`, `/currencies`.
+- `pages/` — `PascalCase.tsx` top-level views, one per route: `LedgerPage`, `CategoriesPage`, `CurrenciesPage`, `ChatPage`. Routes: `/` → `/ledger`, plus `/categories`, `/currencies`, `/chat`. `ChatPage` (AI chat) drafts a ledger entry from a natural-language message via `useChat` (ephemeral in-memory history) and the `DraftEntryCard` preview, then saves through the existing `createLedger`; it gates on `GET /api/chat/status` and shows a "not configured" notice when the local model is disabled.
 - `components/` — `PascalCase.tsx` presentational/feature components (flat). `AmountDisplay` is the single source of truth for rendering money. `icons.tsx` holds inline SVG icons (no icon dependency).
 - `hooks/` — data + URL state (see **Server state** below).
 - `lib/` — framework-agnostic helpers: `client.ts` (typed `fetch` wrapper; throws `ApiError` from the `{ code, message }` body), `money.ts` (integer-cent ↔ major), `datePeriod.ts` (UTC period math, Monday weeks), `currencyMeta.ts` (flags/names + `convertCents`), `categoryStyle.ts` (deterministic color/glyph from a category slug).

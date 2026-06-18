@@ -174,6 +174,25 @@ export const MESSAGES = {
     'calendar.source': 'Income source',
     'calendar.total': 'TOTAL',
     'calendar.percent': '%',
+
+    'nav.chat': 'AI Chat',
+    'chat.title': 'AI Chat',
+    'chat.subtitle': 'Describe a transaction and add it to your ledger.',
+    'chat.loading': 'Loading…',
+    'chat.empty':
+      'Type something like “spent 500 on groceries today” and I’ll draft a ledger entry for you to confirm.',
+    'chat.placeholder': 'Describe a transaction…',
+    'chat.send': 'Send',
+    'chat.thinking': 'Thinking…',
+    'chat.confirm': 'Add to ledger',
+    'chat.verify': 'verify',
+    'chat.pickCategory': 'Pick a category to continue.',
+    'chat.saved': 'Added to your ledger',
+    'chat.downloadHint':
+      'The model is downloaded on first use via Ollama — your first message may take a little longer.',
+    'chat.notConfiguredTitle': 'AI chat is not configured',
+    'chat.notConfiguredBody':
+      'Set CHAT_MODEL and run Ollama to enable adding ledger entries from chat.',
   },
   uk: {
     'app.title': 'Особисті фінанси',
@@ -347,6 +366,25 @@ export const MESSAGES = {
     'calendar.source': 'Джерело доходу',
     'calendar.total': 'РАЗОМ',
     'calendar.percent': '%',
+
+    'nav.chat': 'ШІ-чат',
+    'chat.title': 'ШІ-чат',
+    'chat.subtitle': 'Опишіть операцію — і додайте її до журналу.',
+    'chat.loading': 'Завантаження…',
+    'chat.empty':
+      'Напишіть, наприклад, «витратив 500 на продукти сьогодні», і я підготую запис для підтвердження.',
+    'chat.placeholder': 'Опишіть операцію…',
+    'chat.send': 'Надіслати',
+    'chat.thinking': 'Обробляю…',
+    'chat.confirm': 'Додати до журналу',
+    'chat.verify': 'перевірте',
+    'chat.pickCategory': 'Оберіть категорію, щоб продовжити.',
+    'chat.saved': 'Додано до журналу',
+    'chat.downloadHint':
+      'Модель завантажується під час першого використання через Ollama — перше повідомлення може зайняти трохи більше часу.',
+    'chat.notConfiguredTitle': 'ШІ-чат не налаштовано',
+    'chat.notConfiguredBody':
+      'Встановіть CHAT_MODEL і запустіть Ollama, щоб додавати записи журналу через чат.',
   },
 } satisfies Record<Locale, Record<string, string>>;
 

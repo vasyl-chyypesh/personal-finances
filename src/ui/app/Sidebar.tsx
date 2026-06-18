@@ -2,13 +2,13 @@ import { NavLink } from 'react-router';
 import { useI18n } from '../i18n/i18nContext.ts';
 import { LOCALE_LABELS } from '../i18n/messages.ts';
 import { useTheme } from './themeContext.ts';
-import { CoinsIcon, LedgerIcon, TagIcon } from '../components/icons.tsx';
+import { ChatIcon, CoinsIcon, LedgerIcon, TagIcon } from '../components/icons.tsx';
 import type { Locale } from '../types.ts';
 import type { ReactNode } from 'react';
 
 interface NavItem {
   to: string;
-  labelKey: 'nav.ledger' | 'nav.categories' | 'nav.currencies';
+  labelKey: 'nav.ledger' | 'nav.categories' | 'nav.currencies' | 'nav.chat';
   icon: ReactNode;
 }
 
@@ -16,6 +16,7 @@ const NAV: NavItem[] = [
   { to: '/ledger', labelKey: 'nav.ledger', icon: <LedgerIcon size={18} /> },
   { to: '/categories', labelKey: 'nav.categories', icon: <TagIcon size={18} /> },
   { to: '/currencies', labelKey: 'nav.currencies', icon: <CoinsIcon size={18} /> },
+  { to: '/chat', labelKey: 'nav.chat', icon: <ChatIcon size={18} /> },
 ];
 
 function navLinkClass({ isActive }: { isActive: boolean }): string {

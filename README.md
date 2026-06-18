@@ -41,6 +41,24 @@ The UI is served by Vite on `http://localhost:5173` and proxies `/api/*` request
 
 The app is **multi-language** (English and Ukrainian). Use the language switcher in the header to change locale; the choice is remembered in `localStorage` and defaults from the browser language. Category names are bilingual — stored per category and shown in the active language (falling back to the other language, then the slug).
 
+## AI chat (optional)
+
+The **AI Chat** view turns a natural-language message ("spent 500 on groceries today" / "500 грн таксі вчора", English or Ukrainian) into a **draft ledger entry** you review and confirm before it's saved. Nothing is auto-inserted; the conversation is kept in memory only (a reload clears it — the entries you confirm persist as normal).
+
+It runs a **local LLM via [Ollama](https://ollama.com)** — no cloud, no API key. The app stays pure JS and talks to the local Ollama daemon over HTTP. To use it:
+
+```bash
+# 1. Install Ollama (https://ollama.com/download), then start the daemon
+ollama serve
+
+# 2. (Optional) pre-pull the model; otherwise it's pulled on first chat use
+ollama pull gemma4:12b-mlx
+```
+
+The default model is **`gemma4:12b-mlx`** (configurable via `CHAT_MODEL`); `OLLAMA_HOST` overrides the daemon URL (default `http://127.0.0.1:11434`). If the model isn't present, it's **pulled on first chat use**, so the first message is slow while it downloads (needs network once); afterwards it runs fully offline.
+
+The feature is **optional**: if `CHAT_MODEL` is empty (or Ollama isn't running), the chat view shows an "AI chat is not configured"/"not ready" state and the rest of the app is unaffected. Tests and CI inject a fake extractor and never contact a daemon. Any Ollama model works — to use a different one, set `CHAT_MODEL` to its tag (e.g. `gemma3`, `qwen2.5:3b`).
+
 The API follows a strict layered architecture: **Routes → Services → Repositories**. The UI lives under `src/ui/` (Vite SPA, plain `fetch` + hooks, no extra state library). See [CLAUDE.md](./CLAUDE.md) for the full architecture and contribution conventions.
 
 ## License
