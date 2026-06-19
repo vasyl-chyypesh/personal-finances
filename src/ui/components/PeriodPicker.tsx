@@ -1,5 +1,6 @@
 import { useI18n } from '../i18n/i18nContext.ts';
 import { formatPeriodLabel, shiftPeriod } from '../lib/datePeriod.ts';
+import { SegmentedControl } from './SegmentedControl.tsx';
 import { ChevronLeftIcon, ChevronRightIcon } from './icons.tsx';
 
 export interface PeriodPickerProps {
@@ -11,9 +12,6 @@ export interface PeriodPickerProps {
   hideGranularity?: boolean;
   className?: string;
 }
-
-const segBase =
-  'px-3 py-1 text-xs font-medium transition-colors duration-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary';
 
 /**
  * Period selector: week/month toggle, an explicit range label, and prev/next
@@ -47,30 +45,17 @@ export function PeriodPicker({
         }
       }}
     >
-      <div
-        className={`${hideGranularity ? 'hidden' : 'inline-flex'} overflow-hidden rounded-md border-hairline border-line`}
-        role="tablist"
-      >
-        {(['week', 'month'] as const).map((p) => {
-          const active = period === p;
-          return (
-            <button
-              key={p}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              onClick={() => onPeriodChange(p)}
-              className={`${segBase} ${
-                active
-                  ? 'bg-primary text-white'
-                  : 'bg-surface text-fg-muted hover:bg-surface-muted hover:text-fg'
-              }`}
-            >
-              {p === 'week' ? t('period.week') : t('period.month')}
-            </button>
-          );
-        })}
-      </div>
+      {hideGranularity ? null : (
+        <SegmentedControl
+          ariaLabel={t('period.month')}
+          value={period}
+          onChange={onPeriodChange}
+          options={[
+            { value: 'week', label: t('period.week') },
+            { value: 'month', label: t('period.month') },
+          ]}
+        />
+      )}
 
       <div className="flex items-center gap-1">
         <button

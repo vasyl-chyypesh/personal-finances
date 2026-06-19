@@ -6,6 +6,7 @@ import { useCurrencies } from '../hooks/useCurrencies.ts';
 import { useLedgerFilters, type LedgerView } from '../hooks/useLedgerFilters.ts';
 import { isWithinPeriod, toISODate } from '../lib/datePeriod.ts';
 import { Button } from '../components/Button.tsx';
+import { SegmentedControl } from '../components/SegmentedControl.tsx';
 import { PageHeader } from '../components/PageHeader.tsx';
 import { SummaryBar } from '../components/SummaryBar.tsx';
 import { LedgerFilter } from '../components/LedgerFilter.tsx';
@@ -24,9 +25,6 @@ import type {
   LedgerEntry,
   LedgerEntryType,
 } from '../types.ts';
-
-const segBase =
-  'px-3 py-1 text-xs font-medium transition-colors duration-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary';
 
 interface PanelState {
   open: boolean;
@@ -190,26 +188,12 @@ export function LedgerPage() {
 
         <div className="rounded-lg border-hairline border-line bg-surface">
           <div className="flex items-center justify-end border-b-hairline border-line px-3 py-2">
-            <div className="inline-flex overflow-hidden rounded-md border-hairline border-line">
-              {VIEWS.map((v) => {
-                const active = view === v.key;
-                return (
-                  <button
-                    key={v.key}
-                    type="button"
-                    aria-pressed={active}
-                    onClick={() => setView(v.key)}
-                    className={`${segBase} ${
-                      active
-                        ? 'bg-primary text-white'
-                        : 'bg-surface text-fg-muted hover:bg-surface-muted hover:text-fg'
-                    }`}
-                  >
-                    {t(v.labelKey)}
-                  </button>
-                );
-              })}
-            </div>
+            <SegmentedControl
+              ariaLabel={t('ledger.viewList')}
+              value={view}
+              onChange={setView}
+              options={VIEWS.map((v) => ({ value: v.key, label: t(v.labelKey) }))}
+            />
           </div>
 
           <div className="p-2">
