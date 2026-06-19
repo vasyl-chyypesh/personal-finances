@@ -106,7 +106,7 @@ function SectionTable({
                         {note ? (
                           <span
                             aria-hidden
-                            className="absolute top-0.5 right-0.5 size-1.5 rounded-pill bg-accent"
+                            className="absolute top-0 right-0 h-0 w-0 border-t-[5px] border-l-[5px] border-t-accent border-l-transparent"
                           />
                         ) : null}
                       </button>
