@@ -60,21 +60,25 @@
   --shadow-xs: 0 1px 2px 0 rgb(16 24 40 / 0.04);
   --shadow-sm: 0 1px 3px 0 rgb(16 24 40 / 0.06), 0 1px 2px -1px rgb(16 24 40 / 0.06);
 
-  /* Financial semantic colors */
-  --color-income-bg: #eaf3de;
-  --color-income-text: #3b6d11;
+  /*
+   * Financial semantic colors. `bg`/`text` flip per theme (resolved from the
+   * light/dark variables below) so soft tints + their foreground read correctly
+   * on both canvases; `strong` is a solid fill (white text) that holds in both.
+   */
+  --color-income-bg: var(--income-bg);
+  --color-income-text: var(--income-text);
   --color-income-strong: #639922;
 
-  --color-expense-bg: #fcebeb;
-  --color-expense-text: #a32d2d;
+  --color-expense-bg: var(--expense-bg);
+  --color-expense-text: var(--expense-text);
   --color-expense-strong: #e24b4a;
 
-  --color-pending-bg: #faeeda;
-  --color-pending-text: #854f0b;
+  --color-pending-bg: var(--pending-bg);
+  --color-pending-text: var(--pending-text);
   --color-pending-strong: #ef9f27;
 
-  --color-transfer-bg: #e6f1fb;
-  --color-transfer-text: #185fa5;
+  --color-transfer-bg: var(--transfer-bg);
+  --color-transfer-text: var(--transfer-text);
   --color-transfer-strong: #378add;
 
   /* Primary / accent */
@@ -110,6 +114,16 @@
   --fg-subtle: #8a909a;
   --line: #e6e8eb;
   --line-strong: #c4c8ce;
+
+  /* Semantic soft tint + foreground (light). */
+  --income-bg: #eaf3de;
+  --income-text: #3b6d11;
+  --expense-bg: #fcebeb;
+  --expense-text: #a32d2d;
+  --pending-bg: #faeeda;
+  --pending-text: #854f0b;
+  --transfer-bg: #e6f1fb;
+  --transfer-text: #185fa5;
 }
 
 .dark {
@@ -121,6 +135,16 @@
   --fg-subtle: #767d87;
   --line: #26292e;
   --line-strong: #34383e;
+
+  /* Semantic soft tint + foreground (dark): low-chroma tints, brighter text. */
+  --income-bg: #19240f;
+  --income-text: #92c766;
+  --expense-bg: #2a1a1b;
+  --expense-text: #f08a88;
+  --pending-bg: #2a2210;
+  --pending-text: #e9b765;
+  --transfer-bg: #15212e;
+  --transfer-text: #7fb7ec;
 }
 
 /*
