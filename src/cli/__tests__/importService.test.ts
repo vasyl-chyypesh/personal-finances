@@ -68,7 +68,7 @@ const sheet: ParsedSheet = {
   rows: [
     { type: 'expense', category: 'Благодійність', day: 1, amount: 800, description: 'army' },
     { type: 'expense', category: 'Благодійність', day: 3, amount: 100, description: null },
-    { type: 'income', category: 'Зарплата', day: 1, amount: 267325.695, description: 'salary' },
+    { type: 'income', category: 'Премія', day: 1, amount: 267325.695, description: 'bonus' },
   ],
 };
 
@@ -87,10 +87,10 @@ describe('ImportService', () => {
     const summary = new ImportService(fakeDb, ledger.repo, cats.repo).import(sheet);
 
     // "Благодійність" -> catalog slug "charity" with both names;
-    // "Зарплата" is not in the catalog -> custom slug from the label, uk only.
+    // "Премія" is not in the catalog -> custom slug from the label, uk only.
     assert.deepEqual(cats.created, [
       { slug: 'charity', names: { en: 'Charity', uk: 'Благодійність' } },
-      { slug: 'зарплата', names: { uk: 'Зарплата' } },
+      { slug: 'премія', names: { uk: 'Премія' } },
     ]);
     assert.equal(summary.categoriesCreated, 2);
   });
@@ -104,7 +104,7 @@ describe('ImportService', () => {
 
     assert.deepEqual(
       cats.created.map((c) => c.slug),
-      ['зарплата'],
+      ['премія'],
     );
     assert.equal(summary.categoriesCreated, 1);
   });

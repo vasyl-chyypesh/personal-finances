@@ -65,11 +65,11 @@ describe('xls import (integration)', () => {
     const electricity = categoriesRepo.findBySlug('electricity');
     assert.equal(electricity?.names.uk, 'Електроенергія');
 
-    // "Зарплата" is not in the catalog -> created as a custom, single-locale category
-    const salary = entries.find((e) => e.category.slug === 'зарплата');
+    // "Зарплата" maps to the seeded catalog "salary" slug (bilingual)
+    const salary = entries.find((e) => e.category.slug === 'salary');
     assert.equal(salary?.type, 'income');
     assert.equal(salary?.amount, 26732570); // 267325.695 * 100, rounded
-    assert.deepEqual(salary?.category.names, { uk: 'Зарплата' });
+    assert.deepEqual(salary?.category.names, { en: 'Salary', uk: 'Зарплата' });
   });
 
   it('is idempotent per month — re-running replaces rather than duplicates', () => {

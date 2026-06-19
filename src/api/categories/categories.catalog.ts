@@ -46,11 +46,11 @@ export const CATEGORY_CATALOG: CategoryDef[] = [
   { slug: 'transport', names: { en: 'Transport', uk: 'Транспортні витрати' } },
   { slug: 'eating-out', names: { en: 'Eating out', uk: 'Харчування поза домом' } },
   { slug: 'investments', names: { en: 'Investments', uk: 'Інвестиції' } },
-  { slug: 'salary', names: { en: 'Salary (Codify Stigg)', uk: 'Зарплата Codify Stigg' } },
+  { slug: 'salary', names: { en: 'Salary', uk: 'Зарплата' } },
   { slug: 'side-project', names: { en: 'Side projects', uk: 'Додаткові проекти' } },
   {
     slug: 'rental-income',
-    names: { en: 'Rental utilities (Mozhayskoho 5)', uk: 'Можайського 5 комуналка' },
+    names: { en: 'Rental utilities (cashback)', uk: 'Комунальні платежі (повернення)' },
   },
   { slug: 'deposits', names: { en: 'Deposits, securities', uk: 'Депозити, Цінні папери' } },
   { slug: 'cashback', names: { en: 'Cashback', uk: 'Кешбек' } },
