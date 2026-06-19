@@ -2,6 +2,7 @@ import { useI18n } from '../i18n/i18nContext.ts';
 import { useCurrencies } from '../hooks/useCurrencies.ts';
 import { useRatesHistory } from '../hooks/useRatesHistory.ts';
 import { useCurrencyChartParams } from '../hooks/useCurrencyChartParams.ts';
+import { Button } from '../components/Button.tsx';
 import { PageHeader } from '../components/PageHeader.tsx';
 import { CurrencyListItem } from '../components/CurrencyListItem.tsx';
 import { RateHistoryChart } from '../components/RateHistoryChart.tsx';
@@ -20,21 +21,13 @@ export function CurrenciesPage() {
     <>
       <PageHeader title={t('currencies.title')} subtitle={t('currencies.subtitle')} />
 
-      <div className="rounded-lg border-hairline border-line bg-surface p-2">
+      <div className="rounded-lg border-hairline border-line bg-surface p-2 shadow-sm">
         {error ? (
           <EmptyState
             icon={<AlertIcon size={22} />}
             title={t('currencies.loadError')}
             description={error}
-            action={
-              <button
-                type="button"
-                onClick={() => window.location.reload()}
-                className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-white transition-colors duration-100 hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-              >
-                {t('error.retry')}
-              </button>
-            }
+            action={<Button onClick={() => window.location.reload()}>{t('error.retry')}</Button>}
           />
         ) : loading || !base || !rates ? (
           <div>
@@ -69,7 +62,7 @@ export function CurrenciesPage() {
         )}
       </div>
 
-      <div className="mt-4 rounded-lg border-hairline border-line bg-surface p-4">
+      <div className="mt-4 rounded-lg border-hairline border-line bg-surface p-4 shadow-sm">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-sm font-medium text-fg">{t('currencies.chartTitle')}</h2>
           <RangePresets value={range} onChange={setRange} />

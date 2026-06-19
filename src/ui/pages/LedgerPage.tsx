@@ -186,7 +186,7 @@ export function LedgerPage() {
           hideGranularity={calendarMode}
         />
 
-        <div className="rounded-lg border-hairline border-line bg-surface">
+        <div className="rounded-lg border-hairline border-line bg-surface shadow-sm">
           <div className="flex items-center justify-end border-b-hairline border-line px-3 py-2">
             <SegmentedControl
               ariaLabel={t('ledger.viewList')}

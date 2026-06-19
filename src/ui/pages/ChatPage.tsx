@@ -17,12 +17,12 @@ export function ChatPage() {
       {statusLoading ? (
         <p className="text-sm text-fg-muted">{t('chat.loading')}</p>
       ) : !status?.available ? (
-        <div className="rounded-lg border-hairline border-line bg-surface p-6">
+        <div className="rounded-lg border-hairline border-line bg-surface p-6 shadow-sm">
           <h2 className="text-md font-medium text-fg">{t('chat.notConfiguredTitle')}</h2>
           <p className="mt-1 text-sm text-fg-muted">{t('chat.notConfiguredBody')}</p>
         </div>
       ) : (
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border-hairline border-line bg-surface">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border-hairline border-line bg-surface shadow-sm">
           {status.ready === false ? (
             <p className="border-b-hairline border-line bg-surface-muted px-4 py-2 text-xs text-fg-muted">
               {t('chat.downloadHint')}

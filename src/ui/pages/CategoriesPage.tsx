@@ -41,7 +41,7 @@ export function CategoriesPage() {
     <>
       <PageHeader title={t('nav.categories')} />
 
-      <div className="rounded-lg border-hairline border-line bg-surface">
+      <div className="rounded-lg border-hairline border-line bg-surface shadow-sm">
         {/* Add form: name + translations */}
         <form
           onSubmit={(e) => {

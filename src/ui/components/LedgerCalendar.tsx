@@ -89,7 +89,7 @@ function SectionTable({
                       <button
                         type="button"
                         onClick={() => onCellClick(section.type, row.category, i + 1)}
-                        className="relative inline-block w-full rounded-sm px-1 text-right text-fg transition-colors duration-100 hover:bg-primary-soft focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary"
+                        className="relative inline-block w-full rounded-sm px-1 text-right text-fg transition-colors duration-100 hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary"
                       >
                         {cellFmt.format(centsToMajor(value))}
                         {note ? (

@@ -29,7 +29,7 @@ function Cell({ label, hint, children }: { label: string; hint?: string; childre
  * render correctly in both grid layouts.
  */
 const ROW =
-  'grid grid-cols-2 gap-px overflow-hidden rounded-lg border-hairline border-line bg-line lg:grid-cols-4';
+  'grid grid-cols-2 gap-px overflow-hidden rounded-lg border-hairline border-line bg-line shadow-sm lg:grid-cols-4';
 
 /**
  * Derived headline metrics. All money is summed in integer cents and converted
