@@ -81,6 +81,17 @@ export const transition = {
   slow: '200ms ease',
 } as const;
 
+/**
+ * Elevation — subtle, cool-tinted shadows for the crisp/minimal surfaces.
+ * Mirrored into the `--shadow-*` utilities in index.css. Separation comes
+ * mostly from hairline borders; these add just enough lift for raised
+ * controls and hover states.
+ */
+export const shadow = {
+  xs: '0 1px 2px 0 rgb(16 24 40 / 0.04)',
+  sm: '0 1px 3px 0 rgb(16 24 40 / 0.06), 0 1px 2px -1px rgb(16 24 40 / 0.06)',
+} as const;
+
 /** Borders are intentionally lighter than Tailwind's 1px default. */
 export const border = {
   hairline: '0.5px',

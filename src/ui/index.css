@@ -52,21 +52,33 @@
   --ease-base: ease;
   --ease-slow: ease;
 
-  /* Financial semantic colors */
-  --color-income-bg: #eaf3de;
-  --color-income-text: #3b6d11;
+  /*
+   * Elevation — subtle, cool-tinted shadows for the crisp/minimal surfaces.
+   * Separation comes mostly from hairline borders; these add just enough lift
+   * for raised controls (active segment) and hover states. shadow- utilities.
+   */
+  --shadow-xs: 0 1px 2px 0 rgb(16 24 40 / 0.04);
+  --shadow-sm: 0 1px 3px 0 rgb(16 24 40 / 0.06), 0 1px 2px -1px rgb(16 24 40 / 0.06);
+
+  /*
+   * Financial semantic colors. `bg`/`text` flip per theme (resolved from the
+   * light/dark variables below) so soft tints + their foreground read correctly
+   * on both canvases; `strong` is a solid fill (white text) that holds in both.
+   */
+  --color-income-bg: var(--income-bg);
+  --color-income-text: var(--income-text);
   --color-income-strong: #639922;
 
-  --color-expense-bg: #fcebeb;
-  --color-expense-text: #a32d2d;
+  --color-expense-bg: var(--expense-bg);
+  --color-expense-text: var(--expense-text);
   --color-expense-strong: #e24b4a;
 
-  --color-pending-bg: #faeeda;
-  --color-pending-text: #854f0b;
+  --color-pending-bg: var(--pending-bg);
+  --color-pending-text: var(--pending-text);
   --color-pending-strong: #ef9f27;
 
-  --color-transfer-bg: #e6f1fb;
-  --color-transfer-text: #185fa5;
+  --color-transfer-bg: var(--transfer-bg);
+  --color-transfer-text: var(--transfer-text);
   --color-transfer-strong: #378add;
 
   /* Primary / accent */
@@ -94,25 +106,45 @@
 }
 
 :root {
-  --canvas: #f1efe8;
+  --canvas: #f7f8fa;
   --surface: #ffffff;
-  --surface-muted: #f7f6f1;
-  --fg: #444441;
-  --fg-muted: #5f5e58;
-  --fg-subtle: #76756e;
-  --line: #e2e0d8;
-  --line-strong: #b4b2a9;
+  --surface-muted: #f1f3f5;
+  --fg: #1a1d21;
+  --fg-muted: #5c636e;
+  --fg-subtle: #8a909a;
+  --line: #e6e8eb;
+  --line-strong: #c4c8ce;
+
+  /* Semantic soft tint + foreground (light). */
+  --income-bg: #eaf3de;
+  --income-text: #3b6d11;
+  --expense-bg: #fcebeb;
+  --expense-text: #a32d2d;
+  --pending-bg: #faeeda;
+  --pending-text: #854f0b;
+  --transfer-bg: #e6f1fb;
+  --transfer-text: #185fa5;
 }
 
 .dark {
-  --canvas: #1c1c1a;
-  --surface: #262623;
-  --surface-muted: #2f2f2b;
-  --fg: #f1efe8;
-  --fg-muted: #b4b2a9;
-  --fg-subtle: #a3a199;
-  --line: #3a3a36;
-  --line-strong: #4c4c47;
+  --canvas: #0e0f11;
+  --surface: #16181b;
+  --surface-muted: #1c1f23;
+  --fg: #f2f4f7;
+  --fg-muted: #aeb4bd;
+  --fg-subtle: #767d87;
+  --line: #26292e;
+  --line-strong: #34383e;
+
+  /* Semantic soft tint + foreground (dark): low-chroma tints, brighter text. */
+  --income-bg: #19240f;
+  --income-text: #92c766;
+  --expense-bg: #2a1a1b;
+  --expense-text: #f08a88;
+  --pending-bg: #2a2210;
+  --pending-text: #e9b765;
+  --transfer-bg: #15212e;
+  --transfer-text: #7fb7ec;
 }
 
 /*

@@ -20,8 +20,10 @@ const NAV: NavItem[] = [
 ];
 
 function navLinkClass({ isActive }: { isActive: boolean }): string {
-  return `flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors duration-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary ${
-    isActive ? 'bg-primary-soft text-primary' : 'text-fg-muted hover:bg-surface-muted hover:text-fg'
+  return `relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors duration-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary ${
+    isActive
+      ? 'bg-surface-muted text-fg before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-r-full before:bg-primary'
+      : 'text-fg-muted hover:bg-surface-muted hover:text-fg'
   }`;
 }
 
@@ -36,7 +38,7 @@ export function Sidebar() {
     <aside className="flex w-16 shrink-0 flex-col border-r-hairline border-line bg-surface lg:w-60">
       {/* Logo */}
       <div className="flex h-16 items-center gap-2 px-4">
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-white">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-fg text-surface">
           <CoinsIcon size={18} />
         </span>
         <span className="hidden truncate text-md font-medium text-fg lg:inline">

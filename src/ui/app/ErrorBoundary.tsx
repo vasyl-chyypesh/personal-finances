@@ -1,5 +1,6 @@
 import { Component, type ReactNode } from 'react';
 import { useI18n } from '../i18n/i18nContext.ts';
+import { Button } from '../components/Button.tsx';
 import { EmptyState } from '../components/EmptyState.tsx';
 import { AlertIcon } from '../components/icons.tsx';
 
@@ -17,15 +18,7 @@ interface ErrorBoundaryState {
  * re-run their data fetches — recoverable without a full page reload. */
 function ErrorFallback({ onRetry, inline }: { onRetry: () => void; inline?: boolean }) {
   const { t } = useI18n();
-  const retry = (
-    <button
-      type="button"
-      onClick={onRetry}
-      className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-white transition-colors duration-100 hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-    >
-      {t('error.retry')}
-    </button>
-  );
+  const retry = <Button onClick={onRetry}>{t('error.retry')}</Button>;
 
   if (inline) {
     return (

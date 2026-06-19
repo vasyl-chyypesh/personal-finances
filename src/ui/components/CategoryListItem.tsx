@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useI18n } from '../i18n/i18nContext.ts';
 import { categoryName } from '../i18n/categoryName.ts';
-import { categoryColor, categoryGlyph } from '../lib/categoryStyle.ts';
+import { categoryGlyph, categoryTint } from '../lib/categoryStyle.ts';
 import { ConfirmTooltip } from './ConfirmTooltip.tsx';
 import { CheckIcon, CloseIcon, PencilIcon, TrashIcon } from './icons.tsx';
 import type { Category, LocalizedName } from '../types.ts';
@@ -26,7 +26,7 @@ function collect(en: string, uk: string): LocalizedName {
 export function CategoryListItem({ category, onRename, onDelete }: CategoryListItemProps) {
   const { t, locale } = useI18n();
   const name = categoryName(category, locale);
-  const color = categoryColor(category.slug);
+  const tint = categoryTint(category.slug);
 
   const [editing, setEditing] = useState(false);
   const [en, setEn] = useState(category.names.en ?? '');
@@ -70,8 +70,8 @@ export function CategoryListItem({ category, onRename, onDelete }: CategoryListI
       >
         <span
           aria-hidden
-          className="flex size-9 shrink-0 items-center justify-center rounded-md text-sm font-medium text-white"
-          style={{ backgroundColor: color }}
+          className="flex size-9 shrink-0 items-center justify-center rounded-md text-sm font-medium"
+          style={{ backgroundColor: tint.bg, color: tint.fg }}
         >
           {categoryGlyph(name)}
         </span>
@@ -120,8 +120,8 @@ export function CategoryListItem({ category, onRename, onDelete }: CategoryListI
     <div className="flex items-center gap-3 rounded-md px-3 py-2.5 transition-colors duration-100 hover:bg-surface-muted">
       <span
         aria-hidden
-        className="flex size-9 shrink-0 items-center justify-center rounded-md text-sm font-medium text-white"
-        style={{ backgroundColor: color }}
+        className="flex size-9 shrink-0 items-center justify-center rounded-md text-sm font-medium"
+        style={{ backgroundColor: tint.bg, color: tint.fg }}
       >
         {categoryGlyph(name)}
       </span>

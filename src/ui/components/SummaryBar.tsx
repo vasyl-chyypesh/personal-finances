@@ -13,15 +13,23 @@ export interface SummaryBarProps {
   loading?: boolean;
 }
 
-function Card({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
+function Cell({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
-    <div className="rounded-lg border-hairline border-line bg-surface p-4">
-      <p className="text-2xs font-medium tracking-wide text-fg-muted uppercase">{label}</p>
+    <div className="bg-surface p-4">
+      <p className="text-2xs font-medium tracking-wide text-fg-subtle uppercase">{label}</p>
       <div className="mt-2">{children}</div>
       {hint ? <p className="mt-1 text-2xs text-fg-subtle">{hint}</p> : null}
     </div>
   );
 }
+
+/**
+ * One bordered row, cells split by hairline dividers (2×2 on narrow screens,
+ * 1×4 from lg). `gap-px` over a `bg-line` container draws the dividers so they
+ * render correctly in both grid layouts.
+ */
+const ROW =
+  'grid grid-cols-2 gap-px overflow-hidden rounded-lg border-hairline border-line bg-line shadow-sm lg:grid-cols-4';
 
 /**
  * Derived headline metrics. All money is summed in integer cents and converted
@@ -54,9 +62,9 @@ export function SummaryBar({ records, base, rates, loading }: SummaryBarProps) {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className={ROW}>
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="rounded-lg border-hairline border-line bg-surface p-4">
+          <div key={i} className="bg-surface p-4">
             <div className="h-2.5 w-20 animate-pulse rounded-sm bg-surface-muted" />
             <div className="mt-3 h-5 w-28 animate-pulse rounded-sm bg-surface-muted" />
           </div>
@@ -66,11 +74,11 @@ export function SummaryBar({ records, base, rates, loading }: SummaryBarProps) {
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      <Card label={t('summary.income')} hint={hint}>
+    <div className={ROW}>
+      <Cell label={t('summary.income')} hint={hint}>
         <AmountDisplay amount={income} currency={base} type="income" size="lg" showSign={false} />
-      </Card>
-      <Card label={t('summary.expenses')} hint={hint}>
+      </Cell>
+      <Cell label={t('summary.expenses')} hint={hint}>
         <AmountDisplay
           amount={expenses}
           currency={base}
@@ -78,8 +86,8 @@ export function SummaryBar({ records, base, rates, loading }: SummaryBarProps) {
           size="lg"
           showSign={false}
         />
-      </Card>
-      <Card label={t('summary.balance')} hint={hint}>
+      </Cell>
+      <Cell label={t('summary.balance')} hint={hint}>
         <AmountDisplay
           amount={balance}
           currency={base}
@@ -87,8 +95,8 @@ export function SummaryBar({ records, base, rates, loading }: SummaryBarProps) {
           size="lg"
           showSign={false}
         />
-      </Card>
-      <Card label={t('summary.savingsRate')}>
+      </Cell>
+      <Cell label={t('summary.savingsRate')}>
         <span
           className={`font-mono text-xl font-medium tabular-nums ${
             savingsRate < 0 ? 'text-expense-text' : 'text-fg'
@@ -96,7 +104,7 @@ export function SummaryBar({ records, base, rates, loading }: SummaryBarProps) {
         >
           {savingsRate.toFixed(1)}%
         </span>
-      </Card>
+      </Cell>
     </div>
   );
 }

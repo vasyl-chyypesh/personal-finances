@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useI18n } from '../i18n/i18nContext.ts';
 import { categoryName } from '../i18n/categoryName.ts';
 import { AmountDisplay } from './AmountDisplay.tsx';
+import { Button } from './Button.tsx';
 import { CloseIcon, PlusIcon } from './icons.tsx';
 import type { Category, LedgerEntry } from '../types.ts';
 
@@ -100,14 +101,10 @@ export function CellEntriesModal({
         </div>
 
         <footer className="border-t-hairline border-line p-3">
-          <button
-            type="button"
-            onClick={onAdd}
-            className="flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-medium text-white transition-colors duration-100 hover:bg-primary-hover active:bg-primary-active focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-          >
+          <Button onClick={onAdd} className="w-full">
             <PlusIcon size={16} />
             {t('cell.add')}
-          </button>
+          </Button>
         </footer>
       </div>
     </div>
