@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { useI18n } from '../i18n/i18nContext.ts';
 import { categoryName } from '../i18n/categoryName.ts';
 import { centsToMajor, majorToCents } from '../lib/money.ts';
+import { Button } from './Button.tsx';
 import { ConfirmTooltip } from './ConfirmTooltip.tsx';
 import { CloseIcon } from './icons.tsx';
 import { CURRENCIES } from '../types.ts';
@@ -317,20 +318,12 @@ export function RecordSidePanel({
             </div>
 
             <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={onClose}
-                className="rounded-md px-3 py-2 text-sm font-medium text-fg-muted transition-colors duration-100 hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary"
-              >
+              <Button variant="ghost" onClick={onClose}>
                 {t('panel.cancel')}
-              </button>
-              <button
-                type="submit"
-                disabled={saving}
-                className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white transition-colors duration-100 hover:bg-primary-hover active:bg-primary-active disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-              >
+              </Button>
+              <Button type="submit" disabled={saving}>
                 {t('panel.save')}
-              </button>
+              </Button>
             </div>
           </footer>
         </form>

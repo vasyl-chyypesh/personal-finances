@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useI18n } from '../i18n/i18nContext.ts';
 import { useCategories } from '../hooks/useCategories.ts';
+import { Button } from '../components/Button.tsx';
 import { PageHeader } from '../components/PageHeader.tsx';
 import { CategoryListItem } from '../components/CategoryListItem.tsx';
 import { EmptyState } from '../components/EmptyState.tsx';
@@ -71,14 +72,10 @@ export function CategoriesPage() {
               className={`mt-1 ${inputClass}`}
             />
           </label>
-          <button
-            type="submit"
-            disabled={adding || !canAdd}
-            className="flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-medium text-white transition-colors duration-100 hover:bg-primary-hover active:bg-primary-active disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-          >
+          <Button type="submit" disabled={adding || !canAdd}>
             <PlusIcon size={16} />
             {t('categories.submitAdd')}
-          </button>
+          </Button>
         </form>
 
         <div className="p-2">

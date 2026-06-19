@@ -46,7 +46,7 @@ export function ChatComposer({ disabled = false, onSend }: ChatComposerProps) {
         disabled={disabled || !text.trim()}
         aria-label={t('chat.send')}
         title={t('chat.send')}
-        className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary text-white transition-colors duration-100 hover:bg-primary-hover active:bg-primary-active disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        className="flex size-10 shrink-0 items-center justify-center rounded-md bg-fg text-surface transition duration-100 hover:opacity-90 active:opacity-80 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       >
         <SendIcon size={22} />
       </button>

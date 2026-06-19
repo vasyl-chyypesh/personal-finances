@@ -5,6 +5,7 @@ import { useCategories } from '../hooks/useCategories.ts';
 import { useCurrencies } from '../hooks/useCurrencies.ts';
 import { useLedgerFilters, type LedgerView } from '../hooks/useLedgerFilters.ts';
 import { isWithinPeriod, toISODate } from '../lib/datePeriod.ts';
+import { Button } from '../components/Button.tsx';
 import { PageHeader } from '../components/PageHeader.tsx';
 import { SummaryBar } from '../components/SummaryBar.tsx';
 import { LedgerFilter } from '../components/LedgerFilter.tsx';
@@ -159,14 +160,10 @@ export function LedgerPage() {
         title={t('ledger.title')}
         subtitle={t('ledger.subtitle')}
         actions={
-          <button
-            type="button"
-            onClick={openCreate}
-            className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-medium text-white transition-colors duration-100 hover:bg-primary-hover active:bg-primary-active focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-          >
+          <Button onClick={openCreate}>
             <PlusIcon size={16} />
             {t('ledger.add')}
-          </button>
+          </Button>
         }
       />
 
