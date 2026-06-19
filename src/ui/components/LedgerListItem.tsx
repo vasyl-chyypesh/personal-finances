@@ -1,6 +1,6 @@
 import { useI18n } from '../i18n/i18nContext.ts';
 import { categoryName } from '../i18n/categoryName.ts';
-import { categoryColor, categoryGlyph } from '../lib/categoryStyle.ts';
+import { categoryGlyph, categoryTint } from '../lib/categoryStyle.ts';
 import { parseISODate } from '../lib/datePeriod.ts';
 import { AmountDisplay } from './AmountDisplay.tsx';
 import { CategoryBadge } from './CategoryBadge.tsx';
@@ -23,7 +23,7 @@ const dateFmt = new Intl.DateTimeFormat('en-US', {
 export function LedgerListItem({ record, onClick, onEdit }: LedgerListItemProps) {
   const { t, locale } = useI18n();
   const name = categoryName(record.category, locale);
-  const color = categoryColor(record.category.slug);
+  const tint = categoryTint(record.category.slug);
   const title = record.description?.trim() || name;
 
   return (
@@ -37,12 +37,12 @@ export function LedgerListItem({ record, onClick, onEdit }: LedgerListItemProps)
           onClick?.(record);
         }
       }}
-      className="group flex cursor-pointer items-center gap-3 rounded-md px-3 py-3 transition-colors duration-100 hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary"
+      className="group flex cursor-pointer items-center gap-3 rounded-md px-3 py-2.5 transition-colors duration-100 hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary"
     >
       <span
         aria-hidden
-        className="flex size-9 shrink-0 items-center justify-center rounded-md text-sm font-medium text-white"
-        style={{ backgroundColor: color }}
+        className="flex size-8 shrink-0 items-center justify-center rounded-md text-sm font-medium"
+        style={{ backgroundColor: tint.bg, color: tint.fg }}
       >
         {categoryGlyph(name)}
       </span>

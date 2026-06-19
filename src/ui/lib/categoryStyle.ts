@@ -30,6 +30,18 @@ export function categoryColor(slug: string): string {
   return PALETTE[hash % PALETTE.length];
 }
 
+/**
+ * Soft per-category tint for glyph squares: the palette color at low alpha as a
+ * background with the solid color as the glyph. The alpha composites over the
+ * themed surface, so it reads as a calm accent in both light and dark mode
+ * (vs. the louder white-on-solid swatch). The square is decorative (aria-hidden);
+ * the accessible label is the category name beside it.
+ */
+export function categoryTint(slug: string): { bg: string; fg: string } {
+  const color = categoryColor(slug);
+  return { bg: `${color}24`, fg: color };
+}
+
 /** First grapheme of the display name, used as the icon-square glyph. */
 export function categoryGlyph(name: string): string {
   const trimmed = name.trim();

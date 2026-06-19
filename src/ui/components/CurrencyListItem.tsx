@@ -30,7 +30,7 @@ export function CurrencyListItem({ code, base, rate }: CurrencyListItemProps) {
         <div className="flex items-center gap-2">
           <span className="font-mono text-base font-medium text-fg">{code}</span>
           {isBase ? (
-            <span className="rounded-pill bg-primary-soft px-2 py-0.5 text-2xs font-medium text-primary">
+            <span className="rounded-sm border-hairline border-line-strong px-1.5 py-0.5 text-2xs font-medium text-fg-muted">
               {t('currencies.base')}
             </span>
           ) : null}

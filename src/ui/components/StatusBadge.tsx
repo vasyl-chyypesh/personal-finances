@@ -23,7 +23,7 @@ export function StatusBadge({ status, className = '' }: StatusBadgeProps) {
   const tone = TONE[status];
   return (
     <span
-      className={`inline-flex items-center rounded-pill px-2 py-0.5 text-2xs font-medium ${tone} ${className}`}
+      className={`inline-flex items-center rounded-sm px-1.5 py-0.5 text-2xs font-medium ${tone} ${className}`}
     >
       {status === 'income' ? t('status.income') : t('status.expense')}
     </span>

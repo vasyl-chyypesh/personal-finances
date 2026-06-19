@@ -120,7 +120,7 @@ export function DraftEntryCard({ result, categories, saved, onConfirm }: DraftEn
 
   const verifyBadge = (field: UncertainField) =>
     uncertain.has(field) ? (
-      <span className="rounded bg-primary-soft px-1 py-px text-2xs font-medium text-primary">
+      <span className="rounded-sm bg-pending-bg px-1 py-px text-2xs font-medium text-pending-text">
         {t('chat.verify')}
       </span>
     ) : null;

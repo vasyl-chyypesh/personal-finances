@@ -24,7 +24,7 @@ export function ChatPage() {
       ) : (
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border-hairline border-line bg-surface">
           {status.ready === false ? (
-            <p className="border-b-hairline border-line bg-primary-soft px-4 py-2 text-xs text-primary">
+            <p className="border-b-hairline border-line bg-surface-muted px-4 py-2 text-xs text-fg-muted">
               {t('chat.downloadHint')}
             </p>
           ) : null}
