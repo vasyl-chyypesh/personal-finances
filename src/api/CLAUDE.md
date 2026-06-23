@@ -53,33 +53,22 @@ router.get('/:id', requestValidator(IdParamSchema, RequestSource.params), (req, 
 
 `src/api/app.ts` exports the configured Express `app` as default. `src/api/index.ts` imports it and calls `app.listen()`. Tests that exercise HTTP routes import `app.ts` directly.
 
-## Categories & i18n (API/data side)
+## Feature internals
 
-Categories are **language-neutral with bilingual names**. The `categories` table is `(id, slug, names)` where `slug` is the stable identity and `names` is a JSON blob like `{"en":"Charity","uk":"Благодійність"}` (at least one locale; supported locales are `en` and `uk`).
+Conventions live here; each feature's deep-dive (data model, provider wiring,
+endpoint contracts, offline switches) lives in `docs/api/`. Read the matching doc
+before changing that feature — keep it in sync when the behavior changes.
 
-- `src/api/categories/categories.catalog.ts` — `CATEGORY_CATALOG`, the canonical bilingual list (the `uk` value matches the xls parser's normalized labels). It is **both** the seed set (`seedCategories` inserts all of it) and the import mapping source. `resolveCategory(label, locale)` maps a label to a catalog `{ slug, names }`, falling back to a slugified single-locale category for unknown labels.
-- `categories` is **writable**: `PATCH /api/categories/:id` with `{ names: { en?, uk? } }` merges translations (used to fill a missing-language name). `GET /api/categories` returns `{ id, slug, names }`; ledger entries embed the same category shape. The API returns **all translations** — the UI picks the active locale client-side. API error messages remain English.
-
-The UI rendering half of i18n (locale selection, message catalogs, display-name resolution) lives in `src/ui/CLAUDE.md`. The catalog is also consumed by the importer — see `src/cli/CLAUDE.md`.
-
-## Exchange rates
-
-Rates are **date-keyed and provider-backed**. The `exchange_rates` table is `(date, base, quote, rate)` with PK on the triple; only the two `UAH→USD` / `UAH→EUR` quotes are stored per day, and the full pairwise matrix (identities, inverses, the `EUR↔USD` cross-rate) is **derived** from them in the service — so `EUR↔USD` is computed (e.g. `52/44`), never verbatim.
-
-- **Provider** (`exchangeRates.provider.ts`): a Frankfurter **v2** client (`https://api.frankfurter.dev/v2`, no key) — `createExchangeRatesProvider({ fetchImpl?, baseUrl? })` is injectable so tests never hit the network. `fetchLatest()` / `fetchRange(from,to)` return rows grouped into `{ date, quotes }`, keeping only days that carry every `QUOTE_CURRENCIES` value.
-- **Sync** (`exchangeRates.sync.ts`): `ExchangeRatesSync` orchestrates provider→DB. `refreshToday()` upserts the latest day; `backfillHistory()` warms `[today − BACKFILL_MONTHS, today]` in `BACKFILL_BATCH_MONTHS`-sized batches (skipping fully-past months that already have data, always re-fetching the month containing today); `ensureRange(from,to)` lazily fills a requested read range, fetching the single contiguous span covering any uncovered months in one provider call. Every method is best-effort (failures logged, never thrown). `sync()` (backfill + refresh) is triggered from **`index.ts`** after `listen` (kept out of `app.ts` so HTTP tests stay network-free).
-- **Endpoints**: `GET /api/exchange-rates` → `{ base, asOf, stale, rates }` (latest stored matrix; `stale` when `asOf` is older than `STALE_AFTER_DAYS`). `GET /api/exchange-rates/history?from&to` → `{ base, from, to, series }` for charts, where each point's `rates[quote]` is **base-per-unit** (1 USD = X UAH). The read range is clamped to today and to a `MAX_HISTORY_MONTHS` span; uncovered dates within it are fetched **on demand** via `ensureRange` (then cached) before reading. `exchangeRates.schema.ts` validates the history query. The service takes the repository **and an optional sync** — without a sync (or with `RATES_OFFLINE`) reads are DB-only.
-- **Offline switch**: `RATES_OFFLINE=1` (or `true`) skips the startup sync and constructs the routes' service without a sync, so reads never touch the provider — used to run fully offline and to keep HTTP tests network-free (the integration test sets it).
-- `exchangeRates.catalog.ts` holds `BASE_CURRENCY`, `QUOTE_CURRENCIES`, the provider/timeout constants, `BACKFILL_MONTHS` (startup warm window), `MAX_HISTORY_MONTHS` (max read span), and `DEFAULT_EXCHANGE_RATES` (offline fallback). `seedExchangeRates` seeds today's quotes from the fallback only when the table is empty; the first successful sync overrides them. `migrateSchema` drops the legacy `(from_currency, to_currency, rate)` table and recreates the date-keyed shape.
-
-## AI chat
-
-The `chat` feature turns a natural-language message into a **draft** ledger entry — it only **extracts**; saving reuses `POST /api/ledger`. There is **no table** and no persisted history (the conversation is client-side only). It mirrors the exchange-rates **injectable provider** pattern so tests never reach a daemon.
-
-- **Extractor** (`chat.llm.ts`): `createLedgerExtractor()` returns an `ILedgerExtractor` backed by **[Ollama](https://ollama.com)** (a local daemon; no model code runs in this process). `extract()` calls `ollama.chat({ model, format, options, messages })` with `format` set to a **JSON schema** whose `categorySlug` is an `enum` of the live category slugs (or `null`), so the model can't invent a category; every other field is nullable (`null` = "not stated"), all `required`. Runs at low temperature. On the first `extract`, the model is **pulled if missing** (`ollama.pull`). `CHAT_MODEL` (default `gemma4:12b-mlx`) and `OLLAMA_HOST` (default `http://127.0.0.1:11434`) are read from env. The "tuning" is **prompt/config only** (system prompt + EN/UK few-shot + JSON-schema format + sampling) — there is no training pipeline.
-- **Service** (`chat.service.ts`): `ChatService(extractor, categoriesRepo)`. Applies defaults for `null` fields (date→today, currency→`UAH`, type→`expense`) and flags each as uncertain; converts the major-unit amount to integer cents; resolves `categorySlug`→`categoryId` against non-deleted categories (never guesses — an unresolved slug yields `categoryId: null` + `unresolvedCategory: true`); merges the model's own `uncertainFields`. Throws `HttpError(CHAT_UNAVAILABLE, 503)` when the extractor is unavailable. `status()` is async: it returns `{ available, ready }` and only probes the daemon (`isReady()`) when `available`.
-- **Endpoints**: `POST /api/chat/extract` `{ message }` → `{ draft, uncertainFields, unresolvedCategory }` (the `draft` mirrors `CreateLedgerEntryDto`, except `categoryId` may be `null`). `GET /api/chat/status` → `{ available, ready }` (`available` = a model is configured; `ready` = the daemon already has it — an unreachable daemon yields `ready:false`). `chat.schema.ts` validates the request.
-- **Optional / offline**: an empty `CHAT_MODEL` disables the feature (`available:false`; the UI shows a "not configured" notice). The HTTP integration test sets `CHAT_MODEL=''` so the route is exercised **without a daemon** — the same idea as `RATES_OFFLINE`. The extractor is injected as a fake in the service unit tests, so **no daemon is ever contacted in tests/CI**.
+- **Categories & i18n** — language-neutral categories with bilingual `{en,uk}`
+  names; the `CATEGORY_CATALOG` is both seed set and import mapping source, and
+  `categories` is writable via `PATCH`. → [`docs/api/categories-and-i18n.md`](../../docs/api/categories-and-i18n.md). The UI rendering half of i18n lives in `src/ui/CLAUDE.md`; the catalog is also consumed by the importer (`src/cli/CLAUDE.md`).
+- **Exchange rates** — date-keyed `(date, base, quote, rate)` rows from a
+  Frankfurter v2 provider; the full pairwise matrix is **derived**, sync is
+  best-effort and kept out of `app.ts`, and `RATES_OFFLINE` makes reads DB-only.
+  → [`docs/api/exchange-rates.md`](../../docs/api/exchange-rates.md).
+- **AI chat** — extracts a **draft** ledger entry from natural language via a local
+  Ollama daemon behind an injectable provider; no table, no persisted history, and
+  an empty `CHAT_MODEL` disables it. → [`docs/api/ai-chat.md`](../../docs/api/ai-chat.md).
 
 ## Shared Utilities
 

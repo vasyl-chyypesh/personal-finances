@@ -134,6 +134,11 @@ valid, stated outcome. Flag uncertainty rather than inventing issues.
   against the actual diff; never report a flag verbatim as a finding.
 - For a broad, multi-file automated pass, `/code-review ultra` (cloud,
   multi-agent) is the heavier hammer; this skill is the targeted manual audit.
+- Need context isolation (this review is a sub-step of a bigger task and you don't
+  want the full diff in the main context)? Spawn the `review-finances-isolated`
+  agent (`.claude/agents/`), a read-only wrapper that runs **this** skill in its own
+  window and returns only the findings. Default to running the skill directly when
+  you want the findings to stay in context so you can act on them.
 - The full diff can be large; if `scope.sh` output is long, review per-layer
   using the "Layers touched" list to prioritise Services → Repositories →
   Schemas first (where security/correctness bugs concentrate).

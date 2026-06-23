@@ -78,3 +78,29 @@ Project-wide rules (part-specific details — supertest, the `DB_PATH` HTTP setu
 - **ls-lint**: file naming linter.
 - **husky**: runs `npm run lint` + `npm run lint:files` on pre-commit; runs commitlint on commit-msg.
 - **CI/CD**: GitHub Actions runs ls-lint, ESLint, `format:check`, build, and tests, plus a Bearer security scan, on every push and PR to `main`.
+
+## Claude Code tooling (`.claude/`)
+
+Agent-facing configuration. Skills and the MCP allow/deny rules are checked in;
+personal grants live in the untracked `settings.local.json`.
+
+- **MCP servers** (`.mcp.json`): two SQLite servers — `sqlite` → the throwaway
+  `test.db`, and `sqlite-prod` → the **live `finance.db`**. `sqlite-prod` is
+  **read-only by policy**: `settings.json` denies `mcp__sqlite-prod__write_query`
+  and `mcp__sqlite-prod__create_table`. Do any mutating SQL through `sqlite`
+  (`test.db`), never against the production DB.
+- **Hooks** (`settings.json` → `hooks.PostToolUse`): after every `Edit`/`Write`,
+  `.claude/hooks/format.sh` runs `prettier --write` on the touched file (honoring
+  `.prettierignore`, which excludes `.claude/`). This catches the gap where husky
+  runs ESLint but **not** Prettier pre-commit, so files stay green for CI's
+  `format:check`.
+- **Skills** (`.claude/skills/`): `run-personal-finances` (launch both dev servers
+  and drive/screenshot the SPA headlessly) and `review-finances` (project-aware
+  security/correctness review of the diff). Slash commands in `.claude/commands/`:
+  `audit` (npm audit + fix) and `update-deps` (bump + re-pin + test).
+- **Agents** (`.claude/agents/`): `review-finances-isolated` — a read-only,
+  context-isolated wrapper that runs the `review-finances` skill in its own window
+  and returns only the findings. `SKILL.md` stays the single source of truth; reach
+  for the agent **only** when the review is a sub-step of a larger task and you don't
+  want the full diff consuming the main context. For a normal standalone review,
+  invoke the `review-finances` skill directly.
