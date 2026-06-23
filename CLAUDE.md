@@ -98,9 +98,14 @@ personal grants live in the untracked `settings.local.json`.
   and drive/screenshot the SPA headlessly) and `review-finances` (project-aware
   security/correctness review of the diff). Slash commands in `.claude/commands/`:
   `audit` (npm audit + fix) and `update-deps` (bump + re-pin + test).
-- **Agents** (`.claude/agents/`): `review-finances-isolated` — a read-only,
-  context-isolated wrapper that runs the `review-finances` skill in its own window
-  and returns only the findings. `SKILL.md` stays the single source of truth; reach
-  for the agent **only** when the review is a sub-step of a larger task and you don't
-  want the full diff consuming the main context. For a normal standalone review,
-  invoke the `review-finances` skill directly.
+- **Agents** (`.claude/agents/`): `pr-review` — a project-aware, read-only reviewer
+  that runs the `review-finances` skill's security/correctness core, then adds a PR
+  layer (description-vs-diff accuracy, commit/Conventional-Commit hygiene, test
+  adequacy, style/conventions). **Dual-mode:** in PR mode (a PR number or the
+  current branch's open PR) it returns findings plus ready-to-paste GitHub
+  comments; in local mode (no PR) it reviews the branch diff vs `main` + working
+  tree. It is **read-only to GitHub** — it never posts, approves, requests changes,
+  or merges; you publish anything yourself. `SKILL.md` stays the single source of
+  truth for the core lenses. For an in-context review (findings stay in the main
+  thread instead of an isolated window), invoke the `review-finances` skill
+  directly instead.
