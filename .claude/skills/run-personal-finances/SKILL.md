@@ -20,6 +20,19 @@ All paths below are relative to the repo root (`<unit>/`). Verified on
 macOS, Node v25.9.0, Google Chrome installed at the default `/Applications`
 path.
 
+## Usage
+
+Invoked by description — ask to run, launch, build, test, or screenshot the
+app. There are two paths:
+
+- **Agent path** (headless, default) — start both servers, drive the SPA
+  through `driver.mjs` to click/fill inputs, add a ledger entry, and capture
+  PNG screenshots. See **Run (agent path)** below.
+- **Human path** — start both dev servers and use the app interactively in a
+  real browser. See **Run (human path)** below.
+
+For a quick check without a browser, see **Direct API smoke** below.
+
 ## Prerequisites
 
 - Node ≥ 25 (`node --version` → `v25.9.0` here) and npm.
