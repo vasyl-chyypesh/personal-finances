@@ -2,7 +2,7 @@
 # PostToolUse hook: format the just-edited file with Prettier.
 #
 # Stdin carries the tool payload as JSON; we format only the edited file,
-# honoring .prettierignore (so .claude/ stays hand-tuned) and skipping
+# honoring .prettierignore (skill/agent markdown stays hand-tuned) and skipping
 # unsupported file types via --ignore-unknown. This closes the gap noted in
 # src/ui/CLAUDE.md: the husky pre-commit hook runs ESLint but NOT Prettier,
 # so unformatted files otherwise slip through to CI's `format:check`.

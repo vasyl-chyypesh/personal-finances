@@ -1,3 +1,5 @@
-# Agent tooling and docs — hand-tuned, not subject to the app's formatter.
-# (Prettier also mangles escaped backticks in the skill markdown.)
-.claude/
+# Agent markdown and the hand-tuned CDP driver script stay excluded — Prettier
+# mangles the escaped backticks in skill/agent docs, and driver.mjs is hand-tuned.
+# JSON under .claude/ (settings, etc.) IS formatted.
+.claude/**/*.md
+.claude/**/*.mjs

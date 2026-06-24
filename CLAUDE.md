@@ -91,7 +91,8 @@ personal grants live in the untracked `settings.local.json`.
   (`test.db`), never against the production DB.
 - **Hooks** (`settings.json` → `hooks.PostToolUse`): after every `Edit`/`Write`,
   `.claude/hooks/format.sh` runs `prettier --write` on the touched file (honoring
-  `.prettierignore`, which excludes `.claude/`). This catches the gap where husky
+  `.prettierignore`, which excludes the hand-tuned skill/agent markdown and
+  `driver.mjs` but **does** format `.claude/` JSON config). This catches the gap where husky
   runs ESLint but **not** Prettier pre-commit, so files stay green for CI's
   `format:check`.
 - **Skills** (`.claude/skills/`): `run-personal-finances` (launch both dev servers
