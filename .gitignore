@@ -116,3 +116,6 @@ test_data.xls
 
 # Security scan report
 scan-report.html
+
+# claudelint cache
+.claudelint-cache/

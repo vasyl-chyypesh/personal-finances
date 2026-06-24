@@ -14,6 +14,13 @@ want a rigorous, project-aware audit of the changed code.
 
 Paths are relative to the repo root.
 
+## Usage
+
+Invoked by description — ask to review, audit, or security-review the current
+branch, working-tree changes, or a GitHub PR before merge. Work through the
+three steps below in order: **gather scope** (Step 1), **review against the
+four lenses** (Step 2), then **report** the findings (Step 3).
+
 ## Step 1 — gather scope
 
 Run the scope script. It prints the diffstat, the layers touched, heuristic
