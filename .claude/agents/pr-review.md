@@ -1,7 +1,11 @@
 ---
 name: pr-review
 description: Project-aware reviewer for personal-finances, dual-mode. PR mode — given a PR number or the current branch's open PR — reviews it for security/correctness AND PR hygiene (description-vs-diff accuracy, commit/Conventional-Commit hygiene, test adequacy, code style) and returns findings plus ready-to-paste GitHub comments. Local mode — when there's no PR — reviews the current branch's diff vs main plus working-tree changes. Read-only to GitHub — it NEVER posts, comments, approves, requests changes, or merges. Use for a pre-merge review you'll act on yourself.
-tools: Read, Grep, Glob, Bash
+tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
 model: sonnet
 color: blue
 skills:
