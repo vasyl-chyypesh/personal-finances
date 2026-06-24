@@ -78,3 +78,35 @@ Project-wide rules (part-specific details — supertest, the `DB_PATH` HTTP setu
 - **ls-lint**: file naming linter.
 - **husky**: runs `npm run lint` + `npm run lint:files` on pre-commit; runs commitlint on commit-msg.
 - **CI/CD**: GitHub Actions runs ls-lint, ESLint, `format:check`, build, and tests, plus a Bearer security scan, on every push and PR to `main`.
+
+## Claude Code tooling (`.claude/`)
+
+Agent-facing configuration. Skills and the MCP allow/deny rules are checked in;
+personal grants live in the untracked `settings.local.json`.
+
+- **MCP servers** (`.mcp.json`): two SQLite servers — `sqlite` → the throwaway
+  `test.db`, and `sqlite-prod` → the **live `finance.db`**. `sqlite-prod` is
+  **read-only by policy**: `settings.json` denies `mcp__sqlite-prod__write_query`
+  and `mcp__sqlite-prod__create_table`. Do any mutating SQL through `sqlite`
+  (`test.db`), never against the production DB.
+- **Hooks** (`settings.json` → `hooks.PostToolUse`): after every `Edit`/`Write`,
+  `.claude/hooks/format.sh` runs `prettier --write` on the touched file (honoring
+  `.prettierignore`, which excludes the hand-tuned skill/agent markdown and
+  `driver.mjs` but **does** format `.claude/` JSON config). This catches the gap where husky
+  runs ESLint but **not** Prettier pre-commit, so files stay green for CI's
+  `format:check`.
+- **Skills** (`.claude/skills/`): `run-personal-finances` (launch both dev servers
+  and drive/screenshot the SPA headlessly) and `review-finances` (project-aware
+  security/correctness review of the diff). Slash commands in `.claude/commands/`:
+  `audit` (npm audit + fix) and `update-deps` (bump + re-pin + test).
+- **Agents** (`.claude/agents/`): `pr-review` — a project-aware, read-only reviewer
+  that runs the `review-finances` skill's security/correctness core, then adds a PR
+  layer (description-vs-diff accuracy, commit/Conventional-Commit hygiene, test
+  adequacy, style/conventions). **Dual-mode:** in PR mode (a PR number or the
+  current branch's open PR) it returns findings plus ready-to-paste GitHub
+  comments; in local mode (no PR) it reviews the branch diff vs `main` + working
+  tree. It is **read-only to GitHub** — it never posts, approves, requests changes,
+  or merges; you publish anything yourself. `SKILL.md` stays the single source of
+  truth for the core lenses. For an in-context review (findings stay in the main
+  thread instead of an isolated window), invoke the `review-finances` skill
+  directly instead.

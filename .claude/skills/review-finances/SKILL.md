@@ -134,6 +134,13 @@ valid, stated outcome. Flag uncertainty rather than inventing issues.
   against the actual diff; never report a flag verbatim as a finding.
 - For a broad, multi-file automated pass, `/code-review ultra` (cloud,
   multi-agent) is the heavier hammer; this skill is the targeted manual audit.
+- Want context isolation + a PR-hygiene layer? Spawn the `pr-review` agent
+  (`.claude/agents/`), a read-only wrapper that runs **this** skill's core in its
+  own window and adds checks for commit hygiene, test adequacy, and style. It is
+  dual-mode: in PR mode (a PR number or the branch's open PR) it also checks
+  description-vs-diff and returns ready-to-paste GitHub comments; with no PR it
+  reviews the branch diff vs `main` + working tree. Default to running this skill
+  directly when you want the findings to stay in the main context.
 - The full diff can be large; if `scope.sh` output is long, review per-layer
   using the "Layers touched" list to prioritise Services → Repositories →
   Schemas first (where security/correctness bugs concentrate).
