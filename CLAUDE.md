@@ -96,9 +96,21 @@ personal grants live in the untracked `settings.local.json`.
   runs ESLint but **not** Prettier pre-commit, so files stay green for CI's
   `format:check`.
 - **Skills** (`.claude/skills/`): `run-personal-finances` (launch both dev servers
-  and drive/screenshot the SPA headlessly) and `review-finances` (project-aware
-  security/correctness review of the diff). Slash commands in `.claude/commands/`:
-  `audit` (npm audit + fix) and `update-deps` (bump + re-pin + test).
+  and drive/screenshot the SPA headlessly), `review-finances` (project-aware
+  security/correctness review of the diff), and `work-backlog` (the dev loop —
+  see **Loops** below). Slash commands in `.claude/commands/`:
+  `audit` (npm audit + fix), `update-deps` (bump + re-pin + test), and
+  `maintain` (the maintenance loop — see **Loops** below).
+- **Loops** (`BACKLOG.md` + skills): two loop-engineering workflows, both
+  autonomous **up to an open PR** — they never push to `main` or merge.
+  - `work-backlog` works one item per invocation from `BACKLOG.md` (the work
+    queue and the loop's only persistent state — its **Item format** section
+    is the protocol): claim → implement on a branch → full CI gate →
+    `pr-review` check → PR → mark done. Drive it repeatedly with
+    `/loop work-backlog`; an empty queue or a blocked item ends the loop.
+    Items tagged `(placeholder)` are format examples and are never picked.
+  - `/maintain` is one shippable maintenance cycle: `update-deps` + `audit` +
+    the full gate, then a `chore(deps)` PR with the evidence. Run it weekly.
 - **Agents** (`.claude/agents/`): `pr-review` — a project-aware, read-only reviewer
   that runs the `review-finances` skill's security/correctness core, then adds a PR
   layer (description-vs-diff accuracy, commit/Conventional-Commit hygiene, test
