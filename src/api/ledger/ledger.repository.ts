@@ -95,8 +95,7 @@ export class LedgerRepository implements ILedgerRepository {
 
   findById(id: number): LedgerEntry | undefined {
     const row = this.db.prepare(`${SELECT_WITH_CATEGORY} WHERE le.id = ?`).get(id) as
-      | LedgerRow
-      | undefined;
+      LedgerRow | undefined;
     return row ? mapRow(row) : undefined;
   }
 

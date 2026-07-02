@@ -43,9 +43,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   const body = (await res.json().catch(() => null)) as
-    | { code?: string; message?: string }
-    | T
-    | null;
+    { code?: string; message?: string } | T | null;
 
   if (!res.ok) {
     const err = (body ?? {}) as { code?: string; message?: string };

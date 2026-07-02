@@ -45,8 +45,7 @@ export class CategoriesRepository implements ICategoriesRepository {
 
   findById(id: number): Category | undefined {
     const row = this.db.prepare(`SELECT ${SELECT_FIELDS} FROM categories WHERE id = ?`).get(id) as
-      | CategoryRow
-      | undefined;
+      CategoryRow | undefined;
     return row ? mapRow(row) : undefined;
   }
 
