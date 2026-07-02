@@ -82,9 +82,12 @@ argue findings away without evidence.
 ## Step 5 — ship
 
 Commit the work in Conventional Commits style (`feat:`/`fix:`/`test:`; no
-attribution or co-author lines). Push with `git push -u origin <branch>` and
-open the PR with `gh pr create`. The PR body must carry the evidence, not
-adjectives: what changed and why, the **Done when** criteria and how each is
+attribution or co-author lines). Push with `git push origin <branch>` (no
+`-u` — the permission allow is prefix-matched on `git push origin`, and
+`gh pr create` doesn't need the upstream link) and open the PR with
+`gh pr create`. Recommend **squash-merge** in the PR body — the claim/done
+bookkeeping commits shouldn't land in `main`'s history as separate commits.
+The PR body must carry the evidence, not adjectives: what changed and why, the **Done when** criteria and how each is
 met, gate results, the pr-review outcome (including accepted lower-severity
 findings), and the screenshot for UI items.
 

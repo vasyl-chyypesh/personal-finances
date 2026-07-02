@@ -5,7 +5,7 @@ allowed-tools:
   - Bash(git checkout -b *)
   - Bash(git add *)
   - Bash(git commit *)
-  - Bash(git push origin *)
+  - Bash(git push origin chore/*)
   - Bash(git diff *)
   - Bash(gh pr create *)
   - Bash(npm run *)
