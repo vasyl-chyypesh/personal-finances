@@ -105,8 +105,9 @@ personal grants live in the untracked `settings.local.json`.
   autonomous **up to an open PR** — they never push to `main` or merge.
   - `work-backlog` works one item per invocation from `BACKLOG.md` (the work
     queue and the loop's only persistent state — its **Item format** section
-    is the protocol): claim → implement on a branch → full CI gate →
-    `pr-review` check → PR → mark done. Drive it repeatedly with
+    is the protocol): claim → explore the related code → plan → implement on
+    a branch → full CI gate → `pr-review` check → PR → mark done. Drive it
+    repeatedly with
     `/loop work-backlog`; an empty queue or a blocked item ends the loop.
     Items tagged `(placeholder)` are format examples and are never picked.
   - `/maintain` is one shippable maintenance cycle: `update-deps` + `audit` +

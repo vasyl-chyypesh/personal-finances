@@ -1,6 +1,6 @@
 ---
 name: work-backlog
-description: Work one item from BACKLOG.md end to end — claim it, implement on a branch, verify against the full CI gate, get a pr-review check, open a PR, and update the backlog. Use to work the backlog, pick up the next backlog item, or run the autonomous dev loop (e.g. via /loop work-backlog).
+description: Work one item from BACKLOG.md end to end — claim it, explore the related code, write an implementation plan, implement on a branch, verify against the full CI gate, get a pr-review check, open a PR, and update the backlog. Use to work the backlog, pick up the next backlog item, or run the autonomous dev loop (e.g. via /loop work-backlog).
 ---
 
 # work-backlog
@@ -15,9 +15,10 @@ the queue.
 
 Invoked by description or as `/work-backlog` — ask to work the backlog, pick
 up the next backlog item, or run the dev loop. Work through the steps below
-in order: **pick and claim** (Step 1), **implement** (Step 2), **verify**
-(Step 3), **independent check** (Step 4), **ship** (Step 5) — or take the
-**Blocked exit** when the rules say so.
+in order: **pick and claim** (Step 1), **explore** (Step 2), **plan**
+(Step 3), **implement** (Step 4), **verify** (Step 5), **independent check**
+(Step 6), **ship** (Step 7) — or take the **Blocked exit** when the rules
+say so.
 
 ## Hard rules
 
@@ -48,16 +49,39 @@ Create a branch named for the item (`feat/…` or `fix/…`), then mark the item
 `[~]` with the branch name and today's date, and commit just that edit as
 `chore: claim backlog item <title>`.
 
-## Step 2 — implement
+## Step 2 — explore
 
-Read the nested `CLAUDE.md` for each part of `src/` you touch **before**
-writing code, and follow it: layering, integer cents, validation, i18n,
-naming. Keep the diff small and focused on the item's **Done when** criteria —
-scope creep is a bug. Tests are part of the implementation, not an
-afterthought: integration tests always; unit tests when there's real logic
-(project testing rules apply).
+Map the terrain before touching code. Find the code and flow related to the
+item (Grep/Glob/Read): the routes, services, repositories, and UI components
+it will touch or sit next to (note `file:line` references), how the existing
+flow works end to end, and the test patterns the nearest neighbors use. Read
+the nested `CLAUDE.md` for each part of `src/` involved — layering, integer
+cents, validation, i18n, naming all bind the plan. If nothing related exists,
+say so explicitly and name the closest analog whose structure the new code
+should follow.
 
-## Step 3 — verify (the gate)
+The output is a short **context brief** — it feeds Step 3 directly. If
+exploration reveals the item's **Done when** criteria don't match reality
+(the feature half-exists, the described flow isn't how the app works), don't
+reinterpret the item — go to *Blocked exit* for re-scoping.
+
+## Step 3 — plan
+
+Turn the brief into a concrete implementation plan before writing code: the
+files to create or change, layer by layer; the test plan mapped to each
+**Done when** criterion; and the E2E verification step for UI-facing items.
+Scope guard: if the plan grows beyond the item's criteria, trim the plan,
+not the criteria — extra ideas become new backlog items, not scope creep.
+
+## Step 4 — implement
+
+Follow the plan. Deviating from it is fine when the code teaches you
+something the exploration missed — but note every deviation for the PR body.
+Keep the diff small and focused on the item's **Done when** criteria. Tests
+are part of the implementation, not an afterthought: integration tests
+always; unit tests when there's real logic (project testing rules apply).
+
+## Step 5 — verify (the gate)
 
 Run the full CI gate locally:
 
@@ -72,14 +96,14 @@ skill (agent path): drive the real SPA and capture a screenshot proving the
 On failure: fix and re-run. **Three** failed fix→gate cycles on the same item
 means stop — go to *Blocked exit* below.
 
-## Step 4 — independent check
+## Step 6 — independent check
 
 Spawn the `pr-review` agent (local mode — it reviews the branch diff vs
 `main`). Fix what it finds at Critical/High severity, re-run the gate, and
 note lower-severity findings for the PR body. The agent is the checker; don't
 argue findings away without evidence.
 
-## Step 5 — ship
+## Step 7 — ship
 
 Commit the work in Conventional Commits style (`feat:`/`fix:`/`test:`; no
 attribution or co-author lines). Push with `git push origin <branch>` (no
@@ -88,7 +112,8 @@ attribution or co-author lines). Push with `git push origin <branch>` (no
 `gh pr create`. Recommend **squash-merge** in the PR body — the claim/done
 bookkeeping commits shouldn't land in `main`'s history as separate commits.
 The PR body must carry the evidence, not adjectives:
-what changed and why, the **Done when** criteria and how each is met,
+what changed and why, a short **Plan** section (the Step 3 plan plus any
+deviations from Step 4), the **Done when** criteria and how each is met,
 gate results, the pr-review outcome (including accepted lower-severity
 findings), and the screenshot for UI items.
 
@@ -99,6 +124,7 @@ commit on the same branch so it rides the PR.
 ## Blocked exit
 
 When the item can't proceed — three failed gate cycles, missing information,
+**Done when** criteria that exploration showed don't match reality,
 or a decision only the human can make — move it to **Blocked** in
 `BACKLOG.md` with a one-line reason, commit as
 `chore: mark backlog item blocked` and push what exists **only if the gate
