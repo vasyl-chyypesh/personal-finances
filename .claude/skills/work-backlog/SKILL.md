@@ -87,8 +87,9 @@ attribution or co-author lines). Push with `git push origin <branch>` (no
 `gh pr create` doesn't need the upstream link) and open the PR with
 `gh pr create`. Recommend **squash-merge** in the PR body — the claim/done
 bookkeeping commits shouldn't land in `main`'s history as separate commits.
-The PR body must carry the evidence, not adjectives: what changed and why, the **Done when** criteria and how each is
-met, gate results, the pr-review outcome (including accepted lower-severity
+The PR body must carry the evidence, not adjectives:
+what changed and why, the **Done when** criteria and how each is met,
+gate results, the pr-review outcome (including accepted lower-severity
 findings), and the screenshot for UI items.
 
 Then update `BACKLOG.md`: mark the item `[x] … — done — PR #<n>`, move it
@@ -99,8 +100,9 @@ commit on the same branch so it rides the PR.
 
 When the item can't proceed — three failed gate cycles, missing information,
 or a decision only the human can make — move it to **Blocked** in
-`BACKLOG.md` with a one-line reason, commit and push what exists **only if
-the gate is green**; otherwise leave the branch local and unpushed. Report
+`BACKLOG.md` with a one-line reason, commit as
+`chore: mark backlog item blocked` and push what exists **only if the gate
+is green**; otherwise leave the branch local and unpushed. Report
 what blocked it and end the iteration (a blocked item ends a `/loop` run too
 — the human unblocks before the loop restarts).
 
