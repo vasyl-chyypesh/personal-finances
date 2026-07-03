@@ -10,7 +10,14 @@
       "Bash(npx tsx *)",
       "Bash(npx tsc *)",
       "Bash(npx prettier *)",
-      "Bash(npx eslint *)"
+      "Bash(npx eslint *)",
+      "Bash(git checkout -b *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push origin feat/*)",
+      "Bash(git push origin fix/*)",
+      "Bash(git push origin chore/*)",
+      "Bash(gh pr create *)"
     ],
     "deny": ["mcp__sqlite-prod__write_query", "mcp__sqlite-prod__create_table"]
   },
