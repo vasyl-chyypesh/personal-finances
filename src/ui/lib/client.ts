@@ -15,6 +15,14 @@ import type {
 
 const BASE = '/api';
 
+/** Default per-request budget — regular CRUD calls should fail fast. */
+const DEFAULT_TIMEOUT_MS = 15_000;
+/**
+ * Chat waits on a local LLM (minutes on CPU). Kept slightly above nginx's
+ * 300s chat proxy timeout so the server's structured error wins the race.
+ */
+const CHAT_TIMEOUT_MS = 310_000;
+
 export class ApiError extends Error {
   readonly code: string;
   readonly status: number;
@@ -27,14 +35,19 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+async function request<T>(path: string, init?: RequestInit & { timeoutMs?: number }): Promise<T> {
+  const { timeoutMs = DEFAULT_TIMEOUT_MS, ...rest } = init ?? {};
   let res: Response;
   try {
     res = await fetch(`${BASE}${path}`, {
       headers: { 'Content-Type': 'application/json' },
-      ...init,
+      signal: AbortSignal.timeout(timeoutMs),
+      ...rest,
     });
-  } catch {
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'TimeoutError') {
+      throw new ApiError('Request timed out', 'TIMEOUT', 0);
+    }
     throw new ApiError('Network error — is the API running?', 'NETWORK_ERROR', 0);
   }
 
@@ -144,5 +157,6 @@ export function extractChat(message: string): Promise<ChatExtractResult> {
   return request<ChatExtractResult>('/chat/extract', {
     method: 'POST',
     body: JSON.stringify({ message }),
+    timeoutMs: CHAT_TIMEOUT_MS,
   });
 }
