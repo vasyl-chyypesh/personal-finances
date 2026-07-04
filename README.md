@@ -17,7 +17,7 @@ A personal finance manager that runs locally and stores data in a SQLite databas
 
 - Node.js ≥ 25
 - npm
-- Docker (optional — only for the Bearer security scan)
+- Docker (optional — for the containerized run and the Bearer security scan)
 
 ## Getting started
 
@@ -40,6 +40,32 @@ The API listens on `http://localhost:3001` by default. The SQLite file is create
 The UI is served by Vite on `http://localhost:5173` and proxies `/api/*` requests to the API on `:3001`, so both dev servers must be running to use the app. From there you can add ledger entries, list them by period (week/month/year), and edit or delete existing entries.
 
 The app is **multi-language** (English and Ukrainian). Use the language switcher in the header to change locale; the choice is remembered in `localStorage` and defaults from the browser language. Category names are bilingual — stored per category and shown in the active language (falling back to the other language, then the slug).
+
+## Run with Docker (optional)
+
+Instead of the two dev servers, the whole app can run containerized (API + nginx-served UI + a bundled Ollama for AI chat):
+
+```bash
+# Start (build images on first run / after changes)
+docker compose up --build -d
+
+# Stop (data is kept)
+docker compose down
+
+# Stop and delete all data (SQLite db + pulled chat models)
+docker compose down -v
+```
+
+Once up, the app is at `http://localhost:8080` (nginx serves the UI and proxies `/api` to the API); the API is also reachable directly at `http://127.0.0.1:3001`. The SQLite database lives in the `finance-data` named volume and survives restarts. Useful extras:
+
+```bash
+docker compose ps                                    # service status + health
+docker compose logs -f api                           # follow API logs
+docker compose cp finance.db api:/data/finance.db    # seed an existing db (once, then restart)
+docker compose exec ollama ollama pull gemma3        # pre-pull a chat model
+```
+
+`CHAT_MODEL` and `OLLAMA_HOST` are read from `.env` as usual; by default the API talks to the bundled `ollama` service (set `OLLAMA_HOST=http://host.docker.internal:11434` to use a host-side Ollama instead).
 
 ## AI chat (optional)
 
