@@ -3,7 +3,9 @@ services:
     build: { context: ., target: api }
     environment:
       RATES_OFFLINE: ${RATES_OFFLINE:-}
-      CHAT_MODEL: ${CHAT_MODEL:-}
+      # Fixed here rather than passed through from .env: the host model is an
+      # MLX build (macOS-only) that the bundled Linux Ollama can't run.
+      CHAT_MODEL: gemma4:e4b
       # Defaults to the in-compose ollama service; set OLLAMA_HOST in .env
       # (e.g. http://host.docker.internal:11434) to use a host-side Ollama.
       OLLAMA_HOST: ${OLLAMA_HOST:-http://ollama:11434}
