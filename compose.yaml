@@ -1,0 +1,55 @@
+services:
+  api:
+    build: { context: ., target: api }
+    environment:
+      RATES_OFFLINE: ${RATES_OFFLINE:-}
+      CHAT_MODEL: ${CHAT_MODEL:-}
+      # Defaults to the in-compose ollama service; set OLLAMA_HOST in .env
+      # (e.g. http://host.docker.internal:11434) to use a host-side Ollama.
+      OLLAMA_HOST: ${OLLAMA_HOST:-http://ollama:11434}
+    volumes:
+      - finance-data:/data
+    ports:
+      - '127.0.0.1:3001:3001' # loopback-only, for direct API/curl access
+    depends_on:
+      - ollama # ordering only — the API boots fine without Ollama (chat is optional)
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3001/health').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  ui:
+    build: { context: ., target: ui }
+    ports:
+      - '8080:8080'
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:0.31.1
+    volumes:
+      - ollama-data:/root/.ollama # persist pulled models
+    # No host port: 11434 usually belongs to a host-side Ollama. Pull models
+    # with `docker compose exec ollama ollama pull <model>` instead.
+    healthcheck:
+      test: ['CMD', 'ollama', 'list'] # the CLI hits the local server; no curl in the image
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+volumes:
+  finance-data:
+  ollama-data:

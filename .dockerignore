@@ -1,0 +1,29 @@
+# Never ship into the build context: deps, build output, secrets, databases.
+node_modules
+dist
+coverage
+.git
+.github
+.husky
+.claude
+.claudelint-cache
+.env
+.env.test
+*.db
+*.db-shm
+*.db-wal
+*.log
+logs
+scan-report.html
+test_data.xls
+.DS_Store
+
+# Docs and repo meta — not needed inside images.
+*.md
+docs
+BACKLOG.md
+
+# Docker files themselves (avoid needless cache invalidation).
+Dockerfile
+compose.yaml
+.dockerignore
