@@ -30,7 +30,7 @@ services:
   ui:
     build: { context: ., target: ui }
     ports:
-      - '8080:8080'
+      - '127.0.0.1:8080:8080' # loopback-only — the app is unauthenticated
     depends_on:
       api:
         condition: service_healthy

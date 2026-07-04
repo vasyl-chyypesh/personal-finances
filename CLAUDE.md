@@ -70,7 +70,7 @@ Project-wide rules (part-specific details — supertest, the `DB_PATH` HTTP setu
 - `npm start` — run compiled production build from `dist/`
 - `npm run scan:security` — run Bearer security scanner (requires Docker)
 - `npm run scan:security:report` — same, outputs an HTML report to `scan-report.html`
-- `docker compose up --build` — production-style containerized run: nginx serves the UI on `http://localhost:8080` (proxying `/api`), the API is on `127.0.0.1:3001`, and an Ollama service backs the AI chat on `127.0.0.1:11434`. The SQLite db lives in the `finance-data` named volume (seed it once with `docker compose cp finance.db api:/data/finance.db`); pulled chat models persist in `ollama-data`.
+- `docker compose up --build -d` — production-style containerized run: nginx serves the UI on `http://localhost:8080` (proxying `/api`), the API is on `127.0.0.1:3001`, and a bundled Ollama service backs the AI chat (internal-only at `http://ollama:11434`; pull models with `docker compose exec ollama ollama pull <model>`). The SQLite db lives in the `finance-data` named volume (seed it once with `docker compose cp finance.db api:/data/finance.db`); pulled chat models persist in `ollama-data`.
 
 ## Tooling
 
