@@ -26,6 +26,65 @@ function isValidISODate(value: string): boolean {
   return !Number.isNaN(parsed.getTime()) && parsed.toISOString().startsWith(value);
 }
 
+/**
+ * Turn a raw model extraction into a draft result: apply defaults for `null`
+ * fields (flagging each uncertain), convert the amount to integer cents, resolve
+ * `categorySlug`→`categoryId` (never guessed), and merge the model's own
+ * `uncertainFields`. Pure and `today`-injectable so it can be reused by the eval
+ * pipeline with a fixed reference date. The `today` argument is the ISO date used
+ * when the message states no date (or an invalid one).
+ */
+export function normalizeExtraction(
+  raw: RawExtraction,
+  categories: Category[],
+  today: string,
+): ChatExtractResult {
+  const uncertain = new Set<UncertainField>(raw.uncertainFields ?? []);
+
+  let type = raw.type;
+  if (type == null) {
+    type = 'expense';
+    uncertain.add('type');
+  }
+
+  let currency = raw.currency;
+  if (currency == null) {
+    currency = 'UAH';
+    uncertain.add('currency');
+  }
+
+  let date = raw.date;
+  if (date == null || !isValidISODate(date)) {
+    date = today;
+    uncertain.add('date');
+  }
+
+  // Amount: major units -> integer cents. Missing/invalid leaves 0 for the user to fill.
+  let amount = 0;
+  if (raw.amountMajor != null && Number.isFinite(raw.amountMajor) && raw.amountMajor > 0) {
+    amount = Math.round(raw.amountMajor * 100);
+  } else {
+    uncertain.add('amount');
+  }
+
+  // Category is never guessed: resolve the slug or leave it unresolved.
+  let categoryId: number | null = null;
+  let unresolvedCategory = true;
+  if (raw.categorySlug) {
+    const match = categories.find((c) => c.slug === raw.categorySlug);
+    if (match) {
+      categoryId = match.id;
+      unresolvedCategory = false;
+    }
+  }
+  if (unresolvedCategory) uncertain.add('category');
+
+  const description = raw.description?.trim() ? raw.description.trim() : undefined;
+
+  const draft: DraftLedgerEntry = { type, amount, currency, categoryId, description, date };
+  return { draft, uncertainFields: [...uncertain], unresolvedCategory };
+}
+
 export class ChatService {
   constructor(
     private readonly extractor: ILedgerExtractor,
@@ -51,54 +110,6 @@ export class ChatService {
       today,
     });
 
-    return this.toResult(raw, categories, today);
-  }
-
-  /** Apply defaults, convert amount to cents, resolve the category, flag uncertainty. */
-  private toResult(raw: RawExtraction, categories: Category[], today: string): ChatExtractResult {
-    const uncertain = new Set<UncertainField>(raw.uncertainFields ?? []);
-
-    let type = raw.type;
-    if (type == null) {
-      type = 'expense';
-      uncertain.add('type');
-    }
-
-    let currency = raw.currency;
-    if (currency == null) {
-      currency = 'UAH';
-      uncertain.add('currency');
-    }
-
-    let date = raw.date;
-    if (date == null || !isValidISODate(date)) {
-      date = today;
-      uncertain.add('date');
-    }
-
-    // Amount: major units -> integer cents. Missing/invalid leaves 0 for the user to fill.
-    let amount = 0;
-    if (raw.amountMajor != null && Number.isFinite(raw.amountMajor) && raw.amountMajor > 0) {
-      amount = Math.round(raw.amountMajor * 100);
-    } else {
-      uncertain.add('amount');
-    }
-
-    // Category is never guessed: resolve the slug or leave it unresolved.
-    let categoryId: number | null = null;
-    let unresolvedCategory = true;
-    if (raw.categorySlug) {
-      const match = categories.find((c) => c.slug === raw.categorySlug);
-      if (match) {
-        categoryId = match.id;
-        unresolvedCategory = false;
-      }
-    }
-    if (unresolvedCategory) uncertain.add('category');
-
-    const description = raw.description?.trim() ? raw.description.trim() : undefined;
-
-    const draft: DraftLedgerEntry = { type, amount, currency, categoryId, description, date };
-    return { draft, uncertainFields: [...uncertain], unresolvedCategory };
+    return normalizeExtraction(raw, categories, today);
   }
 }

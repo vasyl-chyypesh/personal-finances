@@ -50,6 +50,25 @@ export default [
       '@typescript-eslint/no-explicit-any': 'warn',
     },
   },
+  // Eval tooling (Node, shares the API's tsconfig + rules)
+  {
+    files: ['src/eval/**/*.ts'],
+    plugins: {
+      '@typescript-eslint': typescriptEslint,
+    },
+    languageOptions: {
+      parser: tsParser,
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      parserOptions: {
+        project: ['./tsconfig.json'],
+      },
+    },
+    rules: {
+      'no-console': 'error',
+      '@typescript-eslint/no-explicit-any': 'warn',
+    },
+  },
   // override for test files
   {
     files: ['**/*.test.ts'],
