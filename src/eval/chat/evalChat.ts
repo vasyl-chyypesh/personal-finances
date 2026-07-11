@@ -6,11 +6,12 @@ import { CATEGORY_CATALOG } from '../../api/categories/categories.catalog.js';
 import { createLedgerExtractor } from '../../api/chat/chat.llm.js';
 import { normalizeExtraction } from '../../api/chat/chat.service.js';
 import type { Category } from '../../api/categories/categories.types.js';
-import type { RawExtraction } from '../../api/chat/chat.types.js';
+import type { RawExtraction, UncertainField } from '../../api/chat/chat.types.js';
 import { loadCases } from './loadCases.js';
 import { gradeFields, type GradedExtraction } from './fieldGrader.js';
 import { buildReport, formatReport } from './report.js';
-import type { CaseResult, EvalCase } from './eval.types.js';
+import { createLlmJudge } from './llmJudge.js';
+import type { CaseResult, EvalCase, ILlmJudge, JudgeVerdict } from './eval.types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_CASES = path.join(__dirname, 'cases.jsonl');
@@ -20,6 +21,8 @@ interface CliArgs {
   filter?: string;
   threshold?: number;
   model?: string;
+  judgeModel?: string;
+  noJudge: boolean;
 }
 
 function parseArgs(argv: string[]): CliArgs {
@@ -29,8 +32,32 @@ function parseArgs(argv: string[]): CliArgs {
     casesPath: get('--cases') ?? DEFAULT_CASES,
     filter: get('--filter'),
     model: get('--model'),
+    judgeModel: get('--judge-model'),
+    noJudge: argv.includes('--no-judge'),
     threshold: threshold != null ? Number(threshold) : undefined,
   };
+}
+
+/** Judge the subjective fields; on judge failure, mark both criteria failed so it shows. */
+async function judgeCase(
+  judge: ILlmJudge,
+  testCase: EvalCase,
+  actualDescription: string | null,
+  flaggedByModel: UncertainField[],
+): Promise<JudgeVerdict> {
+  try {
+    return await judge.judge({
+      message: testCase.message,
+      expectedDescription: testCase.expected.description,
+      actualDescription,
+      descriptionRubric: testCase.descriptionRubric,
+      flaggedByModel,
+      uncertaintyRubric: testCase.uncertaintyRubric,
+    });
+  } catch (err) {
+    const reason = `judge error: ${err instanceof Error ? err.message : String(err)}`;
+    return { description: { pass: false, reason }, uncertainty: { pass: false, reason } };
+  }
 }
 
 /** Synthetic Category rows from the catalog, with stable ids for slug resolution. */
@@ -65,10 +92,16 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
+  const judge = createLlmJudge({ model: args.judgeModel });
+  const judging = !args.noJudge && judge.isAvailable();
+  // Mirror createLlmJudge's precedence: --judge-model, then EVAL_JUDGE_MODEL, then the extractor model.
+  const judgeModel = args.judgeModel?.trim() || process.env['EVAL_JUDGE_MODEL']?.trim() || model;
+
   const categories = catalogCategories();
   const extractCtx = { categories: categories.map((c) => ({ slug: c.slug, names: c.names })) };
 
-  Logger.log(`Running ${cases.length} case(s) against "${model}"…`);
+  const judgeNote = judging ? ` (judge: ${judgeModel})` : ' (deterministic only)';
+  Logger.log(`Running ${cases.length} case(s) against "${model}"${judgeNote}…`);
   const results: CaseResult[] = [];
   for (const testCase of cases) {
     const expected = expectedSide(testCase, categories);
@@ -82,7 +115,18 @@ async function main(): Promise<void> {
         slug: raw.categorySlug,
       };
       const fields = gradeFields(expected, actual);
-      results.push({ case: testCase, fields, pass: fields.every((f) => f.pass) });
+      const verdict = judging
+        ? await judgeCase(
+            judge,
+            testCase,
+            actual.norm.draft.description ?? null,
+            raw.uncertainFields,
+          )
+        : undefined;
+      const pass =
+        fields.every((f) => f.pass) &&
+        (verdict == null || (verdict.description.pass && verdict.uncertainty.pass));
+      results.push({ case: testCase, fields, judge: verdict, pass });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       results.push({ case: testCase, fields: [], pass: false, error: message });
@@ -90,7 +134,7 @@ async function main(): Promise<void> {
   }
 
   const report = buildReport(results);
-  Logger.log('\n' + formatReport(report, { model }));
+  Logger.log('\n' + formatReport(report, { model, judgeModel: judging ? judgeModel : undefined }));
 
   if (args.threshold != null && report.passRate * 100 < args.threshold) {
     Logger.error(

@@ -18,6 +18,7 @@ export function buildReport(results: CaseResult[]): RunReport {
     GradedField,
     FieldTally
   >;
+  const byJudge = { description: emptyTally(), uncertainty: emptyTally() };
   const failures: CaseResult[] = [];
   const errored: CaseResult[] = [];
 
@@ -39,6 +40,12 @@ export function buildReport(results: CaseResult[]): RunReport {
         t.total += 1;
         if (g.pass) t.passed += 1;
       }
+      if (r.judge) {
+        byJudge.description.total += 1;
+        if (r.judge.description.pass) byJudge.description.passed += 1;
+        byJudge.uncertainty.total += 1;
+        if (r.judge.uncertainty.pass) byJudge.uncertainty.passed += 1;
+      }
     }
   }
 
@@ -49,22 +56,29 @@ export function buildReport(results: CaseResult[]): RunReport {
     passRate: total === 0 ? 0 : passed / total,
     byLocale,
     byField,
+    byJudge,
     failures,
     errored,
   };
 }
 
-/** The first failing field of a case, for a compact failure line. */
+/** The first failing field or judge criterion of a case, for a compact line. */
 function firstFailure(r: CaseResult): string {
   const g = r.fields.find((f) => !f.pass);
-  if (!g) return '';
-  return `${g.field}: expected ${g.expected}, got ${g.actual}`;
+  if (g) return `${g.field}: expected ${g.expected}, got ${g.actual}`;
+  if (r.judge && !r.judge.description.pass) return `description: ${r.judge.description.reason}`;
+  if (r.judge && !r.judge.uncertainty.pass) return `uncertainty: ${r.judge.uncertainty.reason}`;
+  return '';
 }
 
 /** Render a run report as a single multi-line string for the logger. */
-export function formatReport(report: RunReport, meta: { model: string }): string {
+export function formatReport(
+  report: RunReport,
+  meta: { model: string; judgeModel?: string },
+): string {
   const lines: string[] = [];
-  lines.push(`Chat extraction eval — model=${meta.model}  (${report.total} cases)`);
+  const judgeTag = meta.judgeModel ? `  judge=${meta.judgeModel}` : '';
+  lines.push(`Chat extraction eval — model=${meta.model}${judgeTag}  (${report.total} cases)`);
 
   const locSummary = Object.entries(report.byLocale)
     .map(([loc, t]) => `${loc.toUpperCase()} ${t.passed}/${t.total}`)
@@ -79,6 +93,14 @@ export function formatReport(report: RunReport, meta: { model: string }): string
     (f) => `${f} ${pct(report.byField[f].passed, report.byField[f].total)}`,
   ).join('  ');
   lines.push(`Per-field accuracy:  ${fieldSummary}`);
+
+  const { description: desc, uncertainty: unc } = report.byJudge;
+  if (desc.total > 0) {
+    lines.push(
+      `LLM-judged:          description ${pct(desc.passed, desc.total)}  ` +
+        `uncertainty ${pct(unc.passed, unc.total)}`,
+    );
+  }
 
   if (report.failures.length > 0) {
     lines.push('Failures:');

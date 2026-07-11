@@ -12,16 +12,17 @@ reuses the API's modules; unlike a feature it is **not shipped** —
 - **Run**: `npm run eval:chat` — needs a live Ollama daemon (it exercises the
   **real** extractor, `createLedgerExtractor`, so the eval always tests the prompt
   the product actually ships). Honors `CHAT_MODEL` / `OLLAMA_HOST` from `.env`.
-  Flags: `--model=<name>` (override the extractor model), `--filter=<id-substr|locale>`,
-  `--cases=<path>`, `--threshold=<pct>` (exit non-zero below it — for an opt-in job;
-  it is **not** in the default CI gate).
+  Flags: `--model=<name>` (override the extractor model),
+  `--judge-model=<name>` (override the judge; else `EVAL_JUDGE_MODEL`, else the
+  extractor model), `--no-judge` (deterministic-only, fast),
+  `--filter=<id-substr|locale>`, `--cases=<path>`, `--threshold=<pct>` (exit
+  non-zero below it — for an opt-in job; it is **not** in the default CI gate).
 
 ## Design (hybrid grading)
 
 Objective fields are graded deterministically in code; subjective fields are left
-to a local LLM judge (phase 4, not yet built). The extractor and the judge are
-both local Ollama models — no external API, consistent with the app's local-first
-stance.
+to a local LLM judge. The extractor and the judge are both local Ollama models —
+no external API, consistent with the app's local-first stance.
 
 - **Deterministic (`fieldGrader.ts`)** — exact-match on `type`, `amount` (integer
   cents), `currency`, `category` (raw slug), `date`. `type`/`amount`/`currency`/`date`
@@ -29,8 +30,12 @@ stance.
   matches a defaulted actual one. `category` compares the raw slug (the schema
   constrains the model to real slugs or `null`, so slug equality _is_ category
   correctness).
-- **LLM-judged (planned)** — `description` quality and `uncertainFields`
-  appropriateness. Excluded from the deterministic grader on purpose.
+- **LLM-judged (`llmJudge.ts`)** — two discrete `pass`/`fail` criteria: `description`
+  quality and whether the fields the **model itself** flagged (`raw.uncertainFields`,
+  not the app's defaulted ones) are reasonable. The judge reply is constrained by an
+  Ollama JSON-schema `format` (the same trick the extractor uses), at temperature 0,
+  with a short reason per verdict. Excluded from the deterministic grader on purpose;
+  a case passes only when every deterministic field **and** both judge criteria pass.
 
 Both sides run through the API's exported `normalizeExtraction(raw, categories, today)`
 (single source of truth with `ChatService`). The eval injects a **fixed `today`
@@ -41,7 +46,7 @@ the clock.
 ## Files (`src/eval/chat/`)
 
 - `eval.types.ts` — `EvalCase`, `ExpectedExtraction`, `FieldGrade`, `CaseResult`,
-  `RunReport`.
+  `RunReport`, and the judge types (`JudgeInput`, `JudgeVerdict`, `ILlmJudge`).
 - `cases.jsonl` — the golden dataset: one JSON case per line, bilingual EN/UK.
   Each case is `{ id, locale, message, today, expected, descriptionRubric?,
 uncertaintyRubric? }`; `expected` mirrors the model's `RawExtraction` minus
@@ -50,11 +55,17 @@ uncertaintyRubric? }`; `expected` mirrors the model's `RawExtraction` minus
 - `loadCases.ts` — pure `parseCases(text)` (Zod-validated; throws with the line
   number on bad JSON / schema / duplicate id) + `loadCases(path)` file wrapper.
 - `fieldGrader.ts` — pure `gradeFields(expected, actual)` → `FieldGrade[]`.
-- `report.ts` — pure `buildReport(results)` (overall / per-locale / per-field
-  tallies) + `formatReport(report, meta)` (one multi-line string for the logger).
+- `llmJudge.ts` — the Ollama-backed judge: pure `buildJudgeMessages` +
+  `parseJudgeVerdict` + `JUDGE_SCHEMA`, and `createLlmJudge({ chat?, model? })`.
+  Injecting `chat` bypasses the daemon (used by tests); the real path pulls the
+  judge model on first use.
+- `report.ts` — pure `buildReport(results)` (overall / per-locale / per-field +
+  per-judge-criterion tallies) + `formatReport(report, meta)` (one multi-line
+  string for the logger).
 - `evalChat.ts` — entry: arg parsing, builds synthetic categories from the
-  catalog, runs the real extractor per case, grades, and logs the report; exits
-  non-zero below `--threshold`.
+  catalog, runs the real extractor per case, grades deterministically, LLM-judges
+  the subjective fields (unless `--no-judge`), and logs the report; exits non-zero
+  below `--threshold`.
 
 ## Conventions
 
@@ -67,6 +78,7 @@ uncertaintyRubric? }`; `expected` mirrors the model's `RawExtraction` minus
 
 Unit tests only, and **daemon-free** — they run under the project-wide `npm test`
 glob, so they must never contact Ollama. `fieldGrader.test.ts`, `report.test.ts`,
-and `loadCases.test.ts` use inline fixtures. The live model run happens only via
-`npm run eval:chat`. (The LLM judge, when added, will be unit-tested with a fake
-Ollama client, mirroring `fakeExtractor` in `src/api/chat/__tests__/chat.test.ts`.)
+and `loadCases.test.ts` use inline fixtures; `llmJudge.test.ts` injects a fake
+`chat` fn (mirroring `fakeExtractor` in `src/api/chat/__tests__/chat.test.ts`);
+`cases.test.ts` guards the shipped dataset (parses, unique ids, real catalog
+slugs). The live model run happens only via `npm run eval:chat`.

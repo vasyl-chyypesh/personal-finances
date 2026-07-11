@@ -1,4 +1,5 @@
 import type { Currency, LedgerEntryType } from '../../api/ledger/ledger.types.js';
+import type { UncertainField } from '../../api/chat/chat.types.js';
 
 /**
  * A hand-labeled expected extraction for one case. Mirrors the model's
@@ -45,11 +46,42 @@ export interface FieldGrade {
   actual: string;
 }
 
+/** What the LLM judge is asked to rule on for one case (subjective fields only). */
+export interface JudgeInput {
+  message: string;
+  expectedDescription: string | null;
+  actualDescription: string | null;
+  descriptionRubric?: string;
+  /** Fields the model itself chose to flag (raw), not the app's defaulted ones. */
+  flaggedByModel: UncertainField[];
+  uncertaintyRubric?: string;
+}
+
+export interface JudgeCriterion {
+  pass: boolean;
+  reason: string;
+}
+
+/** The judge's ruling on the two subjective criteria. */
+export interface JudgeVerdict {
+  description: JudgeCriterion;
+  uncertainty: JudgeCriterion;
+}
+
+/** Ollama-backed grader for subjective fields; injected with a fake in tests. */
+export interface ILlmJudge {
+  /** Whether a judge model is configured. */
+  isAvailable(): boolean;
+  judge(input: JudgeInput): Promise<JudgeVerdict>;
+}
+
 export interface CaseResult {
   case: EvalCase;
   /** Empty when the extraction errored. */
   fields: FieldGrade[];
-  /** True only when every field passed and no error occurred. */
+  /** Set when the case was LLM-judged; absent when judging was skipped. */
+  judge?: JudgeVerdict;
+  /** True only when every field (and any judge criterion) passed, with no error. */
   pass: boolean;
   /** Set when the extractor/normalizer threw (daemon down, unparseable reply). */
   error?: string;
@@ -67,7 +99,9 @@ export interface RunReport {
   passRate: number;
   byLocale: Record<string, FieldTally>;
   byField: Record<GradedField, FieldTally>;
-  /** Cases that ran but failed at least one field. */
+  /** Subjective-criteria accuracy over LLM-judged cases (0 totals when unjudged). */
+  byJudge: { description: FieldTally; uncertainty: FieldTally };
+  /** Cases that ran but failed at least one field or judge criterion. */
   failures: CaseResult[];
   /** Cases whose extraction threw. */
   errored: CaseResult[];
