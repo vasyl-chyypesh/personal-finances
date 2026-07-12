@@ -1,25 +1,34 @@
 import { Ollama } from 'ollama';
 import { Logger } from '../../api/shared/logger.js';
-import type { ILlmJudge, JudgeInput, JudgeVerdict } from './eval.types.js';
+import type { ILlmJudge, JudgeCriterion, JudgeInput, JudgeVerdict } from './eval.types.js';
 
 const DEFAULT_HOST = 'http://127.0.0.1:11434';
 /** Grading must be deterministic — no creativity. */
 const TEMPERATURE = 0;
 
+/** One criterion object: `reason` before `verdict` so the model reasons first (CoT). */
+const CRITERION_SCHEMA = {
+  type: 'object',
+  properties: {
+    reason: { type: 'string' },
+    verdict: { type: 'string', enum: ['pass', 'fail'] },
+  },
+  required: ['reason', 'verdict'],
+} as const;
+
 /**
- * JSON-schema constraint for the judge's reply. Each reason precedes its verdict
- * so the schema grammar makes the model write its reasoning first and condition
- * the pass/fail on it (chain-of-thought), not the other way around.
+ * JSON-schema constraint for the judge's reply. Nested by criterion — matching
+ * both the `JudgeVerdict` domain type and the shape models naturally emit for a
+ * two-criteria rubric (which is what MLX engines fall back to when they ignore
+ * the `format` grammar). Each criterion keeps `reason` before `verdict` (CoT).
  */
 export const JUDGE_SCHEMA = {
   type: 'object',
   properties: {
-    descriptionReason: { type: 'string' },
-    descriptionVerdict: { type: 'string', enum: ['pass', 'fail'] },
-    uncertaintyReason: { type: 'string' },
-    uncertaintyVerdict: { type: 'string', enum: ['pass', 'fail'] },
+    description: CRITERION_SCHEMA,
+    uncertainty: CRITERION_SCHEMA,
   },
-  required: ['descriptionReason', 'descriptionVerdict', 'uncertaintyReason', 'uncertaintyVerdict'],
+  required: ['description', 'uncertainty'],
 } as const;
 
 interface JudgeMessage {
@@ -65,10 +74,30 @@ export function buildJudgeMessages(input: JudgeInput): JudgeMessage[] {
   ];
 }
 
+/** Read one nested criterion; throws when it's absent so a shape mismatch surfaces. */
+function readCriterion(
+  raw: Record<string, unknown>,
+  key: 'description' | 'uncertainty',
+): JudgeCriterion {
+  // eslint-disable-next-line security/detect-object-injection -- key is a typed 'description' | 'uncertainty' literal
+  const obj = raw[key];
+  if (obj == null || typeof obj !== 'object') {
+    throw new Error(`judge reply is missing the "${key}" criterion`);
+  }
+  const c = obj as Record<string, unknown>;
+  return {
+    pass: String(c['verdict']).toLowerCase() === 'pass',
+    reason: typeof c['reason'] === 'string' ? c['reason'] : '',
+  };
+}
+
 /**
  * Parse the judge's reply into a {@link JudgeVerdict}. Mirrors the extractor's
  * defensive parsing (`chat.llm.ts`): strip a ```json fence or surrounding prose
- * before `JSON.parse`, since some engines ignore the schema `format`.
+ * before `JSON.parse`, since some engines ignore the schema `format`. Expects the
+ * nested `{ description: { reason, verdict }, uncertainty: {…} }` shape and throws
+ * when a criterion is missing — so a wrong-shape reply fails loudly (as a per-case
+ * judge error) instead of silently grading every case as fail.
  */
 export function parseJudgeVerdict(content: string): JudgeVerdict {
   let text = content.trim();
@@ -88,17 +117,9 @@ export function parseJudgeVerdict(content: string): JudgeVerdict {
     throw new Error('judge returned a response that could not be parsed');
   }
 
-  const isPass = (v: unknown) => String(v).toLowerCase() === 'pass';
-  const reason = (v: unknown) => (typeof v === 'string' ? v : '');
   return {
-    description: {
-      pass: isPass(raw['descriptionVerdict']),
-      reason: reason(raw['descriptionReason']),
-    },
-    uncertainty: {
-      pass: isPass(raw['uncertaintyVerdict']),
-      reason: reason(raw['uncertaintyReason']),
-    },
+    description: readCriterion(raw, 'description'),
+    uncertainty: readCriterion(raw, 'uncertainty'),
   };
 }
 

@@ -39,9 +39,9 @@ describe('buildJudgeMessages', () => {
 });
 
 describe('parseJudgeVerdict', () => {
-  it('maps pass/fail verdicts and reasons', () => {
+  it('maps the nested per-criterion verdicts and reasons', () => {
     const v = parseJudgeVerdict(
-      '{"descriptionVerdict":"pass","descriptionReason":"names the cafe","uncertaintyVerdict":"fail","uncertaintyReason":"type is clear"}',
+      '{"description":{"reason":"names the cafe","verdict":"pass"},"uncertainty":{"reason":"type is clear","verdict":"fail"}}',
     );
     assert.equal(v.description.pass, true);
     assert.equal(v.description.reason, 'names the cafe');
@@ -51,7 +51,7 @@ describe('parseJudgeVerdict', () => {
 
   it('strips a ```json code fence before parsing', () => {
     const v = parseJudgeVerdict(
-      'Here is my grade:\n```json\n{"descriptionVerdict":"PASS","descriptionReason":"ok","uncertaintyVerdict":"pass","uncertaintyReason":"ok"}\n```',
+      'Here is my grade:\n```json\n{"description":{"reason":"ok","verdict":"PASS"},"uncertainty":{"reason":"ok","verdict":"pass"}}\n```',
     );
     assert.equal(v.description.pass, true);
     assert.equal(v.uncertainty.pass, true);
@@ -59,6 +59,13 @@ describe('parseJudgeVerdict', () => {
 
   it('throws on an unparseable reply', () => {
     assert.throws(() => parseJudgeVerdict('no json here'), /could not be parsed/);
+  });
+
+  it('throws (rather than silently failing) when a criterion is missing', () => {
+    assert.throws(
+      () => parseJudgeVerdict('{"description":{"reason":"ok","verdict":"pass"}}'),
+      /missing the "uncertainty" criterion/,
+    );
   });
 });
 
@@ -72,19 +79,19 @@ describe('createLlmJudge', () => {
     let seenFormat: unknown;
     const chat: JudgeChatFn = async (_messages, format) => {
       seenFormat = format;
-      return '{"descriptionVerdict":"pass","descriptionReason":"ok","uncertaintyVerdict":"pass","uncertaintyReason":"ok"}';
+      return '{"description":{"reason":"ok","verdict":"pass"},"uncertainty":{"reason":"ok","verdict":"pass"}}';
     };
     const verdict = await createLlmJudge({ chat, model: 'judge-x' }).judge(INPUT);
 
     assert.equal(verdict.description.pass, true);
     assert.equal(verdict.uncertainty.pass, true);
-    // The schema constrains the reply and orders each reason before its verdict
-    // (chain-of-thought: reason first, then the pass/fail).
-    assert.deepEqual((seenFormat as { required: string[] }).required, [
-      'descriptionReason',
-      'descriptionVerdict',
-      'uncertaintyReason',
-      'uncertaintyVerdict',
-    ]);
+    // The schema is nested by criterion, and each criterion orders reason before
+    // verdict (chain-of-thought: reason first, then the pass/fail).
+    const format = seenFormat as {
+      required: string[];
+      properties: { description: { required: string[] } };
+    };
+    assert.deepEqual(format.required, ['description', 'uncertainty']);
+    assert.deepEqual(format.properties.description.required, ['reason', 'verdict']);
   });
 });
