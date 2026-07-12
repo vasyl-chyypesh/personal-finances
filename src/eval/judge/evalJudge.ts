@@ -63,29 +63,41 @@ async function main(): Promise<void> {
 
   Logger.log(`Validating judge "${model}" on ${cases.length} meta-case(s)…`);
   const results: MetaResult[] = [];
-  for (const metaCase of cases) {
+  for (const [i, metaCase] of cases.entries()) {
+    let result: MetaResult;
     try {
       const verdict = await judge.judge(metaCase.input);
       const descriptionOk = verdict.description.pass === (metaCase.expect.description === 'pass');
       const uncertaintyOk = verdict.uncertainty.pass === (metaCase.expect.uncertainty === 'pass');
       const got = (b: boolean) => (b ? 'pass' : 'fail');
-      results.push({
+      result = {
         case: metaCase,
         descriptionOk,
         uncertaintyOk,
         detail:
           `description: judge=${got(verdict.description.pass)} expected=${metaCase.expect.description}` +
           ` | uncertainty: judge=${got(verdict.uncertainty.pass)} expected=${metaCase.expect.uncertainty}`,
-      });
+      };
     } catch (err) {
-      results.push({
+      result = {
         case: metaCase,
         descriptionOk: false,
         uncertaintyOk: false,
         detail: '',
         error: err instanceof Error ? err.message : String(err),
-      });
+      };
     }
+    results.push(result);
+    const mismatched = [
+      !result.descriptionOk && 'description',
+      !result.uncertaintyOk && 'uncertainty',
+    ].filter(Boolean);
+    const outcome = result.error
+      ? `ERROR ${result.error}`
+      : mismatched.length === 0
+        ? 'OK'
+        : `MISMATCH (${mismatched.join(', ')})`;
+    Logger.log(`  [${i + 1}/${cases.length}] ${metaCase.id} — ${outcome}`);
   }
 
   const total = results.length;

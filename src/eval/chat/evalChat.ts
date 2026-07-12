@@ -63,6 +63,17 @@ async function judgeCase(
   }
 }
 
+/** A compact per-case outcome for the live progress log. */
+function caseOutcome(r: CaseResult): string {
+  if (r.error) return `ERROR ${r.error}`;
+  if (r.pass) return 'PASS';
+  const field = r.fields.find((f) => !f.pass);
+  if (field) return `FAIL ${field.field} (expected ${field.expected}, got ${field.actual})`;
+  if (r.judge && !r.judge.description.pass) return 'FAIL description';
+  if (r.judge && !r.judge.uncertainty.pass) return 'FAIL uncertainty';
+  return 'FAIL';
+}
+
 /** Synthetic Category rows from the catalog, with stable ids for slug resolution. */
 function catalogCategories(): Category[] {
   return CATEGORY_CATALOG.map((def, i) => ({ id: i + 1, slug: def.slug, names: def.names }));
@@ -106,8 +117,9 @@ async function main(): Promise<void> {
   const judgeNote = judging ? ` (judge: ${judgeModel})` : ' (deterministic only)';
   Logger.log(`Running ${cases.length} case(s) against "${model}"${judgeNote}…`);
   const results: CaseResult[] = [];
-  for (const testCase of cases) {
+  for (const [i, testCase] of cases.entries()) {
     const expected = expectedSide(testCase, categories);
+    let result: CaseResult;
     try {
       const raw = await extractor.extract(testCase.message, {
         ...extractCtx,
@@ -129,11 +141,13 @@ async function main(): Promise<void> {
       const pass =
         fields.every((f) => f.pass) &&
         (verdict == null || (verdict.description.pass && verdict.uncertainty.pass));
-      results.push({ case: testCase, fields, judge: verdict, pass });
+      result = { case: testCase, fields, judge: verdict, pass };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      results.push({ case: testCase, fields: [], pass: false, error: message });
+      result = { case: testCase, fields: [], pass: false, error: message };
     }
+    results.push(result);
+    Logger.log(`  [${i + 1}/${cases.length}] ${testCase.id} — ${caseOutcome(result)}`);
   }
 
   const report = buildReport(results);
