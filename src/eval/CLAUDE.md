@@ -8,15 +8,22 @@ HTTP feature) that measures the quality of the AI-chat extraction prompt against
 curated golden dataset. Like the xls importer it runs on demand from the CLI and
 reuses the API's modules; unlike a feature it is **not shipped** —
 `tsconfig.build.json` excludes `./src/eval`, so `npm run build` never emits it.
+The user-facing walkthrough (dataset schema, how to add a case) lives in
+[`docs/eval/chat.md`](../../docs/eval/chat.md).
 
-- **Run**: `npm run eval:chat` — needs a live Ollama daemon (it exercises the
-  **real** extractor, `createLedgerExtractor`, so the eval always tests the prompt
-  the product actually ships). Honors `CHAT_MODEL` / `OLLAMA_HOST` from `.env`.
-  Flags: `--model=<name>` (override the extractor model),
+- **Run** (`src/eval/chat/`): `npm run eval:chat` — needs a live Ollama daemon (it
+  exercises the **real** extractor, `createLedgerExtractor`, so the eval always
+  tests the prompt the product actually ships). Honors `CHAT_MODEL` / `OLLAMA_HOST`
+  from `.env`. Flags: `--model=<name>` (override the extractor model),
   `--judge-model=<name>` (override the judge; else `EVAL_JUDGE_MODEL`, else the
   extractor model), `--no-judge` (deterministic-only, fast),
   `--filter=<id-substr|locale>`, `--cases=<path>`, `--threshold=<pct>` (exit
-  non-zero below it — for an opt-in job; it is **not** in the default CI gate).
+  non-zero below it — for an opt-in job; it is **not** in the default CI gate),
+  `--json=<path>` (write a machine-readable results artifact for diffing runs).
+- **Meta-eval** (`src/eval/judge/`): `npm run eval:judge` — validates the LLM judge
+  itself against hand-labeled `judgeCases.jsonl` ("grading the grader"), reporting
+  per-criterion accuracy. Flags: `--judge-model`, `--filter`, `--cases`,
+  `--threshold`. Run it before trusting a new judge model's grades.
 
 ## Design (hybrid grading)
 
@@ -61,11 +68,23 @@ uncertaintyRubric? }`; `expected` mirrors the model's `RawExtraction` minus
   judge model on first use.
 - `report.ts` — pure `buildReport(results)` (overall / per-locale / per-field +
   per-judge-criterion tallies) + `formatReport(report, meta)` (one multi-line
-  string for the logger).
+  string for the logger) + `buildJsonArtifact(results, report, meta)` (the
+  serializable `--json` payload).
 - `evalChat.ts` — entry: arg parsing, builds synthetic categories from the
   catalog, runs the real extractor per case, grades deterministically, LLM-judges
-  the subjective fields (unless `--no-judge`), and logs the report; exits non-zero
-  below `--threshold`.
+  the subjective fields (unless `--no-judge`), logs the report and optionally
+  writes the `--json` artifact; exits non-zero below `--threshold`.
+
+## Files (`src/eval/judge/`) — judge meta-eval
+
+- `judgeEval.types.ts` — `JudgeMetaCase` (a `JudgeInput` + the `expect`ed
+  per-criterion verdict).
+- `judgeCases.jsonl` — hand-labeled meta-cases spanning pass and fail labels on
+  both criteria.
+- `loadJudgeCases.ts` — pure `parseJudgeCases(text)` + `loadJudgeCases(path)`
+  (Zod-validated, same failure discipline as the chat loader).
+- `evalJudge.ts` — entry: runs the real judge over the meta-cases and reports
+  per-criterion accuracy; exits non-zero below `--threshold`.
 
 ## Conventions
 
@@ -74,11 +93,13 @@ uncertaintyRubric? }`; `expected` mirrors the model's `RawExtraction` minus
 - **Reuse, don't fork** — grading normalization comes from `normalizeExtraction`;
   categories come from `CATEGORY_CATALOG`. Do not duplicate money/date/slug logic.
 
-## Tests (`src/eval/chat/__tests__/`)
+## Tests (`__tests__/` in each subdir)
 
 Unit tests only, and **daemon-free** — they run under the project-wide `npm test`
-glob, so they must never contact Ollama. `fieldGrader.test.ts`, `report.test.ts`,
-and `loadCases.test.ts` use inline fixtures; `llmJudge.test.ts` injects a fake
-`chat` fn (mirroring `fakeExtractor` in `src/api/chat/__tests__/chat.test.ts`);
-`cases.test.ts` guards the shipped dataset (parses, unique ids, real catalog
-slugs). The live model run happens only via `npm run eval:chat`.
+glob, so they must never contact Ollama. `fieldGrader.test.ts`, `report.test.ts`
+(incl. the `--json` artifact), and `loadCases.test.ts` use inline fixtures;
+`llmJudge.test.ts` injects a fake `chat` fn (mirroring `fakeExtractor` in
+`src/api/chat/__tests__/chat.test.ts`); `cases.test.ts` and
+`judge/__tests__/loadJudgeCases.test.ts` guard the shipped datasets (parse, unique
+ids, real catalog slugs, both verdict labels). The live model runs only via
+`npm run eval:chat` / `npm run eval:judge`.

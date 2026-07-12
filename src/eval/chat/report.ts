@@ -1,4 +1,11 @@
-import type { CaseResult, FieldTally, GradedField, RunReport } from './eval.types.js';
+import type {
+  CaseResult,
+  FieldGrade,
+  FieldTally,
+  GradedField,
+  JudgeVerdict,
+  RunReport,
+} from './eval.types.js';
 
 const GRADED_FIELDS: GradedField[] = ['type', 'amount', 'currency', 'category', 'date'];
 
@@ -59,6 +66,60 @@ export function buildReport(results: CaseResult[]): RunReport {
     byJudge,
     failures,
     errored,
+  };
+}
+
+export interface JsonCaseResult {
+  id: string;
+  locale: string;
+  pass: boolean;
+  error?: string;
+  fields: FieldGrade[];
+  judge?: JudgeVerdict;
+}
+
+/** A machine-readable run artifact (`--json`), diffable across runs. */
+export interface JsonArtifact {
+  generatedAt: string;
+  model: string;
+  judgeModel?: string;
+  summary: {
+    total: number;
+    passed: number;
+    passRate: number;
+    byField: Record<GradedField, FieldTally>;
+    byJudge: { description: FieldTally; uncertainty: FieldTally };
+    byLocale: Record<string, FieldTally>;
+  };
+  cases: JsonCaseResult[];
+}
+
+/** Build the serializable artifact from the per-case results and the aggregate. */
+export function buildJsonArtifact(
+  results: CaseResult[],
+  report: RunReport,
+  meta: { model: string; judgeModel?: string; generatedAt: string },
+): JsonArtifact {
+  return {
+    generatedAt: meta.generatedAt,
+    model: meta.model,
+    ...(meta.judgeModel ? { judgeModel: meta.judgeModel } : {}),
+    summary: {
+      total: report.total,
+      passed: report.passed,
+      passRate: report.passRate,
+      byField: report.byField,
+      byJudge: report.byJudge,
+      byLocale: report.byLocale,
+    },
+    cases: results.map((r) => ({
+      id: r.case.id,
+      locale: r.case.locale,
+      pass: r.pass,
+      ...(r.error ? { error: r.error } : {}),
+      fields: r.fields,
+      ...(r.judge ? { judge: r.judge } : {}),
+    })),
   };
 }
 

@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildReport, formatReport } from '../report.js';
+import { buildJsonArtifact, buildReport, formatReport } from '../report.js';
 import type { CaseResult, EvalCase, FieldGrade, GradedField } from '../eval.types.js';
 
 function evalCase(id: string, locale: 'en' | 'uk'): EvalCase {
@@ -81,5 +81,49 @@ describe('formatReport', () => {
     assert.match(text, /en-bad/);
     assert.match(text, /date: expected/);
     assert.match(text, /uk-err\s+boom/);
+  });
+});
+
+describe('buildJsonArtifact', () => {
+  it('serializes meta, summary and per-case results', () => {
+    const results: CaseResult[] = [
+      {
+        case: evalCase('en-ok', 'en'),
+        fields: grades(),
+        judge: {
+          description: { pass: true, reason: 'ok' },
+          uncertainty: { pass: true, reason: 'ok' },
+        },
+        pass: true,
+      },
+      { case: evalCase('uk-err', 'uk'), fields: [], pass: false, error: 'boom' },
+    ];
+    const report = buildReport(results);
+    const artifact = buildJsonArtifact(results, report, {
+      model: 'ext',
+      judgeModel: 'judge',
+      generatedAt: '2026-07-11T00:00:00.000Z',
+    });
+
+    assert.equal(artifact.model, 'ext');
+    assert.equal(artifact.judgeModel, 'judge');
+    assert.equal(artifact.summary.total, 2);
+    assert.equal(artifact.summary.passed, 1);
+    assert.equal(artifact.cases.length, 2);
+    assert.equal(artifact.cases[0].id, 'en-ok');
+    assert.equal(artifact.cases[0].judge?.description.pass, true);
+    assert.equal(artifact.cases[1].error, 'boom');
+    // Round-trips through JSON unchanged.
+    assert.deepEqual(JSON.parse(JSON.stringify(artifact)), artifact);
+  });
+
+  it('omits judgeModel when the run was deterministic-only', () => {
+    const results: CaseResult[] = [{ case: evalCase('en-ok', 'en'), fields: grades(), pass: true }];
+    const artifact = buildJsonArtifact(results, buildReport(results), {
+      model: 'ext',
+      generatedAt: '2026-07-11T00:00:00.000Z',
+    });
+    assert.equal('judgeModel' in artifact, false);
+    assert.equal('judge' in artifact.cases[0], false);
   });
 });

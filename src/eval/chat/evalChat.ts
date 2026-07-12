@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { fileURLToPath } from 'node:url';
+import { writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { Logger } from '../../api/shared/logger.js';
 import { CATEGORY_CATALOG } from '../../api/categories/categories.catalog.js';
@@ -9,7 +10,7 @@ import type { Category } from '../../api/categories/categories.types.js';
 import type { RawExtraction, UncertainField } from '../../api/chat/chat.types.js';
 import { loadCases } from './loadCases.js';
 import { gradeFields, type GradedExtraction } from './fieldGrader.js';
-import { buildReport, formatReport } from './report.js';
+import { buildJsonArtifact, buildReport, formatReport } from './report.js';
 import { createLlmJudge } from './llmJudge.js';
 import type { CaseResult, EvalCase, ILlmJudge, JudgeVerdict } from './eval.types.js';
 
@@ -23,6 +24,7 @@ interface CliArgs {
   model?: string;
   judgeModel?: string;
   noJudge: boolean;
+  jsonPath?: string;
 }
 
 function parseArgs(argv: string[]): CliArgs {
@@ -34,6 +36,7 @@ function parseArgs(argv: string[]): CliArgs {
     model: get('--model'),
     judgeModel: get('--judge-model'),
     noJudge: argv.includes('--no-judge'),
+    jsonPath: get('--json'),
     threshold: threshold != null ? Number(threshold) : undefined,
   };
 }
@@ -135,6 +138,17 @@ async function main(): Promise<void> {
 
   const report = buildReport(results);
   Logger.log('\n' + formatReport(report, { model, judgeModel: judging ? judgeModel : undefined }));
+
+  if (args.jsonPath) {
+    const artifact = buildJsonArtifact(results, report, {
+      model,
+      judgeModel: judging ? judgeModel : undefined,
+      generatedAt: new Date().toISOString(),
+    });
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- jsonPath is an explicit CLI argument
+    writeFileSync(args.jsonPath, JSON.stringify(artifact, null, 2));
+    Logger.log(`Wrote results to ${args.jsonPath}`);
+  }
 
   if (args.threshold != null && report.passRate * 100 < args.threshold) {
     Logger.error(

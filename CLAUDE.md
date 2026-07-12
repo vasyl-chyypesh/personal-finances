@@ -61,7 +61,8 @@ Project-wide rules (part-specific details — supertest, the `DB_PATH` HTTP setu
 - `npm run dev:api` — start API dev server (tsx watch)
 - `npm run dev:ui` — start the React UI dev server (Vite on `:5173`, proxies `/api` to `:3001`)
 - `npm run import:xls -- <file.xls>` — import a legacy Excel budget sheet into the SQLite db
-- `npm run eval:chat` — grade the AI-chat extractor prompt against the golden dataset (needs a live Ollama daemon; see `src/eval/CLAUDE.md`)
+- `npm run eval:chat` — grade the AI-chat extractor prompt against the golden dataset (needs a live Ollama daemon; see `src/eval/CLAUDE.md` and `docs/eval/chat.md`)
+- `npm run eval:judge` — validate the LLM judge itself against hand-labeled meta-cases (needs a live Ollama daemon)
 - `npm test` — run all tests
 - `npm run lint` — run ESLint
 - `npm run lint:files` — run ls-lint (file naming linter, separate from ESLint)
