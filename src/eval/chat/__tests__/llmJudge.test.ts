@@ -78,12 +78,13 @@ describe('createLlmJudge', () => {
 
     assert.equal(verdict.description.pass, true);
     assert.equal(verdict.uncertainty.pass, true);
-    // The Ollama JSON-schema `format` constrains the reply to discrete verdicts.
+    // The schema constrains the reply and orders each reason before its verdict
+    // (chain-of-thought: reason first, then the pass/fail).
     assert.deepEqual((seenFormat as { required: string[] }).required, [
-      'descriptionVerdict',
       'descriptionReason',
-      'uncertaintyVerdict',
+      'descriptionVerdict',
       'uncertaintyReason',
+      'uncertaintyVerdict',
     ]);
   });
 });

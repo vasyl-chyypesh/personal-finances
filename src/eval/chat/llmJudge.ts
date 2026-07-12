@@ -6,16 +6,20 @@ const DEFAULT_HOST = 'http://127.0.0.1:11434';
 /** Grading must be deterministic — no creativity. */
 const TEMPERATURE = 0;
 
-/** JSON-schema constraint for the judge's reply (discrete verdicts + reasons). */
+/**
+ * JSON-schema constraint for the judge's reply. Each reason precedes its verdict
+ * so the schema grammar makes the model write its reasoning first and condition
+ * the pass/fail on it (chain-of-thought), not the other way around.
+ */
 export const JUDGE_SCHEMA = {
   type: 'object',
   properties: {
-    descriptionVerdict: { type: 'string', enum: ['pass', 'fail'] },
     descriptionReason: { type: 'string' },
-    uncertaintyVerdict: { type: 'string', enum: ['pass', 'fail'] },
+    descriptionVerdict: { type: 'string', enum: ['pass', 'fail'] },
     uncertaintyReason: { type: 'string' },
+    uncertaintyVerdict: { type: 'string', enum: ['pass', 'fail'] },
   },
-  required: ['descriptionVerdict', 'descriptionReason', 'uncertaintyVerdict', 'uncertaintyReason'],
+  required: ['descriptionReason', 'descriptionVerdict', 'uncertaintyReason', 'uncertaintyVerdict'],
 } as const;
 
 interface JudgeMessage {
@@ -38,7 +42,8 @@ export function buildJudgeMessages(input: JudgeInput): JudgeMessage[] {
     '   ambiguous cues, and must NOT flag values that are clearly stated or simply',
     '   absent (the app defaults absent values on its own); fail otherwise.',
     '',
-    'Give a short reason for each verdict. Judge only these two criteria.',
+    'For each criterion, first write a short reason, then give the pass/fail verdict.',
+    'Judge only these two criteria.',
   ].join('\n');
 
   const flagged =
