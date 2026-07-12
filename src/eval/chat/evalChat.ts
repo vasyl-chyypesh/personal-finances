@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { fileURLToPath } from 'node:url';
-import { writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { Logger } from '../../api/shared/logger.js';
 import { CATEGORY_CATALOG } from '../../api/categories/categories.catalog.js';
@@ -10,12 +10,15 @@ import type { Category } from '../../api/categories/categories.types.js';
 import type { RawExtraction, UncertainField } from '../../api/chat/chat.types.js';
 import { loadCases } from './loadCases.js';
 import { gradeFields, type GradedExtraction } from './fieldGrader.js';
-import { buildJsonArtifact, buildReport, formatReport } from './report.js';
+import { buildJsonArtifact, buildReport, formatReport, resolveArtifactPath } from './report.js';
 import { createLlmJudge } from './llmJudge.js';
 import type { CaseResult, EvalCase, ILlmJudge, JudgeVerdict } from './eval.types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_CASES = path.join(__dirname, 'cases.jsonl');
+/** Timestamped run artifacts land here by default (gitignored). */
+const DEFAULT_RESULTS_DIR = path.join(__dirname, 'results');
+const ARTIFACT_PREFIX = 'chat-eval';
 
 interface CliArgs {
   casesPath: string;
@@ -25,6 +28,8 @@ interface CliArgs {
   judgeModel?: string;
   noJudge: boolean;
   jsonPath?: string;
+  outDir?: string;
+  noJson: boolean;
 }
 
 function parseArgs(argv: string[]): CliArgs {
@@ -37,6 +42,8 @@ function parseArgs(argv: string[]): CliArgs {
     judgeModel: get('--judge-model'),
     noJudge: argv.includes('--no-judge'),
     jsonPath: get('--json'),
+    outDir: get('--out-dir'),
+    noJson: argv.includes('--no-json'),
     threshold: threshold != null ? Number(threshold) : undefined,
   };
 }
@@ -153,15 +160,21 @@ async function main(): Promise<void> {
   const report = buildReport(results);
   Logger.log('\n' + formatReport(report, { model, judgeModel: judging ? judgeModel : undefined }));
 
-  if (args.jsonPath) {
+  const outPath = resolveArtifactPath(
+    { jsonPath: args.jsonPath, outDir: args.outDir, noJson: args.noJson },
+    { dir: DEFAULT_RESULTS_DIR, prefix: ARTIFACT_PREFIX, now: new Date() },
+  );
+  if (outPath) {
     const artifact = buildJsonArtifact(results, report, {
       model,
       judgeModel: judging ? judgeModel : undefined,
       generatedAt: new Date().toISOString(),
     });
-    // eslint-disable-next-line security/detect-non-literal-fs-filename -- jsonPath is an explicit CLI argument
-    writeFileSync(args.jsonPath, JSON.stringify(artifact, null, 2));
-    Logger.log(`Wrote results to ${args.jsonPath}`);
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- outPath is the tool's default results dir or an explicit CLI argument
+    mkdirSync(path.dirname(outPath), { recursive: true });
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- outPath is the tool's default results dir or an explicit CLI argument
+    writeFileSync(outPath, JSON.stringify(artifact, null, 2));
+    Logger.log(`Wrote results to ${outPath}`);
   }
 
   if (args.threshold != null && report.passRate * 100 < args.threshold) {

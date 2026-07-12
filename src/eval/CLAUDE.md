@@ -18,8 +18,11 @@ The user-facing walkthrough (dataset schema, how to add a case) lives in
   `--judge-model=<name>` (override the judge; else `EVAL_JUDGE_MODEL`, else the
   extractor model), `--no-judge` (deterministic-only, fast),
   `--filter=<id-substr|locale>`, `--cases=<path>`, `--threshold=<pct>` (exit
-  non-zero below it — for an opt-in job; it is **not** in the default CI gate),
-  `--json=<path>` (write a machine-readable results artifact for diffing runs).
+  non-zero below it — for an opt-in job; it is **not** in the default CI gate).
+  Every run writes a timestamped JSON artifact
+  (`chat-eval-<ISO-stamp>.json`) — by default into `src/eval/chat/results/`
+  (gitignored); `--out-dir=<dir>` changes the directory, `--json=<path>` overrides
+  the exact path, `--no-json` skips writing.
 - **Meta-eval** (`src/eval/judge/`): `npm run eval:judge` — validates the LLM judge
   itself against hand-labeled `judgeCases.jsonl` ("grading the grader"), reporting
   per-criterion accuracy. Flags: `--judge-model`, `--filter`, `--cases`,
@@ -69,7 +72,8 @@ uncertaintyRubric? }`; `expected` mirrors the model's `RawExtraction` minus
 - `report.ts` — pure `buildReport(results)` (overall / per-locale / per-field +
   per-judge-criterion tallies) + `formatReport(report, meta)` (one multi-line
   string for the logger) + `buildJsonArtifact(results, report, meta)` (the
-  serializable `--json` payload).
+  serializable artifact payload) + `artifactFilename` / `resolveArtifactPath` (the
+  timestamped output-path logic: `--no-json` > `--json` > `--out-dir`/default).
 - `evalChat.ts` — entry: arg parsing, builds synthetic categories from the
   catalog, runs the real extractor per case, grades deterministically, LLM-judges
   the subjective fields (unless `--no-judge`), logs the report and optionally

@@ -15,8 +15,10 @@ daemon and is **not** part of the CI gate.
 - `npm run eval:chat` — run the extraction eval. Flags: `--model=<name>`,
   `--judge-model=<name>` (else `EVAL_JUDGE_MODEL`, else the extractor model),
   `--no-judge` (deterministic-only), `--filter=<id-substr|locale>`,
-  `--cases=<path>`, `--threshold=<pct>` (exit non-zero below it),
-  `--json=<path>` (write a machine-readable results artifact).
+  `--cases=<path>`, `--threshold=<pct>` (exit non-zero below it).
+  **Every run writes a timestamped JSON artifact** (`chat-eval-<ISO-stamp>.json`),
+  by default into `src/eval/chat/results/` (gitignored). `--out-dir=<dir>` changes
+  the directory, `--json=<path>` overrides the exact path, `--no-json` skips it.
 - `npm run eval:judge` — the **meta-eval**: validate the judge itself against
   hand-labeled cases (see below). Flags: `--judge-model`, `--filter`, `--cases`,
   `--threshold`.

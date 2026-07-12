@@ -11,3 +11,4 @@ ignore:
   - dist
   - .husky
   - coverage
+  - src/eval/chat/results

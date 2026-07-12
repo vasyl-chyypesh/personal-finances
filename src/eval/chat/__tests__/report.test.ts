@@ -1,6 +1,12 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildJsonArtifact, buildReport, formatReport } from '../report.js';
+import {
+  artifactFilename,
+  buildJsonArtifact,
+  buildReport,
+  formatReport,
+  resolveArtifactPath,
+} from '../report.js';
 import type { CaseResult, EvalCase, FieldGrade, GradedField } from '../eval.types.js';
 
 function evalCase(id: string, locale: 'en' | 'uk'): EvalCase {
@@ -125,5 +131,40 @@ describe('buildJsonArtifact', () => {
     });
     assert.equal('judgeModel' in artifact, false);
     assert.equal('judge' in artifact.cases[0], false);
+  });
+});
+
+describe('artifactFilename', () => {
+  it('builds a colon-free, sortable name from the timestamp', () => {
+    const name = artifactFilename('chat-eval', new Date('2026-07-12T07:43:20.123Z'));
+    assert.equal(name, 'chat-eval-2026-07-12T07-43-20.json');
+    assert.doesNotMatch(name, /:/);
+  });
+});
+
+describe('resolveArtifactPath', () => {
+  const defaults = {
+    dir: '/repo/results',
+    prefix: 'chat-eval',
+    now: new Date('2026-07-12T07:43:20Z'),
+  };
+
+  it('defaults to a timestamped file in the results dir', () => {
+    const p = resolveArtifactPath({}, defaults);
+    assert.equal(p, '/repo/results/chat-eval-2026-07-12T07-43-20.json');
+  });
+
+  it('honors --out-dir but keeps the timestamped name', () => {
+    const p = resolveArtifactPath({ outDir: '/tmp/out' }, defaults);
+    assert.equal(p, '/tmp/out/chat-eval-2026-07-12T07-43-20.json');
+  });
+
+  it('uses an explicit --json path verbatim (over --out-dir)', () => {
+    const p = resolveArtifactPath({ jsonPath: '/x/run.json', outDir: '/tmp/out' }, defaults);
+    assert.equal(p, '/x/run.json');
+  });
+
+  it('returns null when --no-json is set (over everything)', () => {
+    assert.equal(resolveArtifactPath({ noJson: true, jsonPath: '/x/run.json' }, defaults), null);
   });
 });

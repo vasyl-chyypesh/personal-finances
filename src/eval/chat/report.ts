@@ -1,3 +1,4 @@
+import path from 'node:path';
 import type {
   CaseResult,
   FieldGrade,
@@ -121,6 +122,26 @@ export function buildJsonArtifact(
       ...(r.judge ? { judge: r.judge } : {}),
     })),
   };
+}
+
+/** Colon-safe, lexicographically sortable filename, e.g. `chat-eval-2026-07-12T07-43-20.json`. */
+export function artifactFilename(prefix: string, now: Date): string {
+  const stamp = now.toISOString().slice(0, 19).replace(/:/g, '-');
+  return `${prefix}-${stamp}.json`;
+}
+
+/**
+ * Resolve where to write the results artifact from the CLI options. Precedence:
+ * `--no-json` disables it (returns `null`); else an explicit `--json` path wins;
+ * else a timestamped file in `--out-dir` or the default results directory.
+ */
+export function resolveArtifactPath(
+  opts: { jsonPath?: string; outDir?: string; noJson?: boolean },
+  defaults: { dir: string; prefix: string; now: Date },
+): string | null {
+  if (opts.noJson) return null;
+  if (opts.jsonPath) return opts.jsonPath;
+  return path.join(opts.outDir ?? defaults.dir, artifactFilename(defaults.prefix, defaults.now));
 }
 
 /** The first failing field or judge criterion of a case, for a compact line. */
