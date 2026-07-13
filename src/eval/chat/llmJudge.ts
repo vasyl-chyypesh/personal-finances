@@ -36,40 +36,82 @@ interface JudgeMessage {
   content: string;
 }
 
+/**
+ * The judge system prompt. Follows Anthropic prompt-engineering practice: a clear
+ * role, XML-delimited criteria with explicit edge cases, chain-of-thought
+ * (reason before verdict) plus a self-consistency rule so the verdict follows the
+ * reason, and few-shot pass/fail examples. The examples are invented and do NOT
+ * reuse golden-dataset cases, so the eval stays a fair test.
+ */
+const JUDGE_SYSTEM_PROMPT = `You are a strict but fair grader for a personal-finance extraction assistant. The assistant reads ONE user message and fills in a ledger entry. You grade ONLY the two criteria below. Reply with ONLY the JSON object shown in the <output> of the examples — no prose, headings, or text before or after it.
+
+<criteria>
+1. description — Does the assistant's "description" correctly capture the place or payee?
+   - PASS: it names the specific place/payee/person from the message (e.g. "Silpo", "Maria").
+   - PASS: the message names no specific place or payee, and the description is empty.
+   - FAIL: it merely repeats the category or item type instead of a name (e.g. "Groceries", "Coffee", "jacket").
+   - FAIL: the message clearly names a place or payee, but the description is empty or wrong.
+
+2. uncertainty — Are the fields the assistant flagged for the user to double-check reasonable?
+   - PASS: it flags only values it set from weak or ambiguous cues (an inferred type, a loosely-fitting category).
+   - PASS: nothing is flagged and every value the assistant set is clearly stated in the message.
+   - FAIL: it flags a value that is clearly stated in the message (there is nothing to double-check).
+   - FAIL: it does not flag a value it clearly guessed from weak cues.
+   - Values the message does NOT state are filled in by the app automatically and must NOT be flagged — an empty flag list for a message that omits currency or date is correct, not a failure.
+</criteria>
+
+In each criterion object put ONE short sentence in "reason" and then the "verdict". The verdict MUST follow the reasoning: if your reason concludes the assistant handled the field correctly, the verdict is "pass"; if it concludes the assistant got it wrong, the verdict is "fail". Never pair a "correct"/"aligns"/"is right" reason with a "fail" verdict. Grade the two criteria independently and ignore all other fields.
+
+Each example below shows the <input> and the exact <output> JSON you must produce.
+
+<examples>
+<example>
+<input>
+<message>lunch at Kanapa 320</message>
+<expected_description>Kanapa</expected_description>
+<assistant_description>Kanapa</assistant_description>
+<flagged_fields>[] (none)</flagged_fields>
+</input>
+<output>{"description":{"reason":"Names the specific restaurant, Kanapa.","verdict":"pass"},"uncertainty":{"reason":"Every value the assistant set is clearly stated and nothing is flagged, which is correct.","verdict":"pass"}}</output>
+</example>
+<example>
+<input>
+<message>spent 200 on clothes</message>
+<expected_description>(none)</expected_description>
+<assistant_description>Clothes</assistant_description>
+<flagged_fields>[amount]</flagged_fields>
+</input>
+<output>{"description":{"reason":"Only repeats the category instead of naming a place or payee.","verdict":"fail"},"uncertainty":{"reason":"The amount 200 is clearly stated, so flagging it is wrong.","verdict":"fail"}}</output>
+</example>
+<example>
+<input>
+<message>got 5000 bonus</message>
+<expected_description>(none)</expected_description>
+<assistant_description>(none)</assistant_description>
+<flagged_fields>[type]</flagged_fields>
+</input>
+<output>{"description":{"reason":"No place or payee is named, so an empty description is correct.","verdict":"pass"},"uncertainty":{"reason":"Type was inferred from a weak cue, so flagging it for review is reasonable.","verdict":"pass"}}</output>
+</example>
+</examples>`;
+
 /** Build the (system, user) messages for one grading request. */
 export function buildJudgeMessages(input: JudgeInput): JudgeMessage[] {
-  const system = [
-    'You are a strict grader for a personal-finance extraction assistant. The',
-    'assistant reads ONE user message and fills a ledger entry. Judge ONLY two',
-    'things and reply with the JSON object the schema describes.',
-    '',
-    "1) description — pass when the assistant's description captures the place or",
-    '   payee named in the message (or is empty when the message names none) and',
-    '   does NOT merely repeat the category; fail otherwise.',
-    '2) uncertainty — pass when the fields the assistant flagged for the user to',
-    '   double-check are reasonable: it should flag values it set from weak or',
-    '   ambiguous cues, and must NOT flag values that are clearly stated or simply',
-    '   absent (the app defaults absent values on its own); fail otherwise.',
-    '',
-    'For each criterion, first write a short reason, then give the pass/fail verdict.',
-    'Judge only these two criteria.',
-  ].join('\n');
-
   const flagged =
     input.flaggedByModel.length > 0 ? `[${input.flaggedByModel.join(', ')}]` : '[] (none)';
 
   const user = [
-    `Message: "${input.message}"`,
-    `Expected description: ${input.expectedDescription ?? '(none)'}`,
-    `Assistant description: ${input.actualDescription ?? '(none)'}`,
-    `Description guidance: ${input.descriptionRubric ?? '(none)'}`,
+    'Grade this case:',
     '',
-    `Fields the assistant flagged as uncertain: ${flagged}`,
-    `Uncertainty guidance: ${input.uncertaintyRubric ?? '(none)'}`,
+    `<message>${input.message}</message>`,
+    `<expected_description>${input.expectedDescription ?? '(none)'}</expected_description>`,
+    `<assistant_description>${input.actualDescription ?? '(none)'}</assistant_description>`,
+    `<description_guidance>${input.descriptionRubric ?? '(none)'}</description_guidance>`,
+    `<flagged_fields>${flagged}</flagged_fields>`,
+    `<uncertainty_guidance>${input.uncertaintyRubric ?? '(none)'}</uncertainty_guidance>`,
   ].join('\n');
 
   return [
-    { role: 'system', content: system },
+    { role: 'system', content: JUDGE_SYSTEM_PROMPT },
     { role: 'user', content: user },
   ];
 }

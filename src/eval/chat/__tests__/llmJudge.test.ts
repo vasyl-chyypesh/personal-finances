@@ -18,13 +18,16 @@ const INPUT: JudgeInput = {
 };
 
 describe('buildJudgeMessages', () => {
-  it('includes the message, both descriptions and the flagged fields', () => {
+  it('wraps the case data in XML tags and states the self-consistency rule', () => {
     const [system, user] = buildJudgeMessages(INPUT);
     assert.equal(system.role, 'system');
     assert.equal(user.role, 'user');
-    assert.match(user.content, /coffee at Aroma Kava for 85/);
-    assert.match(user.content, /Expected description: Aroma Kava/);
-    assert.match(user.content, /\[type\]/);
+    assert.match(user.content, /<message>coffee at Aroma Kava for 85<\/message>/);
+    assert.match(user.content, /<expected_description>Aroma Kava<\/expected_description>/);
+    assert.match(user.content, /<flagged_fields>\[type\]<\/flagged_fields>/);
+    // The self-consistency rule (verdict must follow the reason) lives in the system prompt.
+    assert.match(system.content, /verdict MUST follow the reasoning/);
+    assert.match(system.content, /<examples>/);
   });
 
   it('renders "(none)" for an absent description and "[] (none)" for no flags', () => {
@@ -33,8 +36,8 @@ describe('buildJudgeMessages', () => {
       actualDescription: null,
       flaggedByModel: [],
     });
-    assert.match(user.content, /Assistant description: \(none\)/);
-    assert.match(user.content, /flagged as uncertain: \[\] \(none\)/);
+    assert.match(user.content, /<assistant_description>\(none\)<\/assistant_description>/);
+    assert.match(user.content, /<flagged_fields>\[\] \(none\)<\/flagged_fields>/);
   });
 });
 
