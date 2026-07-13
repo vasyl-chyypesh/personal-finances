@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { z } from 'zod';
+import { parseJsonlDataset } from '../shared/parseJsonl.js';
 import type { JudgeMetaCase } from './judgeEval.types.js';
 
 const InputSchema = z.object({
@@ -22,36 +23,7 @@ const MetaCaseSchema = z.object({
 
 /** Parse the judge meta-eval dataset (JSONL). Same failure discipline as the chat loader. */
 export function parseJudgeCases(text: string): JudgeMetaCase[] {
-  const cases: JudgeMetaCase[] = [];
-  const seen = new Set<string>();
-  const lines = text.split('\n');
-
-  for (let i = 0; i < lines.length; i++) {
-    // eslint-disable-next-line security/detect-object-injection -- i is a bounded loop index into lines
-    const line = lines[i].trim();
-    if (line === '') continue;
-
-    let json: unknown;
-    try {
-      json = JSON.parse(line);
-    } catch {
-      throw new Error(`judgeCases.jsonl line ${i + 1}: not valid JSON`);
-    }
-
-    const result = MetaCaseSchema.safeParse(json);
-    if (!result.success) {
-      throw new Error(
-        `judgeCases.jsonl line ${i + 1}: ${result.error.issues[0]?.message ?? 'invalid'}`,
-      );
-    }
-    if (seen.has(result.data.id)) {
-      throw new Error(`judgeCases.jsonl line ${i + 1}: duplicate case id "${result.data.id}"`);
-    }
-    seen.add(result.data.id);
-    cases.push(result.data);
-  }
-
-  return cases;
+  return parseJsonlDataset(text, MetaCaseSchema, 'judgeCases.jsonl');
 }
 
 export function loadJudgeCases(path: string): JudgeMetaCase[] {
