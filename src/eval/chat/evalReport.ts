@@ -33,6 +33,7 @@ function isArtifact(x: unknown): x is JsonArtifact {
   return (
     typeof a['generatedAt'] === 'string' &&
     typeof a['model'] === 'string' &&
+    a['summary'] != null &&
     typeof a['summary'] === 'object' &&
     Array.isArray(a['cases'])
   );
@@ -76,8 +77,14 @@ function main(): void {
     }
     const href = file.replace(/\.json$/, '.html');
     const outPath = path.join(args.resultsDir, href);
-    // eslint-disable-next-line security/detect-non-literal-fs-filename -- outPath is inside the tool's results dir
-    writeFileSync(outPath, buildRunHtml(parsed, casesById));
+    try {
+      // eslint-disable-next-line security/detect-non-literal-fs-filename -- outPath is inside the tool's results dir
+      writeFileSync(outPath, buildRunHtml(parsed, casesById));
+    } catch (err) {
+      // A shape-valid-but-malformed artifact shouldn't abort the whole batch — skip it.
+      Logger.log(`Skipping ${file}: ${err instanceof Error ? err.message : String(err)}`);
+      continue;
+    }
     runs.push({ artifact: parsed, href });
   }
 
