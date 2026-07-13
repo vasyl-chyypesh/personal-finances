@@ -27,6 +27,11 @@ The user-facing walkthrough (dataset schema, how to add a case) lives in
   itself against hand-labeled `judgeCases.jsonl` ("grading the grader"), reporting
   per-criterion accuracy. Flags: `--judge-model`, `--filter`, `--cases`,
   `--threshold`. Run it before trusting a new judge model's grades.
+- **HTML report** (`src/eval/chat/`): `npm run eval:report` — no daemon; renders the
+  JSON artifacts in `results/` into a static, self-contained coverage-style report
+  (`index.html` over all runs + one page per run). Per-case messages/rubrics are
+  **joined from `cases.jsonl`** at render time (they aren't in the artifact), so
+  regenerate against the dataset the run used. Flags: `--results-dir`, `--cases`.
 
 ## Design (hybrid grading)
 
@@ -78,6 +83,10 @@ uncertaintyRubric? }`; `expected` mirrors the model's `RawExtraction` minus
   catalog, runs the real extractor per case, grades deterministically, LLM-judges
   the subjective fields (unless `--no-judge`), logs the report and optionally
   writes the `--json` artifact; exits non-zero below `--threshold`.
+- `reportHtml.ts` — pure HTML builders for the static report: `buildIndexHtml(runs)`,
+  `buildRunHtml(artifact, casesById)`, and `escapeHtml`. No fs / no daemon → unit-tested.
+- `evalReport.ts` — entry for `npm run eval:report`: reads the `results/` artifacts,
+  joins each case with `cases.jsonl` by `id`, and writes `index.html` + a page per run.
 
 ## Files (`src/eval/judge/`) — judge meta-eval
 
@@ -103,7 +112,9 @@ Unit tests only, and **daemon-free** — they run under the project-wide `npm te
 glob, so they must never contact Ollama. `fieldGrader.test.ts`, `report.test.ts`
 (incl. the `--json` artifact), and `loadCases.test.ts` use inline fixtures;
 `llmJudge.test.ts` injects a fake `chat` fn (mirroring `fakeExtractor` in
-`src/api/chat/__tests__/chat.test.ts`); `cases.test.ts` and
+`src/api/chat/__tests__/chat.test.ts`); `reportHtml.test.ts` asserts the HTML
+builders (message join, failing-field highlight, judge reason, escaping, fallback);
+`cases.test.ts` and
 `judge/__tests__/loadJudgeCases.test.ts` guard the shipped datasets (parse, unique
 ids, real catalog slugs, both verdict labels). The live model runs only via
 `npm run eval:chat` / `npm run eval:judge`.

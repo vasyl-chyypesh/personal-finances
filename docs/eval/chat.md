@@ -22,8 +22,24 @@ daemon and is **not** part of the CI gate.
 - `npm run eval:judge` — the **meta-eval**: validate the judge itself against
   hand-labeled cases (see below). Flags: `--judge-model`, `--filter`, `--cases`,
   `--threshold`.
+- `npm run eval:report` — render the JSON artifacts in `results/` into a static
+  HTML report (an `index.html` over all runs plus one page per run). No daemon
+  needed. Flags: `--results-dir=<dir>` (where the artifacts are), `--cases=<path>`
+  (the dataset to join messages from, default `cases.jsonl`). Output is written
+  next to the artifacts; the final log line prints the `file://…/index.html` to open.
 
-Both read `CHAT_MODEL` / `OLLAMA_HOST` from `.env`.
+`eval:chat` / `eval:judge` read `CHAT_MODEL` / `OLLAMA_HOST` from `.env`.
+
+## HTML report
+
+`eval:report` is a coverage-style viewer, fully separate from the app UI. Each page
+is self-contained (inlined CSS/JS and data) so it opens straight from `file://`.
+The per-case **message** and rubrics are not in the artifact — they are joined from
+`cases.jsonl` by case `id` at render time, so regenerate against the same dataset
+the run used. A case whose `id` no longer exists in `cases.jsonl` renders with an
+"input unavailable — dataset changed" note instead of its message. The report
+covers the objective field grades (expected vs actual) and the judge's per-criterion
+verdict + reason, with a "show only failures" toggle.
 
 ## Grading
 

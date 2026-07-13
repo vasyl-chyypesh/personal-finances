@@ -68,35 +68,47 @@ function buildSystemPrompt(ctx: ExtractContext): string {
   const today = ctx.today;
   const yesterday = previousDay(today);
 
-  // Examples use the real resolved dates so they stay consistent with the
-  // date rule (relative words -> YYYY-MM-DD; no date mentioned -> null).
+  // Renders one XML-delimited few-shot example. Examples use the real resolved
+  // dates so they stay consistent with the date rule (relative words -> YYYY-MM-DD;
+  // no date mentioned -> null). They are invented — none reuses a golden eval case —
+  // so the eval stays a fair test of the prompt.
   const example = (message: string, json: Record<string, unknown>): string =>
-    `Message: "${message}"\nJSON: ${JSON.stringify(json)}`;
+    `<example>\n<message>${message}</message>\n<json>${JSON.stringify(json)}</json>\n</example>`;
 
   return [
+    '<role>',
     'You extract a single personal-finance ledger entry from one short message.',
-    'The user writes in English or Ukrainian. Reply ONLY with the JSON object the schema describes.',
-    `Today is ${today} (ISO). Resolve relative dates against it and output date as YYYY-MM-DD: "today"/"сьогодні" -> ${today}, "yesterday"/"вчора" -> ${yesterday}. If no date is mentioned, set date to null.`,
+    'The user writes in English or Ukrainian. Reply with ONLY the JSON object the schema describes — no prose, no code fence.',
+    '</role>',
     '',
-    'Fields:',
+    '<date_rule>',
+    `Today is ${today} (ISO). Resolve relative dates against it and output date as YYYY-MM-DD: "today"/"сьогодні" -> ${today}, "yesterday"/"вчора" -> ${yesterday}. If no date is mentioned, set date to null.`,
+    '</date_rule>',
+    '',
+    '<fields>',
     '- amountMajor: the number in its main unit ("500" -> 500, "12.50" -> 12.5). Ignore thousands separators ("1 500"/"1,500" -> 1500). null if no amount is given.',
     '- currency: UAH, USD or EUR. "грн"/"uah"/"₴" -> UAH, "$"/"usd" -> USD, "€"/"eur" -> EUR. null if not stated.',
     '- type: "expense" for spending, "income" for money received — salary/зарплата, refund/повернення, cashback/кешбек, "отримав"/"received".',
-    '- categorySlug: exactly one slug from the list below, or null if none clearly fits. Never invent a slug, and prefer null over a weak guess.',
-    '- description: a short note such as the place or payee (e.g. "Silpo"), or null. Do not just repeat the category.',
+    '- categorySlug: exactly one slug from <categories>, or null if none clearly fits. Never invent a slug, and prefer null over a weak guess.',
+    '- description: ONLY a proper name of a place, payee, or person (e.g. "Silpo", "Puzata Hata", "John"). If the message names no such proper name, set description to null. Never put the item, product, category, or a generic place-type in description — "jacket", "groceries", "restaurant", "fuel", «продукти», «ресторан» are all wrong; use null instead.',
     '- Set any field you cannot determine from the message to null.',
     '- If the message is not about a transaction (a greeting, a question, small talk), set every field to null and uncertainFields to [].',
+    '</fields>',
     '',
-    'Uncertain fields:',
+    '<uncertainty_rules>',
     '- uncertainFields flags values the user should double-check. List a field name ONLY when you set it to a NON-null value you are not fully confident about — e.g. you inferred "type" from weak cues, or "categorySlug" only loosely fits.',
     '- Do NOT list a field you set to null; the app fills in defaults for missing values on its own.',
+    '- A date you resolved from a clear relative word ("today"/"сьогодні"/"yesterday"/"вчора") is stated, not a guess — do NOT flag it.',
     '- Allowed names: "type", "amount", "currency", "category", "date" (use "amount" for a doubtful amountMajor and "category" for a shaky categorySlug).',
     '- When every value you set is clearly stated in the message, return an empty list.',
+    '</uncertainty_rules>',
     '',
-    'Available category slugs (slug: English / Ukrainian):',
+    '<categories>',
+    '(slug: English / Ukrainian)',
     categoryLines,
+    '</categories>',
     '',
-    'Examples:',
+    '<examples>',
     example('spent 500 on groceries', {
       type: 'expense',
       amountMajor: 500,
@@ -151,6 +163,25 @@ function buildSystemPrompt(ctx: ExtractContext): string {
       date: null,
       uncertainFields: ['type'],
     }),
+    // Contrastive: the item name is NOT a description — no place/payee named -> null.
+    example('spent 250 on shoes', {
+      type: 'expense',
+      amountMajor: 250,
+      currency: null,
+      categorySlug: 'footwear',
+      description: null,
+      date: null,
+      uncertainFields: [],
+    }),
+    example('купив навушники 900', {
+      type: 'expense',
+      amountMajor: 900,
+      currency: null,
+      categorySlug: 'electronics',
+      description: null,
+      date: null,
+      uncertainFields: [],
+    }),
     example('кешбек від банку 300', {
       type: 'income',
       amountMajor: 300,
@@ -169,6 +200,9 @@ function buildSystemPrompt(ctx: ExtractContext): string {
       date: null,
       uncertainFields: [],
     }),
+    '</examples>',
+    '',
+    'Reply with ONLY the JSON object described by the schema.',
   ].join('\n');
 }
 
