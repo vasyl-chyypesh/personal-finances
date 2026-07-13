@@ -1,0 +1,8 @@
+{
+  "b3db896ea0437f2ee11734e541a698ef_0": {
+    "author": "vasyl-chyypesh",
+    "comment": "Non-shipped dev-only eval report (src/eval is excluded from npm run build). reportHtml.ts escapeHtml is a correct, unit-tested HTML escaper (& first, covers & < > \" '), applied to every dynamic value and used only in text / double-quoted-attribute contexts — no <script> or javascript: URL sink. The generated HTML is opened locally from file://, never served. See reportHtml.test.ts for the XSS-safety assertion.",
+    "created_at": "2026-07-13T15:26:46.731Z",
+    "false_positive": true
+  }
+}
