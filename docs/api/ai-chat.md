@@ -1,7 +1,9 @@
 # AI chat
 
 > Feature internals extracted from `src/api/CLAUDE.md`. That guide holds the
-> conventions; this file holds the per-feature detail.
+> conventions; this file holds the per-feature detail. The extraction prompt's
+> **quality is measured** by a separate eval pipeline — see
+> [`docs/eval/chat.md`](../eval/chat.md).
 
 The `chat` feature turns a natural-language message into a **draft** ledger entry
 — it only **extracts**; saving reuses `POST /api/ledger`. There is **no table** and

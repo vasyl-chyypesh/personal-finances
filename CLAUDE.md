@@ -21,16 +21,18 @@ All code lives under `src/`, split into three independent parts:
 - `src/api/` — Express 5 + TypeScript HTTP API, layered `Routes → Services → Repositories`, backed by SQLite.
 - `src/ui/` — Vite + React 19 SPA; talks to the API only over HTTP (never imports server modules).
 - `src/cli/` — a standalone xls importer (not an HTTP feature) that loads a legacy Excel budget sheet into the db.
+- `src/eval/` — a standalone prompt-evaluation tool (not an HTTP feature, not shipped) that grades the AI-chat extractor against a golden dataset. See [`src/eval/CLAUDE.md`](src/eval/CLAUDE.md).
 
 ## Directory guides
 
 When working inside a part, read its nested `CLAUDE.md` for the detailed conventions:
 
-| File                                     | Scope                                                                                                                    |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| [`src/api/CLAUDE.md`](src/api/CLAUDE.md) | Express API: layers, request validation, app/middleware wiring, shared utils, categories & i18n data model, API testing. |
-| [`src/ui/CLAUDE.md`](src/ui/CLAUDE.md)   | React/Vite SPA: structure, Tailwind v4 setup, build config, UI i18n, UI linting.                                         |
-| [`src/cli/CLAUDE.md`](src/cli/CLAUDE.md) | xls importer: parser, import service, mapping spec, run command.                                                         |
+| File                                       | Scope                                                                                                                    |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| [`src/api/CLAUDE.md`](src/api/CLAUDE.md)   | Express API: layers, request validation, app/middleware wiring, shared utils, categories & i18n data model, API testing. |
+| [`src/ui/CLAUDE.md`](src/ui/CLAUDE.md)     | React/Vite SPA: structure, Tailwind v4 setup, build config, UI i18n, UI linting.                                         |
+| [`src/cli/CLAUDE.md`](src/cli/CLAUDE.md)   | xls importer: parser, import service, mapping spec, run command.                                                         |
+| [`src/eval/CLAUDE.md`](src/eval/CLAUDE.md) | Prompt eval: golden dataset, hybrid grading, `normalizeExtraction` reuse, run command, daemon-free tests.                |
 
 ## Hard Constraints
 
@@ -59,6 +61,8 @@ Project-wide rules (part-specific details — supertest, the `DB_PATH` HTTP setu
 - `npm run dev:api` — start API dev server (tsx watch)
 - `npm run dev:ui` — start the React UI dev server (Vite on `:5173`, proxies `/api` to `:3001`)
 - `npm run import:xls -- <file.xls>` — import a legacy Excel budget sheet into the SQLite db
+- `npm run eval:chat` — grade the AI-chat extractor prompt against the golden dataset (needs a live Ollama daemon; see `src/eval/CLAUDE.md` and `docs/eval/chat.md`)
+- `npm run eval:judge` — validate the LLM judge itself against hand-labeled meta-cases (needs a live Ollama daemon)
 - `npm test` — run all tests
 - `npm run lint` — run ESLint
 - `npm run lint:files` — run ls-lint (file naming linter, separate from ESLint)

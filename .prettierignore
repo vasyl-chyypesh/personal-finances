@@ -3,3 +3,6 @@
 # JSON under .claude/ (settings, etc.) IS formatted.
 .claude/**/*.md
 .claude/**/*.mjs
+
+# Generated eval run artifacts
+src/eval/chat/results/

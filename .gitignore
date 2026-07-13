@@ -117,5 +117,8 @@ test_data.xls
 # Security scan report
 scan-report.html
 
+# Eval run artifacts (timestamped JSON from `npm run eval:chat`)
+src/eval/chat/results/
+
 # claudelint cache
 .claudelint-cache/
