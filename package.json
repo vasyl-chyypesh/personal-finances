@@ -13,6 +13,7 @@
     "import:xls": "tsx src/cli/importXls.ts",
     "eval:chat": "tsx src/eval/chat/evalChat.ts",
     "eval:judge": "tsx src/eval/judge/evalJudge.ts",
+    "eval:report": "tsx src/eval/chat/evalReport.ts",
     "build": "rm -rf dist && tsc --project tsconfig.build.json",
     "build:ui": "vite build",
     "preview:ui": "vite preview",
