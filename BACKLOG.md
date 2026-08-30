@@ -20,25 +20,30 @@ here. This file is the loop's only memory between runs — keep it accurate.
 
 ## Queue
 
-- [ ] **Monthly spending summary endpoint** `(placeholder)` — add
-      `GET /api/summary/:month` returning per-category totals for the month,
-      in integer cents, following the Routes → Services → Repositories
-      layering.
-      Done when: integration tests cover an empty month and a month with
-      seeded multi-category entries, totals are exact integer cents, and
-      lint/build/test are green.
-- [ ] **Export ledger to CSV** `(placeholder)` — add a UI action on the
-      ledger page that downloads the current entries as a CSV file.
-      Done when: the button renders on the ledger page, a headless-driver
-      run downloads a CSV whose rows match seeded entries, and
-      lint/build/test are green.
+- [ ] **Show inverse (foreign→UAH) rate on the currency list** — the
+      Currencies page (`CurrenciesPage.tsx` / `CurrencyListItem.tsx`) shows only
+      `rates[base][code]`, i.e. how much USD/EUR 1 UAH buys (`0.0223`, labeled
+      "per 1 UAH"). Each non-base row should show **both** directions: the
+      existing `1 UAH = X USD` line _and_ an inverse `1 USD = Y UAH` line. No
+      API or math change is needed — the response already carries the full
+      pairwise matrix, so the inverse is `rates[code][base]`
+      (`ExchangeRatesResponse.rates`); pass it into `CurrencyListItem` and
+      render both lines. Add i18n keys for the inverse label in both `en` and
+      `uk` (`src/ui/i18n/messages.ts`; the `rateValue`/`rateVsBase` keys are the
+      model). Scope is the **list rows only** — leave the rate-history chart's
+      direction unchanged. Format the (larger) inverse value with sensible
+      precision, not necessarily the list's fixed 4 decimals.
+      Done when: each foreign-currency row renders both `1 {base} = … {code}`
+      and `1 {code} = … {base}` using values from the existing matrix (no new
+      endpoint); the base (UAH) row is unaffected; both `en` and `uk` have the
+      new label with no missing-key gaps; a `run-personal-finances` headless
+      run shows both directions on the Currencies page; and lint/build/test are
+      green.
 
 ## Blocked
 
-- [ ] **Multi-currency budgets** `(placeholder)` — blocked: needs a decision
-      on which currency the budget totals are stored in before acceptance
-      criteria can be written.
+_None yet._
 
 ## Done
 
-- [x] **Example finished item** `(placeholder)` — done — PR #0.
+_None yet._
